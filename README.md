@@ -3,6 +3,7 @@ The scripts found with in this repository are all used to create the Resilience 
 
 If you are an outside researcher who has interest in using this data, please contact me. 
 
-<img src="https://github.com/favicon.ico](https://user-images.githubusercontent.com/88209553/192005530-b2fde59f-21b8-4d58-a80f-bd75676b6e74.png" width="48">
+<img src="https://user-images.githubusercontent.com/88209553/192005530-b2fde59f-21b8-4d58-a80f-bd75676b6e74.png" width="48">
+
 
 ![nsf_logo](https://user-images.githubusercontent.com/88209553/192005606-55358448-a846-4956-92f3-d49586ad5ca0.png)
