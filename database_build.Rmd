@@ -25,6 +25,8 @@ location_table <- data.frame(c("panama", "brazil", "usa"))
 colnames(location_table) <- c("location")
 
 write_csv(location_table, here("clean_tables", "location.csv"))
+
+
 ```
 
 
@@ -40,12 +42,34 @@ colnames(usa_regions) <- c("region", "location")
 
 ```
 
-## read in panama legacy data and pull out regions
+## read in and clean panama legacy data and pull out regions
 ```{r}
 
 panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>% 
-  clean_names()
+  clean_names() %>% 
+  mutate(frog_presence = ifelse(!nofrog == "No frogs", 1, 0 ),
+         date = parse_date(date)) %>% 
+  mutate_at(vars(frog_presence), ~replace_na(., 1)) %>% 
+  select(!c(nofrog)) %>% 
+  relocate(frog_presence, .before = observers) %>% 
+  rename(duration_minutes = surv_length,
+         elevation_m = elevation, # double check this is correct
+         wind_speed_m_s = wind_speed, # need to double check kph, I see some showing "0.4/s"
+         air_temp_c = air_temp, # double check this is correct
+         water_temp_c = water_temp, # double check this is correct
+         dissolved_o2_percent = dis_o2, # insert units
+         conductivity_insertunits = conductivity, #insert units
+         tds_insertunits = tds, # insert units
+         salinity_small = salinity, # insert units
+         cloud_cover_percent = cloud_cover,# double check this is correct
+         humidity_percent = humidity, # double check this is correct
+         pressure_hg = pressure_in_hg,
+         number_observers = num_obs,
+         salinity_large = salinity0) %>% 
+  mutate_all(str_to_lower)
 
+
+# regions
 panama_regions <- panama_raw %>% 
   mutate(region = str_to_lower(region),
          location = "panama") %>% 
@@ -65,9 +89,13 @@ colnames(brazil_regions) <- c("region", "location")
 ## combine region tables
 ```{r}
 
-regions <- rbind(brazil_regions, panama_regions, usa_regions)
+regions <- rbind(brazil_regions, panama_regions, usa_regions) %>% 
+  mutate(region = str_replace_all(region, " ", "_"))
 
 write_csv(regions, here("clean_tables", "regions.csv"))
+
+rm(brazil_regions, panama_regions, usa_regions)
+gc()
 ```
 
 
@@ -82,6 +110,7 @@ panama_sites <- panama_raw %>%
          location = "panama") %>% 
   select(region, site, location) %>% 
   unique()
+
 
 ```
 
@@ -144,6 +173,9 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
    ungroup()
   
 write_csv(sites, here("clean_tables", "sites.csv"))
+
+rm(panama_sites, brazil_legacy_sites, penn_sites, serdp_sites)
+gc()
 ```
 
 # create visit table
@@ -284,6 +316,11 @@ penn1_aural <-left_join(munged_Acoustic_Survey, munged_Acoustic_Survey_Repeatabl
 
 penn1_aural$duration_min <- str_sub(penn1_aural$duration_min, -4) %>% 
   as.numeric()
+
+rm(munged_Amphibian_Processing_App, munged_Amphibian_Captured_Information,munged_Amphibian_Captured_Information_Repeatable,
+   munged_Amphibian_Processing_App_Repeatable,munged_VisualEncounter_Survey,munged_VisualEncounter_Survey_Repeatable,
+   munged_Acoustic_Survey,munged_Acoustic_Survey_Repeatable)
+gc()
 ```
 
 ### pull out visits based on date and survey_time(night/day) for VES, aural, and capture
@@ -307,12 +344,112 @@ penn_visit_table <- plyr::rbind.fill(penn1_aural_visit, penn1_VES_visit, penn1_c
   filter(!duplicated(temp_id)) %>% 
   select(!c(detection_type, temp_id))
 
+rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
+gc()
 ```
 
 ## read in serdp unique visits - need to either read in all data and format sites as above or adjust in different script. Either method is fine since data will not be changing
 ```{r}
 
+serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit.csv")) %>% 
+  rename(site = site_name) %>% 
+  mutate(site = str_to_lower(site),
+         site = str_remove(site, "-"),
+         site = str_remove(site, "\\."),
+         site = if_else(site == "wood lab", "wood lab pond", site),
+         site = if_else(site == "rv", "rv pond", site),
+         site = if_else(site == "tuttle", "tuttle pond", site),
+         site = if_else(site == "phelps", "phelps pond", site),
+         site = if_else(site == "newt (mike vorisek's)", "vorisek pond", site))
 
+```
 
+## read panama data and pull out unique visits
+```{r}
+
+panama_visit_table <- panama_raw %>% 
+  select(site, date, survey_time) %>% 
+  mutate(site = str_to_lower(site),
+         date = parse_date(date),
+         site = str_replace_all(site, " ", "_"),
+         site = str_replace_all(site, "[[:space:]]", "")) %>% 
+  group_by(date, survey_time, site) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
+
+```
+
+## read in brazil legacy data unique visits
+```{r}
+
+brazil_legacy_visit_table <- read_csv(here("data", "brazil_legacy", "brazil_visit.csv")) %>% 
+  mutate(site = str_replace_all(site, "[[:space:]]", ""))
+
+```
+
+## bind all visit tables
+```{r}
+
+visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table)
+
+write_csv(visit_table, here("clean_tables", "visit.csv"))
+
+rm(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table)
+gc()
+
+```
+
+# create survey tables for each region/dataset?
+
+## brazil legacy survey table
+```{r}
+
+brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_survey.csv"))
+
+write_csv(brazil_legacy_survey_table, here("clean_tables", "survey_tables", "brazil_legacy_survey.csv"))
+```
+
+## penn survey table
+```{r}
+
+penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>% 
+  select(c(site, date, observer, detection_type, start_time, end_time, 
+           duration_min, detection_type, survey_time)) %>% 
+  group_by(date, site, detection_type, survey_time) %>% 
+  mutate(temp_reg_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_reg_id)) %>% 
+  select(!c(temp_reg_id)) %>% 
+  mutate(site = str_replace(site, " ", "_"))
+
+write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
+  
+rm(penn1_aural, penn1_VES, penn1_capture)
+gc()
+```
+
+## panama survey table
+```{r}
+
+panama_survey_table <- panama_raw %>% 
+  select(c((1:5), (6:15), (21:35), salinity_large, detection_type)) %>% 
+  select(!c(survey_id, sort_id, merge_id, region)) %>% 
+  mutate(site = str_replace_all(site, " ", "_")) %>% 
+  group_by(date, detection_type) %>% 
+  mutate(new_survey_id = cur_group_id()) %>% #add unique id based on date and detection type
+  filter(!duplicated(new_survey_id)) %>% 
+  select(!c(new_survey_id))
+
+write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_survey.csv"))
+```
+
+## read in serdp survey table
+```{r}
+
+serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) %>% 
+  mutate(survey_notes = str_to_lower(survey_notes),
+         precipitation_last_48_h = str_to_lower(precipitation_last_48_h))
+
+write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
 ```
 
