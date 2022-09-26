@@ -114,7 +114,7 @@ panama_sites <- panama_raw %>%
 
 ```
 
-## pull out serdp sites
+## pull out serdp sites - TRUE SITE TABLE
 ```{r}
 
 serdp_sites <- read_csv(here("data", "serdp", "serdp_site_table.csv")) %>% 
@@ -122,21 +122,26 @@ serdp_sites <- read_csv(here("data", "serdp", "serdp_site_table.csv")) %>%
   rename(site_comments = notes,
          region = dod_location) %>% 
   # align serdp site names with current penn site names
-  mutate(site_name = str_to_lower(site_name),
-         site_name = if_else(site_name == "wood lab", "wood lab pond", site_name),
-         site_name = if_else(site_name == "rv", "rv pond", site_name),
-         site_name = if_else(site_name == "tuttle", "tuttle pond", site_name),
-         site_name = if_else(site_name == "phelps", "phelps pond", site_name),
-         site_name = if_else(site_name == "newt (mike vorisek's)", "vorisek pond", site_name),
+  mutate(site = str_to_lower(site),
+         site = if_else(site == "wood lab", "wood lab pond", site),
+         site = if_else(site == "rv", "rv pond", site),
+         site = if_else(site == "tuttle", "tuttle pond", site),
+         site = if_else(site == "phelps", "phelps pond", site),
+         site = if_else(site == "newt (mike vorisek's)", "vorisek pond", site),
          location = "usa",
          region = if_else(region == "pa", "pennsylvania", region),
          region = if_else(region == "tn", "tennessee", region),
          region = if_else(region == "vt", "vermont", region),
          region = if_else(region == "nm", "new mexico", region),
-         region = if_else(region == "la", "louisiana", region)) %>% 
-  select(!c(site_code, t_id)) %>% 
-  rename(site_code = site,
-         site = site_name)
+         region = if_else(region == "la", "louisiana", region),
+         region = if_else(site_code == "la7", "louisiana", region),
+         region = if_else(site_code == "la8", "louisiana", region),
+         site = if_else(site_code == "nm22", "n. caballo lake 2", site),
+         site = if_else(site_code == "nm30", "n. caballo lake 3", site),
+         site = if_else(site_code == "la7", "la7", site),
+         site = if_else(site_code == "la8", "la8", site),
+         site = if_else(site == "la06", "la6", site)) %>% 
+  select(!c( temp_id))
 
 ```
 
@@ -165,7 +170,7 @@ brazil_legacy_sites <- read_csv(here("data", "brazil_legacy", "brazil_site.csv")
 sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_sites) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          region = str_replace_all(region, " ", "_"),
-         site = str_remove(site, "-"),
+         site = str_replace_all(site, "-", "_"),
          site = str_remove(site, "\\.")) %>% 
   group_by(site) %>%
    mutate(across(everything(), ~ .x[order(.x)])) %>%
@@ -340,7 +345,9 @@ penn1_aural_visit <- penn1_aural %>%
 
 penn_visit_table <- plyr::rbind.fill(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit) %>% 
   group_by(date, survey_time, site) %>% 
-  mutate(temp_id = cur_group_id()) %>% 
+  mutate(temp_id = cur_group_id(),
+         site = str_replace(site, "-", "_"),
+         site = str_replace_all(site, " ", "_")) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(detection_type, temp_id))
 
@@ -351,16 +358,20 @@ gc()
 ## read in serdp unique visits - need to either read in all data and format sites as above or adjust in different script. Either method is fine since data will not be changing
 ```{r}
 
-serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit.csv")) %>% 
-  rename(site = site_name) %>% 
+serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit_table.csv")) %>% 
   mutate(site = str_to_lower(site),
-         site = str_remove(site, "-"),
+         site = str_replace(site, "-", "_"),
          site = str_remove(site, "\\."),
          site = if_else(site == "wood lab", "wood lab pond", site),
          site = if_else(site == "rv", "rv pond", site),
          site = if_else(site == "tuttle", "tuttle pond", site),
          site = if_else(site == "phelps", "phelps pond", site),
-         site = if_else(site == "newt (mike vorisek's)", "vorisek pond", site))
+         site = if_else(site == "newt (mike vorisek's)", "vorisek pond", site),
+         site = str_replace_all(site, " ", "_"),
+         survey_time = str_to_lower(survey_time),
+         site = if_else(site_code == "la7", "la7", site),
+         site = if_else(site_code == "la8", "la8", site),
+         site = if_else(site == "la06", "la6", site))
 
 ```
 
@@ -448,8 +459,50 @@ write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_sur
 
 serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) %>% 
   mutate(survey_notes = str_to_lower(survey_notes),
-         precipitation_last_48_h = str_to_lower(precipitation_last_48_h))
+         precipitation_last_48_h = str_to_lower(precipitation_last_48_h)) %>% 
+  select(!c(site_name, dod_site_location_name))
 
 write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
+```
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("dbname"),
+                 host = Sys.getenv("host"), 
+                 port = Sys.getenv("port"),
+                 user = Sys.getenv("user"), 
+                 password = Sys.getenv("password"))
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to public")
+```
+
+## upload unique tables to `RIBBiTR` DB
+```{r}
+
+#location table load
+DBI::dbWriteTable(connection, 'location', location_table, overwrite=T)
+
+#region table load
+dbWriteTable(connection, 'region', regions, overwrite=T)
+
+#site table load
+dbWriteTable(connection, 'site', sites, overwrite=T)
+
+#visit table load
+dbWriteTable(connection, 'visit', visit_table, overwrite=T)
+
+
 ```
 
