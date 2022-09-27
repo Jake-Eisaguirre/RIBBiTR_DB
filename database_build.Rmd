@@ -483,6 +483,27 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
 write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
 ```
 
+# create VES table
+
+## penn1 ves table
+```{r}
+
+penn_ves <- penn1_VES %>% 
+  select(!c(region, location, observer))
+
+```
+
+## panama ves table - still needs a lot of cleaning.....
+```{r}
+panama_ves <- panama_raw %>% 
+  filter(detection_type == "visual") %>% 
+  select(site, transect, survey_time, observers, number_observers, start_time, end_time, duration_minutes, species, detection_type,
+         quantity, capture_loc, microhab, life_stage, notes_amphib1, notes_amphib2, life_stage0, microhab0, location0) %>% 
+  unite(ves_notes, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
+  unite(life_stage, c(life_stage, life_stage0), sep = ", ", na.rm = T)
+```
+
+
 # Database
 
 ## connect to `RIBBiTR` database
