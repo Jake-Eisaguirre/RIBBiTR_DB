@@ -108,7 +108,7 @@ panama_sites <- panama_raw %>%
   mutate(region = str_to_lower(region),
          site = str_to_lower(site),
          location = "panama") %>% 
-  select(region, site, location) %>% 
+  select(region, site, location, utme, utmn, elevation_m) %>% 
   unique()
 
 
@@ -381,7 +381,6 @@ serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit_table.csv")) %>
 panama_visit_table <- panama_raw %>% 
   select(site, date, survey_time) %>% 
   mutate(site = str_to_lower(site),
-         date = parse_date(date),
          site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "[[:space:]]", "")) %>% 
   group_by(date, survey_time, site) %>% 
@@ -416,7 +415,9 @@ gc()
 ## brazil legacy survey table
 ```{r}
 
-brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_survey.csv"))
+brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_survey.csv")) %>% 
+  mutate(detection_type = "capture", 
+         site = str_replace_all(site, "[[:space:]]", ""))
 
 write_csv(brazil_legacy_survey_table, here("clean_tables", "survey_tables", "brazil_legacy_survey.csv"))
 ```
@@ -431,7 +432,8 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
   mutate(temp_reg_id = cur_group_id()) %>% 
   filter(!duplicated(temp_reg_id)) %>% 
   select(!c(temp_reg_id)) %>% 
-  mutate(site = str_replace(site, " ", "_"))
+  mutate(site = str_replace_all(site, " ", "_"),
+         site = str_replace(site, "-", "_"))
 
 write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
   
@@ -449,7 +451,8 @@ panama_survey_table <- panama_raw %>%
   group_by(date, detection_type) %>% 
   mutate(new_survey_id = cur_group_id()) %>% #add unique id based on date and detection type
   filter(!duplicated(new_survey_id)) %>% 
-  select(!c(new_survey_id))
+  select(!c(new_survey_id)) %>% 
+  mutate(date = parse_date(date))
 
 write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_survey.csv"))
 ```
@@ -459,8 +462,23 @@ write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_sur
 
 serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) %>% 
   mutate(survey_notes = str_to_lower(survey_notes),
-         precipitation_last_48_h = str_to_lower(precipitation_last_48_h)) %>% 
-  select(!c(site_name, dod_site_location_name))
+         precipitation_last_48_h = str_to_lower(precipitation_last_48_h),
+         survey_notes = str_replace_all(survey_notes, "[^[:alnum:]]", ""),
+         weather_condition_notes = str_replace_all(weather_condition_notes, "[^[:alnum:]]", ""),
+         site = str_to_lower(site),
+         site = str_replace(site, "-", "_"),
+         site = str_remove(site, "\\."),
+         site = if_else(site == "wood lab", "wood lab pond", site),
+         site = if_else(site == "rv", "rv pond", site),
+         site = if_else(site == "tuttle", "tuttle pond", site),
+         site = if_else(site == "phelps", "phelps pond", site),
+         site = if_else(site == "newt (mike vorisek's)", "vorisek pond", site),
+         site = str_replace_all(site, " ", "_"),
+         survey_time = str_to_lower(survey_time),
+         site = if_else(site_code == "la7", "la7", site),
+         site = if_else(site_code == "la8", "la8", site),
+         site = if_else(site == "la06", "la6", site),
+         detection_type = "capture")
 
 write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
 ```
@@ -478,7 +496,8 @@ tryCatch({
                  host = Sys.getenv("host"), 
                  port = Sys.getenv("port"),
                  user = Sys.getenv("user"), 
-                 password = Sys.getenv("password"))
+                 password = Sys.getenv("password"),
+                 timezone=NULL)
     print("Database Connected!")
     },
     error=function(cond) {
@@ -492,7 +511,7 @@ dbExecute(connection, "set search_path to public")
 ```{r}
 
 #location table load
-DBI::dbWriteTable(connection, 'location', location_table, overwrite=T)
+dbWriteTable(connection, 'location', location_table, overwrite=T)
 
 #region table load
 dbWriteTable(connection, 'region', regions, overwrite=T)
@@ -502,6 +521,18 @@ dbWriteTable(connection, 'site', sites, overwrite=T)
 
 #visit table load
 dbWriteTable(connection, 'visit', visit_table, overwrite=T)
+
+#brazil_legacy_survey table load
+dbWriteTable(connection, 'brazil_legacy_survey', brazil_legacy_survey_table, overwrite=T)
+
+#panama_survey table load
+dbWriteTable(connection, 'panama_survey', panama_survey_table, overwrite=T)
+
+#penn_survey table load
+dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T)
+
+#serdp_survey table load
+dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T)
 
 
 ```
