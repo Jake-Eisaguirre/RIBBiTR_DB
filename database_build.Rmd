@@ -48,7 +48,8 @@ colnames(usa_regions) <- c("region", "location")
 panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>% 
   clean_names() %>% 
   mutate(frog_presence = ifelse(!nofrog == "No frogs", 1, 0 ),
-         date = parse_date(date)) %>% 
+         date = parse_date(date),
+         detection_type = "aural") %>% 
   mutate_at(vars(frog_presence), ~replace_na(., 1)) %>% 
   select(!c(nofrog)) %>% 
   relocate(frog_presence, .before = observers) %>% 
@@ -433,11 +434,12 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
   filter(!duplicated(temp_reg_id)) %>% 
   select(!c(temp_reg_id)) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
-         site = str_replace(site, "-", "_"))
+         site = str_replace(site, "-", "_"),
+         detection_type = if_else(detection_type == "acoustic", "aural", detection_type))
 
 write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
   
-rm(penn1_aural, penn1_VES, penn1_capture)
+rm(penn1_capture)
 gc()
 ```
 
@@ -448,8 +450,8 @@ panama_survey_table <- panama_raw %>%
   select(c((1:5), (6:15), (21:35), salinity_large, detection_type)) %>% 
   select(!c(survey_id, sort_id, merge_id, region)) %>% 
   mutate(site = str_replace_all(site, " ", "_")) %>% 
-  group_by(date, detection_type) %>% 
-  mutate(new_survey_id = cur_group_id()) %>% #add unique id based on date and detection type
+  group_by(date, site, survey_time, detection_type) %>% 
+  mutate(new_survey_id = cur_group_id()) %>% 
   filter(!duplicated(new_survey_id)) %>% 
   select(!c(new_survey_id)) %>% 
   mutate(date = parse_date(date))
@@ -489,20 +491,99 @@ write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_surve
 ```{r}
 
 penn_ves <- penn1_VES %>% 
-  select(!c(region, location, observer))
+  select(!c(region, location, observer)) %>% 
+  mutate(duration_min = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_min = duration_min/60) %>% 
+  relocate(duration_min, .before = species_ves) %>% 
+  rename(ves_notes = comments_ves,
+         duration_minutes = duration_min)
 
+penn_ves$duration_minutes <- str_sub(penn_ves$duration_minutes, -4) %>% 
+  as.numeric()
+
+
+rm(penn1_VES)
+gc()
 ```
 
 ## panama ves table - still needs a lot of cleaning.....
 ```{r}
 panama_ves <- panama_raw %>% 
   filter(detection_type == "visual") %>% 
-  select(site, transect, survey_time, observers, number_observers, start_time, end_time, duration_minutes, species, detection_type,
-         quantity, capture_loc, microhab, life_stage, notes_amphib1, notes_amphib2, life_stage0, microhab0, location0) %>% 
+  select(site, date, transect, survey_time, start_time, end_time, 
+         duration_minutes, species, detection_type,
+         quantity, capture_loc, microhab, life_stage, sex, notes_amphib1, 
+         notes_amphib2, microhab0) %>% 
   unite(ves_notes, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
-  unite(life_stage, c(life_stage, life_stage0), sep = ", ", na.rm = T)
+  rename(microhab_moredetail = microhab0,
+         count = quantity,
+         species_ves = species,
+         detection_location = capture_loc) %>% 
+  mutate(date = parse_date(date))
+
+  
 ```
 
+
+## bind ves tables
+```{r}
+
+ves <- plyr::rbind.fill(panama_ves, penn_ves) %>% 
+  mutate(site = str_replace_all(site, " ", "_")) %>% 
+  rename(notes_ves = ves_notes) %>% 
+  select(!c(start_time, end_time, duration_minutes))
+
+rm(panama_ves,penn_ves)
+gc()
+```
+
+# create aural table
+
+## penn1 aural table
+```{r}
+
+penn_aural <- penn1_aural %>% 
+  select(!c(region, observer, location, start_hour, end_hour, start_time, end_time, duration_min)) %>% 
+  mutate(detection_type = "aural",
+         species_acoustic = str_replace_all(species_acoustic, " ", "_"),
+         site = str_replace_all(site, " ", "_"),
+         site = str_replace(site, "-", "_")) %>% 
+  rename(species_aural = species_acoustic,
+         notes_aural = acoustic_comments)
+
+```
+
+## panama aural table
+```{r}
+
+panama_aural <- panama_raw %>% 
+  filter(detection_type == "aural") %>% 
+  select(site, date, transect, survey_time, 
+         species, detection_type,
+         quantity, capture_loc, microhab, life_stage, sex, notes_amphib1, 
+         notes_amphib2, microhab0) %>% 
+  unite(notes_aural, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
+  rename(microhab_moredetail = microhab0,
+         count = quantity,
+         species_aural = species,
+         detection_location = capture_loc) %>% 
+  mutate(date = parse_date(date),
+         microhab = if_else(is.na(microhab), "unknown", microhab),
+         count = if_else(is.na(count), "1", count), #DOUBLE CHECK THIS IS CORRECT
+         site = str_replace_all(site, " ", "_"),
+         species_aural = str_replace_all(species_aural, " ", "_")) 
+
+```
+
+## bind aural table
+```{r}
+
+aural <- plyr::rbind.fill(penn_aural, panama_aural)
+  
+
+```
 
 # Database
 
@@ -555,6 +636,50 @@ dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T)
 #serdp_survey table load
 dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T)
 
+# ves table load
+dbWriteTable(connection, 'ves', ves, overwrite=T)
 
+# aural table load
+dbWriteTable(connection, 'aural', aural, overwrite=T)
+
+```
+
+# ## add UUID extension
+# ```{r}
+# 
+# dbExecute(connection, 'create extension if not exists "uuid-ossp"')
+# 
+# ```
+# 
+# ## Location: add unique ID and p.keyy
+# ```{r}
+# dbExecute(connection, 
+#           'alter table "location" 
+#           add column location_id UUID default (public.uuid_generate_v4());')
+# 
+# dbExecute(connection, 
+#           'alter table "location" add primary key(location_id);')
+# ```
+# ## Region: add unique ID, p.key, join id on location, and create f.key
+# ```{r}
+# dbExecute(connection, 
+#           'alter table region add column region_id UUID default (public.uuid_generate_v4());')
+# 
+# dbExecute(connection, 
+#           'alter table region add primary key(region_id);')
+# 
+# dbExecute(connection, 
+#           'alter table region add column location_id uuid;')
+# 
+# dbExecute(connection, 
+#           'update region r
+#            set location_id = 
+#             (select rs.location_id 
+#             from "location" rs
+#             where rs.location = r.location);')
+# 
+# dbExecute(connection, 
+#           'alter table region  
+#           add constraint fk_region foreign key (location_id) references location (location_id);')
 ```
 
