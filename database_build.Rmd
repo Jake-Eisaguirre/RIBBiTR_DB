@@ -14,7 +14,8 @@ if (!require(librarian)){
 }
 
 # librarian downloads, if not already downloaded, and reads in needed packages
-librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms)
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
+                 anytime)
 ```
 
 # create location table (panama, brazil, usa)
@@ -49,7 +50,7 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
   clean_names() %>% 
   mutate(frog_presence = ifelse(!nofrog == "No frogs", 1, 0 ),
          date = parse_date(date),
-         detection_type = "aural") %>% 
+         detection_type = if_else(detection_type == "call", "aural", detection_type)) %>% 
   mutate_at(vars(frog_presence), ~replace_na(., 1)) %>% 
   select(!c(nofrog)) %>% 
   relocate(frog_presence, .before = observers) %>% 
@@ -67,7 +68,14 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          pressure_hg = pressure_in_hg,
          number_observers = num_obs,
          salinity_large = salinity0) %>% 
-  mutate_all(str_to_lower)
+  mutate_all(str_to_lower) %>% 
+  mutate(start_hour = hour(anytime(start_time)),
+         end_hour = hour(anytime(end_time)),
+    survey_time = if_else(is.na(survey_time), (case_when(start_hour >= 6 & end_hour >= 6 & 
+                                                                 end_hour < 19 ~ "day",start_hour >= 19 
+                                                               & (end_hour < 6 | end_hour <= 23) |
+                                                                 (start_hour < 6 & end_hour < 6)~ "night",
+                                                               start_hour >=19 ~"night")), survey_time))
 
 
 # regions
@@ -189,7 +197,7 @@ gc()
 ## pull out unique visits for penn1 ribbitr
 
 ### load all year 1 penn data
-```{r}
+```{r, message=F}
 munged_Amphibian_Processing_App <- read_csv(here("data", "penn", "munged_Amphibian_Processing_App.csv"))
 
 munged_Amphibian_Captured_Information <-  read_csv(here("data", "penn","munged_Amphibian_Captured_Information.csv"))
@@ -439,8 +447,7 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
 
 write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
   
-rm(penn1_capture)
-gc()
+
 ```
 
 ## panama survey table
@@ -553,6 +560,8 @@ penn_aural <- penn1_aural %>%
   rename(species_aural = species_acoustic,
          notes_aural = acoustic_comments)
 
+rm(penn1_aural)
+gc()
 ```
 
 ## panama aural table
@@ -582,6 +591,131 @@ panama_aural <- panama_raw %>%
 
 aural <- plyr::rbind.fill(penn_aural, panama_aural)
   
+rm(penn_aural, panama_aural)
+gc()
+```
+
+# Capture table
+
+## penn1 capture
+```{r}
+
+penn_capture <- penn1_capture %>% 
+  select(!c(region, location, visit_comment, survey_comment, start_time, end_time,
+            observer)) %>% 
+  mutate(site = str_replace_all(site, " ", "_"),
+         site = str_replace_all(site, "-", "_"),
+         species_capture = str_replace_all(species_capture, " ", "_"),
+         bd_swab_tube_id = if_else(bd_swab_tube_id == "BdSwab00000", "NA", bd_swab_tube_id),
+         dry_swab_tube_id=if_else(dry_swab_tube_id == "DrySwab00000", "NA", dry_swab_tube_id),
+         crispr_swab_tube_id=if_else(crispr_swab_tube_id == "CRSwab00000", "NA", crispr_swab_tube_id),
+         bacterial_swab_tube_id=if_else(bacterial_swab_tube_id == "BacSwab00000", "NA", bacterial_swab_tube_id),
+         mucusome_id=if_else(mucusome_id == "MucBath00000", "NA", mucusome_id),
+         amp_id_1=if_else(amp_id_1 == "AMPBath00000", "NA", amp_id_1),
+         amp_id_2=if_else(amp_id_2 == "AMPBath00000", "NA", amp_id_2),
+         amp_id_3=if_else(amp_id_3 == "AMPBath00000", "NA", amp_id_3),
+         amp_id_4=if_else(amp_id_4 == "AMPBath00000", "NA", amp_id_4),
+         antibody_id_1=if_else(antibody_id_1 == "AntiBod00000", "NA", antibody_id_1),
+         antibody_id_2=if_else(antibody_id_2 == "AntiBod00000", "NA", antibody_id_2),
+         antibody_id_3=if_else(antibody_id_3 == "AntiBod00000", "NA", antibody_id_3),
+         antibody_id_4=if_else(antibody_id_4 == "AntiBod00000", "NA", antibody_id_4),
+         toe_clip_tube_id=if_else(toe_clip_tube_id == "ToeClip00000", "NA", toe_clip_tube_id)) %>% 
+  rename(bag_mass_g = bag_mass,
+         svl_mm = snout_vent_length,
+         body_and_bag_mass_g = body_and_bag_mass,
+         body_mass_g = body_mass,
+         substrate_temp_c = microhabitat_temperature_c,
+         bd_swab_id = bd_swab_tube_id,
+         bacterial_swab_id = bacterial_swab_tube_id,
+         photo_id = bag_photo,
+         genetic_id = toe_clip_tube_id,
+         amp_id = amp_id_1,
+         notes_capture = capture_comments,
+         body_temp_c = body_temperature_c) %>% 
+  unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T)
+  
+
+rm(penn1_capture, penn1_VES, penn1_aural)
+gc()
+```
+
+## brazil_legacy capture
+```{r}
+brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.csv")) %>% 
+  select(!c(1, 17:20)) %>% 
+  select(!c(count, family)) %>% 
+  rename(species_capture = scientific_name,
+         notes_capture = comments,
+         bd_swab_id = swab_id) %>% 
+  unite(site, area:environment, sep = "_") %>% 
+  mutate(detection_type = "capture",
+         species_capture = str_replace_all(species_capture, " ", "_")) 
+```
+
+## serdp capture table
+```{r}
+
+serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>% 
+  rename(bag_mass_g = mass_of_bag_g,
+         time_of_capture = time,
+         body_and_bag_mass_g = mass_of_animal_in_bag,
+         body_mass_g = mass_of_animal_g,
+         body_temp_c = body_temp,
+         microhabitat_type = microhabitat_category) %>% 
+  select(!c(species_code, frog_number, frog_id)) %>% 
+  mutate(site = str_to_lower(site),
+         site = str_replace_all(site, " ", "_"),
+         bd_swab = if_else(bd_swab == 1, sample_id, NULL),
+         mucosome = if_else(mucosome == 1, sample_id, NULL),
+         microbiome = if_else(microbiome == 1, sample_id, NULL),
+         am_ps = if_else(am_ps == 1, sample_id, NULL)) %>% 
+  rename(bd_swab_id = bd_swab,
+         mucosome_id = mucosome,
+         amp_id = am_ps,
+         bacterial_swab_id = microbiome,
+         substrate_temp_c = substrate_temp,
+         notes_capture = capture_comments,
+         swab_id = sample_id)
+
+```
+
+## panama capture table
+```{r}
+panama_capture <- panama_raw %>% 
+  filter(detection_type == "capture") %>% 
+  select(c(site, transect, date, swab_id, species, detection_type, capture_time,
+           capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected,
+           bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
+           notes_amphib2, microhab0, start_time, end_time)) %>% 
+  unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
+  rename(microhab_moredetail = microhab0,
+         time_of_capture = capture_time,
+         capture_trx_loc = capture_loc,
+         microhabitat_type = microhab,
+         body_temp_c = body_temp,
+         substrate_temp_c = subs_temp,
+         svl_mm = svl,
+         body_mass_g = frog_mass) %>% 
+  mutate(bdswab = if_else(bdswab=="1", swab_id, NULL),
+         am_ps = if_else(am_ps=="1", swab_id, NULL),
+         bacteria_swab = if_else(bacteria_swab=="1", swab_id, NULL),
+         gen_samp = case_when(gen_samp == "toeclip" ~ swab_id,
+                              gen_samp == "buccal" ~ swab_id,
+                              gen_samp == "1" ~ swab_id),
+         site = str_replace_all(site, " ", "_"),
+         species = str_replace_all(species, " ", "_")) %>% 
+  rename(amp_id = am_ps,
+         genetic_id = gen_samp,
+         bd_swab_id = bdswab,
+         bacterial_swab_id = bacteria_swab,
+         species_capture = species)
+
+```
+
+## bind all capture tables
+```{r}
+
+capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture) 
 
 ```
 
