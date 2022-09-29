@@ -68,14 +68,16 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          pressure_hg = pressure_in_hg,
          number_observers = num_obs,
          salinity_large = salinity0) %>% 
-  mutate_all(str_to_lower) %>% 
-  mutate(start_hour = hour(anytime(start_time)),
-         end_hour = hour(anytime(end_time)),
-    survey_time = if_else(is.na(survey_time), (case_when(start_hour >= 6 & end_hour >= 6 & 
-                                                                 end_hour < 19 ~ "day",start_hour >= 19 
-                                                               & (end_hour < 6 | end_hour <= 23) |
-                                                                 (start_hour < 6 & end_hour < 6)~ "night",
-                                                               start_hour >=19 ~"night")), survey_time))
+  mutate_all(str_to_lower) 
+
+# %>% 
+#   mutate(start_hour = hour(start_time),
+#          end_hour = hour(end_time),
+#     survey_time = if_else(is.na(survey_time), (case_when(start_hour >= 6 & end_hour >= 6 & 
+#                                                                  end_hour < 19 ~ "day",start_hour >= 19 
+#                                                                & (end_hour < 6 | end_hour <= 23) |
+#                                                                  (start_hour < 6 & end_hour < 6)~ "night",
+#                                                                start_hour >=19 ~"night")), survey_time))
 
 
 # regions
@@ -650,6 +652,12 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
   unite(site, area:environment, sep = "_") %>% 
   mutate(detection_type = "capture",
          species_capture = str_replace_all(species_capture, " ", "_")) 
+
+translation <- brazil_legacy_capture %>% 
+  select(notes_capture) %>% 
+  unique() %>% 
+  mutate(translation = "") %>% 
+  write_csv(here("legacy_brazil_translation.csv"))
 ```
 
 ## serdp capture table
@@ -715,8 +723,15 @@ panama_capture <- panama_raw %>%
 ## bind all capture tables
 ```{r}
 
-capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture) 
+capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture) %>% 
+  mutate(notes_capture = str_replace_all(notes_capture, "[[:punct:]]", ""),
+         notes_capture = str_replace_all(notes_capture, "=", " equal "),
+         site = str_replace_all(site, "-", "_"),
+         site = str_replace_all(site, " ", "_"),
+         notes_capture = str_remove_all(notes_capture, "Ê", "e")) 
 
+rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
+gc()
 ```
 
 # Database
@@ -775,6 +790,9 @@ dbWriteTable(connection, 'ves', ves, overwrite=T)
 
 # aural table load
 dbWriteTable(connection, 'aural', aural, overwrite=T)
+
+# capture table load
+dbWriteTable(connection, 'capture', capture, overwrite=T)
 
 ```
 
