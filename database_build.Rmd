@@ -112,6 +112,55 @@ gc()
 
 # create site table 
 
+## site table sierra nevada
+
+### conenct sierra nevada database
+```{r}
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("sn_dbname"),
+                 host = Sys.getenv("sn_host"),
+                 port = Sys.getenv("sn_port"),
+                 user = Sys.getenv("sn_user"),
+                 password = Sys.getenv("sn_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to public")
+```
+### query site table 
+```{sql, connection=connection, output.var = "sn_site"}
+
+
+select s.*
+from site s
+
+
+```
+
+### pull out sn site table
+```{r}
+
+
+sn_site_table <- sn_site %>%
+  rename(site = id,
+         elevation_m = elevation) %>%
+  mutate(region = "california",
+        location = "usa") %>%
+  select(!c(name, drainage, county, jurisdiction)) %>%
+  group_by(site) %>%
+  unique()
+
+write_csv(sn_site_table, here("clean_tables", "sn_site_table.csv"))
+```
+
+
 ## pull out panama sites
 ```{r}
 
@@ -178,7 +227,7 @@ brazil_legacy_sites <- read_csv(here("data", "brazil_legacy", "brazil_site.csv")
 ## combine site tables
 ```{r}
 
-sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_sites) %>% 
+sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_sites, sn_site_table) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          region = str_replace_all(region, " ", "_"),
          site = str_replace_all(site, "-", "_"),
@@ -358,13 +407,40 @@ penn_visit_table <- plyr::rbind.fill(penn1_aural_visit, penn1_VES_visit, penn1_c
   group_by(date, survey_time, site) %>% 
   mutate(temp_id = cur_group_id(),
          site = str_replace(site, "-", "_"),
-         site = str_replace_all(site, " ", "_")) %>% 
+         site = str_replace_all(site, " ", "_"),
+         date = format_iso_8601(date)) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(detection_type, temp_id))
 
-rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
+#rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
 gc()
 ```
+
+## pull out uinque sn visits
+
+### query data
+```{sql, connection=connection, output.var = "sn_visit"}
+
+
+select s.id as site, v.* 
+from site s
+join visit v on s.id = v.site_id;
+
+
+```
+
+### clean up sn_visit
+```{r}
+
+sn_visit_table <- sn_visit %>% 
+  select(!c(id, site_id)) %>% 
+  rename(visit_notes = comment,
+         date = visit_date) %>% 
+  mutate(survey_time = "day")
+
+write_csv(sn_visit_table, here("clean_tables", "sn_visit.csv"))
+```
+
 
 ## read in serdp unique visits - need to either read in all data and format sites as above or adjust in different script. Either method is fine since data will not be changing
 ```{r}
@@ -382,7 +458,8 @@ serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit_table.csv")) %>
          survey_time = str_to_lower(survey_time),
          site = if_else(site_code == "la7", "la7", site),
          site = if_else(site_code == "la8", "la8", site),
-         site = if_else(site == "la06", "la6", site))
+         site = if_else(site == "la06", "la6", site)) %>% 
+  rename(visit_notes = notes)
 
 ```
 
@@ -412,7 +489,9 @@ brazil_legacy_visit_table <- read_csv(here("data", "brazil_legacy", "brazil_visi
 ## bind all visit tables
 ```{r}
 
-visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table)
+visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table, 
+                                penn_visit_table, serdp_visit_table, sn_visit_table) %>% 
+  mutate(date = format_iso_8601(date))
 
 write_csv(visit_table, here("clean_tables", "visit.csv"))
 
@@ -428,7 +507,8 @@ gc()
 
 brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_survey.csv")) %>% 
   mutate(detection_type = "capture", 
-         site = str_replace_all(site, "[[:space:]]", ""))
+         site = str_replace_all(site, "[[:space:]]", ""),
+         date = format_iso_8601(date))
 
 write_csv(brazil_legacy_survey_table, here("clean_tables", "survey_tables", "brazil_legacy_survey.csv"))
 ```
@@ -445,7 +525,8 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
   select(!c(temp_reg_id)) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace(site, "-", "_"),
-         detection_type = if_else(detection_type == "acoustic", "aural", detection_type))
+         detection_type = if_else(detection_type == "acoustic", "aural", detection_type),
+         date = format_iso_8601(date))
 
 write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
   
@@ -463,7 +544,7 @@ panama_survey_table <- panama_raw %>%
   mutate(new_survey_id = cur_group_id()) %>% 
   filter(!duplicated(new_survey_id)) %>% 
   select(!c(new_survey_id)) %>% 
-  mutate(date = parse_date(date))
+  mutate(date = format_iso_8601(date))
 
 write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_survey.csv"))
 ```
@@ -489,10 +570,35 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          site = if_else(site_code == "la7", "la7", site),
          site = if_else(site_code == "la8", "la8", site),
          site = if_else(site == "la06", "la6", site),
-         detection_type = "capture")
+         detection_type = "capture",
+         date = format_iso_8601(date))
 
 write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
 ```
+
+## sn survey table
+
+### query data
+```{sql, connection=connection, output.var = "sn_survey"}
+
+
+select v.site_id as site, v.visit_date, s.* 
+from visit v
+join survey s on s.visit_id = v.id;
+
+
+```
+
+### clean sn survey table - need to figure out what to do about CMR and Swab
+```{r}
+
+sn_survey_table <- sn_survey %>%
+  select(!c(id, visit_id)) %>% 
+  mutate(survey_time = "day")
+  
+write_csv(sn_survey_table, here("clean_tables", "sn_survey_table.csv"))
+```
+
 
 # create VES table
 
@@ -535,6 +641,30 @@ panama_ves <- panama_raw %>%
   
 ```
 
+## sn ves table
+
+### query data
+```{sql, connection=connection, output.var = "sn_ves"}
+
+
+select v.site_id as site, v.visit_date as date, s.survey_type as detection_type, vs.*
+from visit v
+join survey s on v.id = s.visit_id
+join visual_survey vs on s.id = vs.survey_id;
+
+
+```
+
+### clean sn ves data - need to align with other ves still
+```{r}
+
+sn_ves_table <- sn_ves %>% 
+  select(!c(id, survey_id)) %>% 
+  mutate(survey_time = "day")
+
+write_csv(sn_ves_table, here("clean_tables", "sn_ves_table.csv"))
+```
+
 
 ## bind ves tables
 ```{r}
@@ -544,9 +674,10 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves) %>%
   rename(notes_ves = ves_notes) %>% 
   select(!c(start_time, end_time, duration_minutes))
 
-rm(panama_ves,penn_ves)
+#rm(panama_ves,penn_ves)
 gc()
 ```
+
 
 # create aural table
 
@@ -562,7 +693,7 @@ penn_aural <- penn1_aural %>%
   rename(species_aural = species_acoustic,
          notes_aural = acoustic_comments)
 
-rm(penn1_aural)
+#rm(penn1_aural)
 gc()
 ```
 
@@ -593,7 +724,7 @@ panama_aural <- panama_raw %>%
 
 aural <- plyr::rbind.fill(penn_aural, panama_aural)
   
-rm(penn_aural, panama_aural)
+#rm(penn_aural, panama_aural)
 gc()
 ```
 
@@ -634,30 +765,59 @@ penn_capture <- penn1_capture %>%
          amp_id = amp_id_1,
          notes_capture = capture_comments,
          body_temp_c = body_temperature_c) %>% 
-  unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T)
+  unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T) %>% 
+  mutate(date = format_iso_8601(date))
+  #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
   
 
-rm(penn1_capture, penn1_VES, penn1_aural)
+#rm(penn1_capture, penn1_VES, penn1_aural)
 gc()
 ```
+
+## sn capture
+
+### queruy data
+```{sql, connection=connection, output.var = "sn_capture"}
+
+
+select v.site_id as site, v.visit_date as date, s.survey_type as detection_type, cs.*
+from visit v
+join survey s on v.id = s.visit_id
+join capture_survey cs on s.id = cs.survey_id;
+
+
+```
+
+### clean sn_data - lots of cleaning on this table still
+```{r}
+
+sn_capture_table <- sn_capture %>% 
+  select(!c(survey_id, id)) %>% 
+  mutate(survey_time = "day")
+  
+write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
+```
+
 
 ## brazil_legacy capture
 ```{r}
 brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.csv")) %>% 
-  select(!c(1, 17:20)) %>% 
+  select(!c(17:20)) %>% 
   select(!c(count, family)) %>% 
   rename(species_capture = scientific_name,
          notes_capture = comments,
          bd_swab_id = swab_id) %>% 
   unite(site, area:environment, sep = "_") %>% 
   mutate(detection_type = "capture",
-         species_capture = str_replace_all(species_capture, " ", "_")) 
+         site = str_replace_all(site, " ", ""),
+         species_capture = str_replace_all(species_capture, " ", "_"))
+  #select(!c(notes_capture)) # ******ADD NOTES BACK AFTER TRANSLATIONG *******
 
-translation <- brazil_legacy_capture %>% 
-  select(notes_capture) %>% 
-  unique() %>% 
-  mutate(translation = "") %>% 
-  write_csv(here("legacy_brazil_translation.csv"))
+# translation <- brazil_legacy_capture %>% 
+#   select(notes_capture) %>% 
+#   unique() %>% 
+#   mutate(translation = "") %>% 
+#   write_csv(here("legacy_brazil_translation.csv"))
 ```
 
 ## serdp capture table
@@ -683,7 +843,8 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          bacterial_swab_id = microbiome,
          substrate_temp_c = substrate_temp,
          notes_capture = capture_comments,
-         swab_id = sample_id)
+         swab_id = sample_id)  
+  #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
 
 ```
 
@@ -691,7 +852,7 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
 ```{r}
 panama_capture <- panama_raw %>% 
   filter(detection_type == "capture") %>% 
-  select(c(site, transect, date, swab_id, species, detection_type, capture_time,
+  select(c(site, transect, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected,
            bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
            notes_amphib2, microhab0, start_time, end_time)) %>% 
@@ -711,12 +872,14 @@ panama_capture <- panama_raw %>%
                               gen_samp == "buccal" ~ swab_id,
                               gen_samp == "1" ~ swab_id),
          site = str_replace_all(site, " ", "_"),
-         species = str_replace_all(species, " ", "_")) %>% 
+         species = str_replace_all(species, " ", "_"),
+         date = format_iso_8601(date)) %>% 
   rename(amp_id = am_ps,
          genetic_id = gen_samp,
          bd_swab_id = bdswab,
          bacterial_swab_id = bacteria_swab,
-         species_capture = species)
+         species_capture = species) 
+  #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
 
 ```
 
@@ -725,14 +888,17 @@ panama_capture <- panama_raw %>%
 
 capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture) %>% 
   mutate(notes_capture = str_replace_all(notes_capture, "[[:punct:]]", ""),
-         notes_capture = str_replace_all(notes_capture, "=", " equal "),
+         #notes_capture = str_replace_all(notes_capture, "=", " equal "),
          site = str_replace_all(site, "-", "_"),
          site = str_replace_all(site, " ", "_"),
-         notes_capture = str_remove_all(notes_capture, "Ê", "e")) 
+         microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
+         site = if_else(site == "wood_lab", "wood_lab_pond", site),
+         detection_type = "capture")
 
-rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
+#rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
 ```
+
 
 # Database
 
