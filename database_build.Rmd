@@ -239,7 +239,7 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
   
 write_csv(sites, here("clean_tables", "sites.csv"))
 
-rm(panama_sites, brazil_legacy_sites, penn_sites, serdp_sites)
+rm(panama_sites, brazil_legacy_sites, penn_sites, serdp_sites, sn_site, sn_site_table)
 gc()
 ```
 
@@ -291,7 +291,7 @@ penn1_capture <- right_join(right_join(munged_Amphibian_Captured_Information,
          microhabitat_type = microhabitat_type.x,
          microhabitat_temperature_c = microhabitat_temperature.x,
          site = location) %>% 
-  mutate(date = parse_date(date),
+  mutate(date = format_iso_8601(date),
          observer = str_to_lower(observer),
          site = str_to_lower(site),
          bag_id = str_to_lower(bag_id),
@@ -330,7 +330,7 @@ penn1_VES <- left_join(munged_VisualEncounter_Survey, munged_VisualEncounter_Sur
   unique() %>%
   drop_na(species_ves) %>% 
   mutate(observer = str_to_lower(observer),
-         date = parse_date(date),
+         date = format_iso_8601(date),
          location = str_to_lower(location),
          species_ves = str_to_lower(species_ves),
          comments_ves = str_to_lower(comments_ves)) %>% 
@@ -358,7 +358,7 @@ penn1_aural <-left_join(munged_Acoustic_Survey, munged_Acoustic_Survey_Repeatabl
   select(observer, date, location, start_time, end_time, species_acoustic, call_index, acoustic_comments) %>%
   unique() %>%
   mutate(observer = str_to_lower(observer),
-         date = parse_date(date),
+         date = format_iso_8601(date),
          location = str_to_lower(location),
          species_acoustic = str_to_lower(species_acoustic),
          call_index = str_to_lower(call_index),
@@ -412,7 +412,7 @@ penn_visit_table <- plyr::rbind.fill(penn1_aural_visit, penn1_VES_visit, penn1_c
   filter(!duplicated(temp_id)) %>% 
   select(!c(detection_type, temp_id))
 
-#rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
+rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
 gc()
 ```
 
@@ -436,9 +436,16 @@ sn_visit_table <- sn_visit %>%
   select(!c(id, site_id)) %>% 
   rename(visit_notes = comment,
          date = visit_date) %>% 
-  mutate(survey_time = "day")
+  mutate(survey_time = "day") %>% 
+  group_by(site, date, survey_time) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
 
 write_csv(sn_visit_table, here("clean_tables", "sn_visit.csv"))
+
+rm(sn_visit)
+gc()
 ```
 
 
@@ -495,7 +502,8 @@ visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table,
 
 write_csv(visit_table, here("clean_tables", "visit.csv"))
 
-rm(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table)
+rm(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table,
+   sn_visit_table)
 gc()
 
 ```
@@ -508,7 +516,14 @@ gc()
 brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_survey.csv")) %>% 
   mutate(detection_type = "capture", 
          site = str_replace_all(site, "[[:space:]]", ""),
-         date = format_iso_8601(date))
+         date = format_iso_8601(date),
+         duration_minutes = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_minutes = duration_minutes/60)
+
+brazil_legacy_survey_table$duration_minutes <- str_sub(brazil_legacy_survey_table$duration_minutes, -4) %>% 
+  as.numeric()
 
 write_csv(brazil_legacy_survey_table, here("clean_tables", "survey_tables", "brazil_legacy_survey.csv"))
 ```
@@ -526,7 +541,8 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace(site, "-", "_"),
          detection_type = if_else(detection_type == "acoustic", "aural", detection_type),
-         date = format_iso_8601(date))
+         date = format_iso_8601(date)) %>% 
+  rename(duration_minutes = duration_min)
 
 write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
   
@@ -571,7 +587,14 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          site = if_else(site_code == "la8", "la8", site),
          site = if_else(site == "la06", "la6", site),
          detection_type = "capture",
-         date = format_iso_8601(date))
+         date = format_iso_8601(date),
+         duration_minutes = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_minutes = duration_minutes/60)
+
+serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
+  as.numeric()
 
 write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
 ```
@@ -594,9 +617,21 @@ join survey s on s.visit_id = v.id;
 
 sn_survey_table <- sn_survey %>%
   select(!c(id, visit_id)) %>% 
-  mutate(survey_time = "day")
+  rename(detection_type = survey_type,
+         date = visit_date) %>% 
+  mutate(survey_time = "day",
+         detection_type = as.character(detection_type),
+         detection_type = if_else(detection_type == "cmr", "capture", detection_type),
+         detection_type = if_else(detection_type == "swab", "capture", detection_type)) %>% 
+  group_by(site, date, survey_time, detection_type) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
   
 write_csv(sn_survey_table, here("clean_tables", "sn_survey_table.csv"))
+
+rm(sn_survey)
+gc()
 ```
 
 
@@ -610,7 +645,8 @@ penn_ves <- penn1_VES %>%
   mutate(duration_min = if_else(end_time < start_time,
                             as_hms(86400) - start_time + end_time,
                             end_time - start_time),
-         duration_min = duration_min/60) %>% 
+         duration_min = duration_min/60,
+         date = format_iso_8601(date)) %>% 
   relocate(duration_min, .before = species_ves) %>% 
   rename(ves_notes = comments_ves,
          duration_minutes = duration_min)
@@ -623,7 +659,7 @@ rm(penn1_VES)
 gc()
 ```
 
-## panama ves table - still needs a lot of cleaning.....
+## panama ves table 
 ```{r}
 panama_ves <- panama_raw %>% 
   filter(detection_type == "visual") %>% 
@@ -636,7 +672,7 @@ panama_ves <- panama_raw %>%
          count = quantity,
          species_ves = species,
          detection_location = capture_loc) %>% 
-  mutate(date = parse_date(date))
+  mutate(date = format_iso_8601(date))
 
   
 ```
@@ -660,21 +696,29 @@ join visual_survey vs on s.id = vs.survey_id;
 
 sn_ves_table <- sn_ves %>% 
   select(!c(id, survey_id)) %>% 
-  mutate(survey_time = "day")
+  mutate(survey_time = "day") %>% 
+  rename(species_ves = species,
+         ves_notes = comment,
+         microhab = location,
+         life_stage = visual_life_stage)
+
 
 write_csv(sn_ves_table, here("clean_tables", "sn_ves_table.csv"))
+
+rm(sn_ves)
+gc()
 ```
 
 
 ## bind ves tables
 ```{r}
 
-ves <- plyr::rbind.fill(panama_ves, penn_ves) %>% 
+ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>% 
   mutate(site = str_replace_all(site, " ", "_")) %>% 
   rename(notes_ves = ves_notes) %>% 
   select(!c(start_time, end_time, duration_minutes))
 
-#rm(panama_ves,penn_ves)
+rm(panama_ves, penn_ves, sn_ves_table)
 gc()
 ```
 
@@ -793,7 +837,18 @@ join capture_survey cs on s.id = cs.survey_id;
 
 sn_capture_table <- sn_capture %>% 
   select(!c(survey_id, id)) %>% 
-  mutate(survey_time = "day")
+  mutate(survey_time = "day",
+         detection_type = as.character(detection_type),
+         detection_type = if_else(detection_type == "cmr", "capture", detection_type),
+         detection_type = if_else(detection_type == "swab", "capture", detection_type)) %>% 
+  rename(notes_capture = comment,
+         body_mass_g = weight,
+         svl_mm = length,
+         life_stage = capture_life_stage,
+         species_capture = species,
+         bd_swab_id = swab_id,
+         microhabitat_type = location,
+         processor = surveyor_id)
   
 write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
 ```
@@ -809,7 +864,7 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
          bd_swab_id = swab_id) %>% 
   unite(site, area:environment, sep = "_") %>% 
   mutate(detection_type = "capture",
-         site = str_replace_all(site, " ", ""),
+         site = str_replace_all(site, " ", "_"),
          species_capture = str_replace_all(species_capture, " ", "_"))
   #select(!c(notes_capture)) # ******ADD NOTES BACK AFTER TRANSLATIONG *******
 
@@ -855,7 +910,7 @@ panama_capture <- panama_raw %>%
   select(c(site, transect, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected,
            bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
-           notes_amphib2, microhab0, start_time, end_time)) %>% 
+           notes_amphib2, microhab0)) %>% 
   unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
   rename(microhab_moredetail = microhab0,
          time_of_capture = capture_time,
@@ -878,7 +933,10 @@ panama_capture <- panama_raw %>%
          genetic_id = gen_samp,
          bd_swab_id = bdswab,
          bacterial_swab_id = bacteria_swab,
-         species_capture = species) 
+         species_capture = species,
+         capture_animal_state = dead) %>% 
+  mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
+                                          capture_animal_state == "0" ~ "alive"))
   #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
 
 ```
@@ -886,7 +944,8 @@ panama_capture <- panama_raw %>%
 ## bind all capture tables
 ```{r}
 
-capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture) %>% 
+capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture,
+                            sn_capture_table) %>% 
   mutate(notes_capture = str_replace_all(notes_capture, "[[:punct:]]", ""),
          #notes_capture = str_replace_all(notes_capture, "=", " equal "),
          site = str_replace_all(site, "-", "_"),
@@ -951,6 +1010,9 @@ dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T)
 #serdp_survey table load
 dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T)
 
+#sn_survey table load
+dbWriteTable(connection, 'sierra_nevada_survey', sn_survey_table, overwrite=T)
+
 # ves table load
 dbWriteTable(connection, 'ves', ves, overwrite=T)
 
@@ -960,44 +1022,5 @@ dbWriteTable(connection, 'aural', aural, overwrite=T)
 # capture table load
 dbWriteTable(connection, 'capture', capture, overwrite=T)
 
-```
-
-# ## add UUID extension
-# ```{r}
-# 
-# dbExecute(connection, 'create extension if not exists "uuid-ossp"')
-# 
-# ```
-# 
-# ## Location: add unique ID and p.keyy
-# ```{r}
-# dbExecute(connection, 
-#           'alter table "location" 
-#           add column location_id UUID default (public.uuid_generate_v4());')
-# 
-# dbExecute(connection, 
-#           'alter table "location" add primary key(location_id);')
-# ```
-# ## Region: add unique ID, p.key, join id on location, and create f.key
-# ```{r}
-# dbExecute(connection, 
-#           'alter table region add column region_id UUID default (public.uuid_generate_v4());')
-# 
-# dbExecute(connection, 
-#           'alter table region add primary key(region_id);')
-# 
-# dbExecute(connection, 
-#           'alter table region add column location_id uuid;')
-# 
-# dbExecute(connection, 
-#           'update region r
-#            set location_id = 
-#             (select rs.location_id 
-#             from "location" rs
-#             where rs.location = r.location);')
-# 
-# dbExecute(connection, 
-#           'alter table region  
-#           add constraint fk_region foreign key (location_id) references location (location_id);')
 ```
 
