@@ -70,14 +70,6 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          salinity_large = salinity0) %>% 
   mutate_all(str_to_lower) 
 
-# %>% 
-#   mutate(start_hour = hour(start_time),
-#          end_hour = hour(end_time),
-#     survey_time = if_else(is.na(survey_time), (case_when(start_hour >= 6 & end_hour >= 6 & 
-#                                                                  end_hour < 19 ~ "day",start_hour >= 19 
-#                                                                & (end_hour < 6 | end_hour <= 23) |
-#                                                                  (start_hour < 6 & end_hour < 6)~ "night",
-#                                                                start_hour >=19 ~"night")), survey_time))
 
 
 # regions
@@ -472,6 +464,11 @@ serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit_table.csv")) %>
 
 ## read panama data and pull out unique visits
 ```{r}
+panama_visit_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "visit.csv")) %>% 
+  group_by(date, survey_time, site) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
 
 panama_visit_table <- panama_raw %>% 
   select(site, date, survey_time) %>% 
@@ -481,7 +478,9 @@ panama_visit_table <- panama_raw %>%
   group_by(date, survey_time, site) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
-  select(!c(temp_id))
+  select(!c(temp_id)) %>% 
+  plyr::rbind.fill(panama_visit_2022)
+
 
 ```
 
@@ -496,7 +495,7 @@ brazil_legacy_visit_table <- read_csv(here("data", "brazil_legacy", "brazil_visi
 ## bind all visit tables
 ```{r}
 
-visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table, 
+visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table,
                                 penn_visit_table, serdp_visit_table, sn_visit_table) %>% 
   mutate(date = format_iso_8601(date))
 
@@ -552,6 +551,14 @@ write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.
 ## panama survey table
 ```{r}
 
+panama_survey_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "survey.csv")) %>% 
+  mutate(date = format_iso_8601(date)) %>% 
+  group_by(date, site, survey_time, detection_type) %>% 
+  mutate(new_survey_id = cur_group_id(),
+         detection_type = if_else(detection_type == "call", "aural", detection_type)) %>% 
+  filter(!duplicated(new_survey_id)) %>% 
+  select(!c(new_survey_id))
+
 panama_survey_table <- panama_raw %>% 
   select(c((1:5), (6:15), (21:35), salinity_large, detection_type)) %>% 
   select(!c(survey_id, sort_id, merge_id, region)) %>% 
@@ -560,7 +567,12 @@ panama_survey_table <- panama_raw %>%
   mutate(new_survey_id = cur_group_id()) %>% 
   filter(!duplicated(new_survey_id)) %>% 
   select(!c(new_survey_id)) %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date)) %>% 
+  plyr::rbind.fill(panama_survey_2022)
+
+
+
+
 
 write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_survey.csv"))
 ```
@@ -661,9 +673,13 @@ gc()
 
 ## panama ves table 
 ```{r}
+
+panama_ves_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "ves.csv")) %>% 
+  mutate(date = format_iso_8601(date))
+
 panama_ves <- panama_raw %>% 
   filter(detection_type == "visual") %>% 
-  select(site, date, transect, survey_time, start_time, end_time, 
+  select(site, date, survey_time, start_time, end_time, 
          duration_minutes, species, detection_type,
          quantity, capture_loc, microhab, life_stage, sex, notes_amphib1, 
          notes_amphib2, microhab0) %>% 
@@ -672,7 +688,8 @@ panama_ves <- panama_raw %>%
          count = quantity,
          species_ves = species,
          detection_location = capture_loc) %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date)) %>% 
+  plyr::rbind.fill(panama_ves_2022)
 
   
 ```
@@ -744,9 +761,12 @@ gc()
 ## panama aural table
 ```{r}
 
+panama_aural_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "aural.csv")) %>% 
+  mutate(date = format_iso_8601(date))
+
 panama_aural <- panama_raw %>% 
   filter(detection_type == "aural") %>% 
-  select(site, date, transect, survey_time, 
+  select(site, date, survey_time, 
          species, detection_type,
          quantity, capture_loc, microhab, life_stage, sex, notes_amphib1, 
          notes_amphib2, microhab0) %>% 
@@ -755,11 +775,12 @@ panama_aural <- panama_raw %>%
          count = quantity,
          species_aural = species,
          detection_location = capture_loc) %>% 
-  mutate(date = parse_date(date),
+  mutate(date = format_iso_8601(date),
          microhab = if_else(is.na(microhab), "unknown", microhab),
          count = if_else(is.na(count), "1", count), #DOUBLE CHECK THIS IS CORRECT
          site = str_replace_all(site, " ", "_"),
-         species_aural = str_replace_all(species_aural, " ", "_")) 
+         species_aural = str_replace_all(species_aural, " ", "_")) %>% 
+  plyr::rbind.fill(panama_aural_2022)
 
 ```
 
@@ -836,7 +857,7 @@ join capture_survey cs on s.id = cs.survey_id;
 ```{r}
 
 sn_capture_table <- sn_capture %>% 
-  select(!c(survey_id, id)) %>% 
+  select(!c(survey_id, id, pit_tag_ref, tag_new)) %>% 
   mutate(survey_time = "day",
          detection_type = as.character(detection_type),
          detection_type = if_else(detection_type == "cmr", "capture", detection_type),
@@ -905,9 +926,16 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
 
 ## panama capture table
 ```{r}
+
+panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "capture.csv")) %>% 
+  mutate(date = format_iso_8601(date)) %>% 
+  rename(capture_animal_state = dead) %>% 
+  mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
+                                          capture_animal_state == "0" ~ "alive"))
+
 panama_capture <- panama_raw %>% 
   filter(detection_type == "capture") %>% 
-  select(c(site, transect, date, survey_time, swab_id, species, detection_type, capture_time,
+  select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected,
            bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
            notes_amphib2, microhab0)) %>% 
@@ -936,7 +964,8 @@ panama_capture <- panama_raw %>%
          species_capture = species,
          capture_animal_state = dead) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
-                                          capture_animal_state == "0" ~ "alive"))
+                                          capture_animal_state == "0" ~ "alive")) %>% 
+  plyr::rbind.fill(panama_capture_2022)
   #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
 
 ```
@@ -980,7 +1009,7 @@ tryCatch({
             print("Unable to connect to Database.")
     })
 
-dbExecute(connection, "set search_path to public")
+dbExecute(connection, "set search_path to ribbitr_schema")
 ```
 
 ## upload unique tables to `RIBBiTR` DB
