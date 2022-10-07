@@ -231,7 +231,7 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
   
 write_csv(sites, here("clean_tables", "sites.csv"))
 
-rm(panama_sites, brazil_legacy_sites, penn_sites, serdp_sites, sn_site, sn_site_table)
+rm(panama_sites, brazil_legacy_sites, penn_sites, sn_site, sn_site_table)
 gc()
 ```
 
@@ -987,6 +987,88 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
 gc()
 ```
 
+# legacy hobo data
+
+## hobo site table
+```{r}
+
+hobo_site <- serdp_sites  %>% 
+  mutate(site = str_replace_all(site, " ", "_"),
+         site = str_replace_all(site, "-", "_"))
+```
+
+## read in serdp hobo data
+
+### shade hobo
+```{r}
+
+raw_shade_hobo <- read.csv(here("data", "serdp", "hobo", "Shade_HOBO_2021_01_28.csv")) %>% 
+  clean_names() 
+
+shade_hobo <- raw_shade_hobo %>% 
+  select(!c(x_1, x)) %>% 
+  rename(shade_temperature_c = temperature,
+         relative_humidity = rh,
+         site_code = site,
+         enviro_location = location) %>% 
+  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
+         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+
+
+```
+
+### soil hobo
+```{r}
+
+raw_soil_hobo <- read_csv(here("data", "serdp", "hobo", "Soil_HOBO_2021_01_28.csv")) %>% 
+  clean_names()
+
+soil_hobo <- raw_soil_hobo %>% 
+  select(!c(x1, x)) %>% 
+  rename(soil_temperature_c = temperature,
+         site_code = site,
+         enviro_location = location) %>% 
+  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
+         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+
+```
+
+### sun hobo
+```{r}
+
+raw_sun_hobo <- read_csv(here("data", "serdp", "hobo", "Sun_HOBO_2021_01_28.csv")) %>% 
+  clean_names()
+
+sun_hobo <- raw_sun_hobo %>% 
+  select(!c(x1, x)) %>% 
+  rename(sun_temperature_c = temperature,
+         site_code = site,
+         enviro_location = location) %>% 
+  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
+         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+
+
+```
+
+### water hobo
+
+```{r}
+raw_water_hobo <- read_csv(here("data", "serdp", "hobo", "Water_HOBO_2021_01_28.csv")) %>% 
+  clean_names()
+
+water_hobo <- raw_water_hobo %>% 
+  select(!c(x1, x)) %>% 
+  rename(water_temperature_c = temperature,
+         site_code = site,
+         enviro_location = location) %>% 
+  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
+         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+```
+
 
 # Database
 
@@ -1050,6 +1132,18 @@ dbWriteTable(connection, 'aural', aural, overwrite=T)
 
 # capture table load
 dbWriteTable(connection, 'capture', capture, overwrite=T)
+
+# hobo table loads
+## hobo site
+dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T)
+## hobo shade
+dbWriteTable(connection, 'shade_hobo', shade_hobo, overwrite=T)
+## hobo soil
+dbWriteTable(connection, 'soil_hobo', soil_hobo, overwrite=T)
+## hobo sun
+dbWriteTable(connection, 'sun_hobo', sun_hobo, overwrite=T)
+## hobo water
+dbWriteTable(connection, 'water_hobo', water_hobo, overwrite=T)
 
 ```
 
