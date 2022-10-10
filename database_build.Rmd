@@ -832,7 +832,6 @@ penn_capture <- penn1_capture %>%
          body_temp_c = body_temperature_c) %>% 
   unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T) %>% 
   mutate(date = format_iso_8601(date))
-  #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
   
 
 #rm(penn1_capture, penn1_VES, penn1_aural)
@@ -887,7 +886,7 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
   mutate(detection_type = "capture",
          site = str_replace_all(site, " ", "_"),
          species_capture = str_replace_all(species_capture, " ", "_"))
-  #select(!c(notes_capture)) # ******ADD NOTES BACK AFTER TRANSLATIONG *******
+
 
 # translation <- brazil_legacy_capture %>% 
 #   select(notes_capture) %>% 
@@ -920,7 +919,7 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          substrate_temp_c = substrate_temp,
          notes_capture = capture_comments,
          swab_id = sample_id)  
-  #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
+
 
 ```
 
@@ -966,7 +965,7 @@ panama_capture <- panama_raw %>%
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive")) %>% 
   plyr::rbind.fill(panama_capture_2022)
-  #select(!c(notes_capture)) # ***** NEED TO ADD NOTES BACK AFTER REMOVING PUNC ******
+
 
 ```
 
@@ -976,14 +975,13 @@ panama_capture <- panama_raw %>%
 capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture,
                             sn_capture_table) %>% 
   mutate(notes_capture = str_replace_all(notes_capture, "[[:punct:]]", ""),
-         #notes_capture = str_replace_all(notes_capture, "=", " equal "),
          site = str_replace_all(site, "-", "_"),
          site = str_replace_all(site, " ", "_"),
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
          detection_type = "capture")
 
-#rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
+rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
 ```
 
@@ -1015,7 +1013,8 @@ shade_hobo <- raw_shade_hobo %>%
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
 
-
+rm(raw_shade_hobo)
+gc()
 ```
 
 ### soil hobo
@@ -1032,7 +1031,8 @@ soil_hobo <- raw_soil_hobo %>%
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
-
+rm(raw_soil_hobo)
+gc()
 ```
 
 ### sun hobo
@@ -1050,7 +1050,8 @@ sun_hobo <- raw_sun_hobo %>%
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
 
-
+rm(raw_sun_hobo)
+gc()
 ```
 
 ### water hobo
@@ -1066,7 +1067,11 @@ water_hobo <- raw_water_hobo %>%
          enviro_location = location) %>% 
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
+                                                                  "mdy HMS", "mdy"))),
+         light = if_else(light == "Logged", "", light))
+
+rm(raw_water_hobo)
+gc()
 ```
 
 
@@ -1091,7 +1096,7 @@ tryCatch({
             print("Unable to connect to Database.")
     })
 
-dbExecute(connection, "set search_path to ribbitr_schema")
+dbExecute(connection, "set search_path to public")
 ```
 
 ## upload unique tables to `RIBBiTR` DB
