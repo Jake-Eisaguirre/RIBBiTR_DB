@@ -15,7 +15,7 @@ if (!require(librarian)){
 
 # librarian downloads, if not already downloaded, and reads in needed packages
 librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
-                 anytime)
+                 anytime, terra)
 ```
 
 # create location table (panama, brazil, usa)
@@ -675,7 +675,8 @@ gc()
 ```{r}
 
 panama_ves_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "ves.csv")) %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date)) %>% 
+  rename(ves_notes = notes_aural)
 
 panama_ves <- panama_raw %>% 
   filter(detection_type == "visual") %>% 
@@ -808,7 +809,7 @@ penn_capture <- penn1_capture %>%
          dry_swab_tube_id=if_else(dry_swab_tube_id == "DrySwab00000", "NA", dry_swab_tube_id),
          crispr_swab_tube_id=if_else(crispr_swab_tube_id == "CRSwab00000", "NA", crispr_swab_tube_id),
          bacterial_swab_tube_id=if_else(bacterial_swab_tube_id == "BacSwab00000", "NA", bacterial_swab_tube_id),
-         mucusome_id=if_else(mucusome_id == "MucBath00000", "NA", mucusome_id),
+         mucosome_id=if_else(mucusome_id == "MucBath00000", "NA", mucusome_id),
          amp_id_1=if_else(amp_id_1 == "AMPBath00000", "NA", amp_id_1),
          amp_id_2=if_else(amp_id_2 == "AMPBath00000", "NA", amp_id_2),
          amp_id_3=if_else(amp_id_3 == "AMPBath00000", "NA", amp_id_3),
@@ -823,13 +824,14 @@ penn_capture <- penn1_capture %>%
          body_and_bag_mass_g = body_and_bag_mass,
          body_mass_g = body_mass,
          substrate_temp_c = microhabitat_temperature_c,
-         bd_swab_id = bd_swab_tube_id,
+         microbiome_swab_id = bd_swab_tube_id,
          bacterial_swab_id = bacterial_swab_tube_id,
          photo_id = bag_photo,
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
          notes_capture = capture_comments,
-         body_temp_c = body_temperature_c) %>% 
+         body_temp_c = body_temperature_c,
+         bd_swab_id = dry_swab_tube_id) %>% 
   unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T) %>% 
   mutate(date = format_iso_8601(date))
   
@@ -881,11 +883,15 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
   select(!c(count, family)) %>% 
   rename(species_capture = scientific_name,
          notes_capture = comments,
-         bd_swab_id = swab_id) %>% 
+         bd_swab_id = swab_id,
+         bacterial_swab_id = glycerol,
+         genetic_id = tissue) %>% 
   unite(site, area:environment, sep = "_") %>% 
   mutate(detection_type = "capture",
          site = str_replace_all(site, " ", "_"),
-         species_capture = str_replace_all(species_capture, " ", "_"))
+         species_capture = str_replace_all(species_capture, " ", "_"),
+         bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NULL),
+         genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NULL))
 
 
 # translation <- brazil_legacy_capture %>% 
@@ -915,10 +921,10 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
   rename(bd_swab_id = bd_swab,
          mucosome_id = mucosome,
          amp_id = am_ps,
-         bacterial_swab_id = microbiome,
+         microbiome_swab_id = microbiome,
          substrate_temp_c = substrate_temp,
-         notes_capture = capture_comments,
-         swab_id = sample_id)  
+         notes_capture = capture_comments) %>% 
+  select(!c(sample_id))
 
 
 ```
@@ -928,9 +934,21 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
 
 panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "capture.csv")) %>% 
   mutate(date = format_iso_8601(date)) %>% 
-  rename(capture_animal_state = dead) %>% 
+  rename(capture_animal_state = dead,
+         bd_swab_id = bdswab,
+         mucosome_id = mucosome_water,
+         bacterial_swab_id = bacteriaswab,
+         genetic_id = oralswab,
+         amp_id = amps) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
-                                          capture_animal_state == "0" ~ "alive"))
+                                          capture_animal_state == "0" ~ "alive"),
+         bd_swab_id = if_else(bd_swab_id == "1", swab_id, NULL),
+         mucosome_id = if_else(mucosome_id == "1", swab_id, NULL),
+         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL),
+         genetic_id = if_else(genetic_id == "1", swab_id, NULL),
+         amp_id = if_else(amp_id == "1", swab_id, NULL),
+         ampshcl = if_else(ampshcl == "1", ampshcl, NULL)) %>% 
+  select(!c(glycerolswab, swab_id, count))
 
 panama_capture <- panama_raw %>% 
   filter(detection_type == "capture") %>% 
@@ -964,6 +982,7 @@ panama_capture <- panama_raw %>%
          capture_animal_state = dead) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive")) %>% 
+  select(!c(swab_id)) %>% 
   plyr::rbind.fill(panama_capture_2022)
 
 
@@ -980,6 +999,11 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
          detection_type = "capture")
+
+# lat_long <- capture %>% 
+#   select(c(utme, utmn)) %>% 
+#   cbind() %>% 
+#   vect(crs = "+proj=utm +zone=10 +datum=WGS84  +units=m")
 
 rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
