@@ -432,4 +432,35 @@ set hobo_site_id =
 
 alter table shade_hobo 
 add constraint fk_shade_hobo foreign key (hobo_site_id) references hobo_site (hobo_site_id);
-	 
+	
+
+
+
+--select l.location, r.region, r.location, s.site, s.region, s.location,
+--v.date, v.site, v.survey_time, ps.site, ps.date, ps.survey_time,
+--pes.site, pes.date, pes.survey_time
+--from location l
+--join region r on l.location_id = r.location_id 
+--join site s on r.region_id = s.region_id 
+--join visit v on s.site_id = v.site_id 
+--join panama_survey ps on v.visit_id = ps.visit_id 
+--join brazil_legacy_survey pes on v.visit_id = pes.visit_id 
+--
+---- Data Check
+--
+--select 'penn' as survey, v.date as visit_date, v.site as visit_site, 
+--  ps.date as survey_date, ps.site as survey_site
+--from visit v 
+--join penn_survey ps on ps.visit_id = v.visit_id 
+--union 
+--select 'brazil', v.date, v.site, b.date, b.site
+--from visit v 
+--join brazil_legacy_survey b on b.visit_id = v.visit_id 
+--union
+--select 'sn', v.date, v.site, sn.date, sn.site
+--from visit v
+--join sierra_nevada_survey sn on sn.visit_id = v.visit_id 
+--union 
+--select 'serdp', v.date, v.site, s.date, s.site
+--from visit v
+--join serdp_survey s on s.visit_id = v.visit_id;
