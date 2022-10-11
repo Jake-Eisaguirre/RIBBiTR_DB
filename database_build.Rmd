@@ -15,7 +15,7 @@ if (!require(librarian)){
 
 # librarian downloads, if not already downloaded, and reads in needed packages
 librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
-                 anytime, terra)
+                 anytime, terra, sp, rgdal, RWmisc, proj4)
 ```
 
 # create location table (panama, brazil, usa)
@@ -215,7 +215,19 @@ brazil_legacy_sites <- read_csv(here("data", "brazil_legacy", "brazil_site.csv")
   mutate(region = "santa virginia",
          location = "brazil")
 
+
+v <- vect(brazil_legacy_sites, c("long", "lat"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=23")
+utm <- crds(u)
+
+i <- which(!is.na(brazil_legacy_sites$long))
+brazil_legacy_sites[i, c("utme", "utmn")] <- utm
+
+brazil_legacy_sites <- brazil_legacy_sites %>% 
+  select(!c(long, lat))
+
 ```
+
 ## combine site tables
 ```{r}
 
@@ -854,7 +866,7 @@ join capture_survey cs on s.id = cs.survey_id;
 
 ```
 
-### clean sn_data - lots of cleaning on this table still
+### clean sn_data 
 ```{r}
 
 sn_capture_table <- sn_capture %>% 
@@ -873,10 +885,10 @@ sn_capture_table <- sn_capture %>%
   mutate(microbiome_swab_id = if_else(str_detect(swab_id, "AJS"), swab_id, NULL), #metagenomic sequencing so micro
          bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL),
          mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL)) %>% 
-  rename(bd_swab_id = swab_id)
+  rename(bd_swab_id = swab_id,
+         capture_utme = utme,
+         capture_utmn = utmn)
 
-test <- sn_capture %>% 
-  filter(str_detect(swab_id, "AJS"))
   
 write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
 ```
@@ -898,6 +910,16 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
          species_capture = str_replace_all(species_capture, " ", "_"),
          bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NULL),
          genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NULL))
+
+v <- vect(brazil_legacy_capture, c("capture_longitude", "capture_latitude"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=23")
+utm <- crds(u)
+
+i <- which(!is.na(brazil_legacy_capture$capture_longitude))
+brazil_legacy_capture[i, c("capture_utme", "capture_utmn")] <- utm
+
+brazil_legacy_capture <- brazil_legacy_capture %>% 
+  select(!c(capture_longitude, capture_latitude))
 
 
 # translation <- brazil_legacy_capture %>% 
@@ -922,12 +944,13 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          site = str_replace_all(site, " ", "_"),
          bd_swab = if_else(bd_swab == 1, sample_id, NULL),
          mucosome = if_else(mucosome == 1, sample_id, NULL),
+         bacterial_swab_id = if_else(microbiome == 1, sample_id, NULL),
          microbiome = if_else(microbiome == 1, sample_id, NULL),
          am_ps = if_else(am_ps == 1, sample_id, NULL)) %>% 
   rename(bd_swab_id = bd_swab,
          mucosome_id = mucosome,
          amp_id = am_ps,
-         microbiome_swab_id = microbiome, #glycerol? if so then bacterial_swab_id
+         microbiome_swab_id = microbiome, #micriobiome column both types, culture and sequence
          substrate_temp_c = substrate_temp,
          notes_capture = capture_comments) %>% 
   select(!c(sample_id))
