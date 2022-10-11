@@ -824,8 +824,8 @@ penn_capture <- penn1_capture %>%
          body_and_bag_mass_g = body_and_bag_mass,
          body_mass_g = body_mass,
          substrate_temp_c = microhabitat_temperature_c,
-         microbiome_swab_id = bd_swab_tube_id,
-         bacterial_swab_id = bacterial_swab_tube_id,
+         bacterial_swab_id = bd_swab_tube_id, #glycerol
+         microbiome_swab_id = bacterial_swab_tube_id, #culture bd
          photo_id = bag_photo,
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
@@ -868,9 +868,15 @@ sn_capture_table <- sn_capture %>%
          svl_mm = length,
          life_stage = capture_life_stage,
          species_capture = species,
-         bd_swab_id = swab_id,
          microhabitat_type = location,
-         processor = surveyor_id)
+         processor = surveyor_id) %>% 
+  mutate(microbiome_swab_id = if_else(str_detect(swab_id, "AJS"), swab_id, NULL), #metagenomic sequencing so micro
+         bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL),
+         mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL)) %>% 
+  rename(bd_swab_id = swab_id)
+
+test <- sn_capture %>% 
+  filter(str_detect(swab_id, "AJS"))
   
 write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
 ```
@@ -921,7 +927,7 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
   rename(bd_swab_id = bd_swab,
          mucosome_id = mucosome,
          amp_id = am_ps,
-         microbiome_swab_id = microbiome,
+         microbiome_swab_id = microbiome, #glycerol? if so then bacterial_swab_id
          substrate_temp_c = substrate_temp,
          notes_capture = capture_comments) %>% 
   select(!c(sample_id))
@@ -937,18 +943,22 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
   rename(capture_animal_state = dead,
          bd_swab_id = bdswab,
          mucosome_id = mucosome_water,
-         bacterial_swab_id = bacteriaswab,
+         bacterial_swab_id = glycerolswab, #culture bd
          genetic_id = oralswab,
-         amp_id = amps) %>% 
+         amp_id = amps,
+         microbiome_swab_id = bacteriaswab) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive"),
          bd_swab_id = if_else(bd_swab_id == "1", swab_id, NULL),
          mucosome_id = if_else(mucosome_id == "1", swab_id, NULL),
-         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL),
+         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL), #culture/sequence
          genetic_id = if_else(genetic_id == "1", swab_id, NULL),
          amp_id = if_else(amp_id == "1", swab_id, NULL),
-         ampshcl = if_else(ampshcl == "1", ampshcl, NULL)) %>% 
-  select(!c(glycerolswab, swab_id, count))
+         ampshcl = if_else(ampshcl == "1", ampshcl, NULL),
+         microbiome_swab_id = if_else(microbiome_swab_id == "1", swab_id, NULL)) %>% #bac swab for microbiome
+  select(!c(swab_id, count))
+
+
 
 panama_capture <- panama_raw %>% 
   filter(detection_type == "capture") %>% 
@@ -977,7 +987,7 @@ panama_capture <- panama_raw %>%
   rename(amp_id = am_ps,
          genetic_id = gen_samp,
          bd_swab_id = bdswab,
-         bacterial_swab_id = bacteria_swab,
+         bacterial_swab_id = bacteria_swab, #culutre/sequence/glycerol
          species_capture = species,
          capture_animal_state = dead) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
