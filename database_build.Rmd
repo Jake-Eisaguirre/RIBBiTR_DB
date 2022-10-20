@@ -1153,11 +1153,13 @@ tryCatch({
             print("Unable to connect to Database.")
     })
 
-dbExecute(connection, "set search_path to public")
+
 ```
 
-## upload unique tables to `RIBBiTR` DB
+## upload unique tables to `RIBBiTR` DB - `survey_data` schema
 ```{r}
+# set schema path
+dbExecute(connection, "set search_path to survey_data")
 
 #location table load
 dbWriteTable(connection, 'location', location_table, overwrite=T)
@@ -1195,6 +1197,12 @@ dbWriteTable(connection, 'aural', aural, overwrite=T)
 # capture table load
 dbWriteTable(connection, 'capture', capture, overwrite=T)
 
+```
+
+## upload data to `hobo` schema
+```{r}
+dbExecute(connection, "set search_path to hobo")
+
 # hobo table loads
 ## hobo site
 dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T)
@@ -1206,6 +1214,5 @@ dbWriteTable(connection, 'soil_hobo', soil_hobo, overwrite=T)
 dbWriteTable(connection, 'sun_hobo', sun_hobo, overwrite=T)
 ## hobo water
 dbWriteTable(connection, 'water_hobo', water_hobo, overwrite=T)
-
 ```
 
