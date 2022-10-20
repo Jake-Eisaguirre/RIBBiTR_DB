@@ -843,9 +843,12 @@ penn_capture <- penn1_capture %>%
          amp_id = amp_id_1,
          notes_capture = capture_comments,
          body_temp_c = body_temperature_c,
-         bd_swab_id = dry_swab_tube_id) %>% 
+         bd_swab_id = dry_swab_tube_id,
+         crispr_id = crispr_swab_tube_id,
+         antibody_id = antibody_id_1) %>% 
   unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T) %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date)) %>% 
+  select(!c(mucusome_id))
   
 
 #rm(penn1_capture, penn1_VES, penn1_aural)
@@ -946,13 +949,15 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          mucosome = if_else(mucosome == 1, sample_id, NULL),
          bacterial_swab_id = if_else(microbiome == 1, sample_id, NULL),
          microbiome = if_else(microbiome == 1, sample_id, NULL),
-         am_ps = if_else(am_ps == 1, sample_id, NULL)) %>% 
+         am_ps = if_else(am_ps == 1, sample_id, NULL),
+         antibodies = if_else(antibodies == 1, sample_id, NULL)) %>% 
   rename(bd_swab_id = bd_swab,
          mucosome_id = mucosome,
          amp_id = am_ps,
          microbiome_swab_id = microbiome, #micriobiome column both types, culture and sequence
          substrate_temp_c = substrate_temp,
-         notes_capture = capture_comments) %>% 
+         notes_capture = capture_comments,
+         antibody_id = antibodies) %>% 
   select(!c(sample_id))
 
 
