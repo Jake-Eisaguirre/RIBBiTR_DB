@@ -5,14 +5,14 @@ create extension if not exists "uuid-ossp";
 
 -- Location: add unique ID and p.key
 alter table "location" 
-add column location_id UUID default (public.uuid_generate_v4());
+add column location_id UUID default (survey_data.uuid_generate_v4());
 
 alter table "location" 
 add primary key(location_id);
 
 -- Region: add unique ID, p.key, join id on location, and create f.key
 alter table region 
-add column region_id UUID default (public.uuid_generate_v4());
+add column region_id UUID default (survey_data.uuid_generate_v4());
 
 alter table region 
 add primary key(region_id);
@@ -31,7 +31,7 @@ add constraint fk_region foreign key (location_id) references location (location
 
 -- Site: add unique ID, p.key, join id on region, and create f.key
 alter table site 
-add column site_id UUID default (public.uuid_generate_v4());
+add column site_id UUID default (survey_data.uuid_generate_v4());
 
 alter table site 
 add primary key(site_id);
@@ -50,7 +50,7 @@ add constraint fk_site foreign key (region_id) references region (region_id);
 
 -- Visit: add unique ID. p.eky, join id on site, and create f.key
 alter table visit 
-add column visit_id UUID default (public.uuid_generate_v4());
+add column visit_id UUID default (survey_data.uuid_generate_v4());
 
 alter table visit
 add primary key(visit_id);
@@ -73,7 +73,7 @@ add constraint fk_visit foreign key (site_id) references site (site_id);
 
 --Penn_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
 alter table penn_survey 
-add column penn_survey_id UUID default (public.uuid_generate_v4());
+add column penn_survey_id UUID default (survey_data.uuid_generate_v4());
 
 alter table penn_survey 
 add primary key(penn_survey_id);
@@ -95,7 +95,7 @@ add constraint fk_penn_survey foreign key (visit_id) references visit (visit_id)
 
 -- Panama_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
 alter table panama_survey 
-add column panama_survey_id UUID default (public.uuid_generate_v4());
+add column panama_survey_id UUID default (survey_data.uuid_generate_v4());
 
 alter table panama_survey 
 add primary key(panama_survey_id);
@@ -117,7 +117,7 @@ add constraint fk_panama_survey foreign key (visit_id) references visit (visit_i
 
 -- Serdp_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
 alter table serdp_survey 
-add column serdp_survey_id UUID default (public.uuid_generate_v4());
+add column serdp_survey_id UUID default (survey_data.uuid_generate_v4());
 
 alter table serdp_survey 
 add primary key(serdp_survey_id);
@@ -139,7 +139,7 @@ add constraint fk_serdp_survey foreign key (visit_id) references visit (visit_id
 
 -- Brazil_legacy_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
 alter table brazil_legacy_survey 
-add column brazil_legacy_survey_id UUID default (public.uuid_generate_v4());
+add column brazil_legacy_survey_id UUID default (survey_data.uuid_generate_v4());
 
 alter table brazil_legacy_survey 
 add primary key(brazil_legacy_survey_id);
@@ -161,7 +161,7 @@ add constraint fk_brazil_legacy_survey foreign key (visit_id) references visit (
 
 -- sierra_nevada_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
 alter table sierra_nevada_survey 
-add column sierra_nevada_survey_id UUID default (public.uuid_generate_v4());
+add column sierra_nevada_survey_id UUID default (survey_data.uuid_generate_v4());
 
 alter table sierra_nevada_survey 
 add primary key(sierra_nevada_survey_id);
@@ -187,7 +187,7 @@ add constraint fk_sierra_nevada_survey foreign key (visit_id) references visit (
 	
 -- VES: add unique ID, p.key, join id on site/date/survey_time/detection_type, and create f.key 	
 alter table ves 
-add column ves_id UUID default (public.uuid_generate_v4());
+add column ves_id UUID default (survey_data.uuid_generate_v4());
 
 alter table ves 
 add primary key(ves_id);
@@ -238,7 +238,7 @@ add constraint fk_ves_penn foreign key (penn_survey_id) references penn_survey (
 
 -- Aural: add unique ID, p.key, join id on site/date/survey_time/detection_type, and create f.key
 alter table aural 
-add column aural_id UUID default (public.uuid_generate_v4());
+add column aural_id UUID default (survey_data.uuid_generate_v4());
 
 alter table aural 
 add primary key(aural_id);
@@ -274,7 +274,7 @@ add constraint fk_aural_penn foreign key (penn_survey_id) references penn_survey
 
 -- Capture: add unique ID, p.key, join id on site/date/survey_time/detection_type, and create f.key
 alter table capture
-add column capture_id UUID default (public.uuid_generate_v4());
+add column capture_id UUID default (survey_data.uuid_generate_v4());
 
 alter table capture 
 add primary key(capture_id);
