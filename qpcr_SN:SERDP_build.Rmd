@@ -1,0 +1,73 @@
+---
+title: "qprc_SERDP/SN_build"
+author: "Jake Eisaguirre"
+date: "2022-10-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, parsedate)
+```
+
+# Sierra Nevada
+
+## conenct sierra nevada database
+```{r}
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("sn_dbname"),
+                 host = Sys.getenv("sn_host"),
+                 port = Sys.getenv("sn_port"),
+                 user = Sys.getenv("sn_user"),
+                 password = Sys.getenv("sn_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to public")
+```
+
+## query sn qpcr data
+```{sql, connection=connection, output.var = "sn_bd"}
+
+select * from bd_load
+
+
+```
+
+## clean sn qpcr data
+
+
+# SERDP
+
+## load serdp qpcr data
+```{r}
+
+qpcr_2017 <- read_csv(here("qpcr_data", "SERDP qPCR results 2017_220721.csv")) %>% 
+  clean_names()
+
+qpcr_2018 <- read_csv(here("qpcr_data", "SERDP qPCR results 2018_191129.csv")) %>% 
+  clean_names()
+
+qpcr_2019 <- read_csv(here("qpcr_data", "SERDP qPCR results 2019_220721.csv")) %>% 
+  clean_names()
+
+serdp_bd <- plyr::rbind.fill(qpcr_2017, qpcr_2018, qpcr_2019) %>% 
+  rename(bd_load = sample_bd_swab_qty)
+
+
+```
+
