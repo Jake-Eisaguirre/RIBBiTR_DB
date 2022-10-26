@@ -272,7 +272,9 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
    slice_head(n = 1) %>%
    ungroup() %>% 
   mutate(utme = round(as.numeric(utme, 4)),
-         utmn = round(as.numeric(utmn, 4)))
+         utmn = round(as.numeric(utmn, 4))) %>% 
+  rename(area_sqr_m = area,
+         depth_m = depth)
   
 write_csv(sites, here("clean_tables", "sites.csv"))
 
@@ -606,14 +608,17 @@ panama_survey_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "su
 
 panama_survey_table <- panama_raw %>% 
   select(c((1:5), (6:15), (21:35), salinity_large, detection_type)) %>% 
-  select(!c(survey_id, sort_id, merge_id, region)) %>% 
+  select(!c(survey_id, sort_id, merge_id, region, salinity_large)) %>% 
   mutate(site = str_replace_all(site, " ", "_")) %>% 
   group_by(date, site, survey_time, detection_type) %>% 
   mutate(new_survey_id = cur_group_id()) %>% 
   filter(!duplicated(new_survey_id)) %>% 
   select(!c(new_survey_id)) %>% 
   mutate(date = format_iso_8601(date)) %>% 
-  plyr::rbind.fill(panama_survey_2022)
+  plyr::rbind.fill(panama_survey_2022) %>% 
+  rename(conductivity_uS_cm = conductivity_insertunits,
+         salinity_ppt = salinity_small,
+         tds_ppm = tds_insertunits)
 
 
 
