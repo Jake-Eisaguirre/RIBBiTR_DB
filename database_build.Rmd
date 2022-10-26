@@ -844,6 +844,37 @@ aural <- plyr::rbind.fill(penn_aural, panama_aural)
 gc()
 ```
 
+# Genomic data
+
+## SERDP Legacy genomic - BD
+need to add before capture table since serdp bd genomic data was not present in initial serdp data and need to back log genomic ids
+## read in serdp bd genomic data
+```{r}
+
+raw_serdp_bd_genom <- read_csv(here("data", "serdp", "bd_genomic", "bd_genomic_serd.csv")) %>% 
+  clean_names()
+
+```
+
+
+## pull out important columns from serdp bd genomic data for db
+```{r}
+
+serdp_bd_genom <- raw_serdp_bd_genom %>% 
+  select(sample_id, seq_run, c(n_seqs_187:lineage_dapc_2_99cut)) %>% 
+  rename(genetic_id = sample_id)
+
+write_csv(serdp_bd_genom, here("clean_tables", "serdp_bd_genom.csv"))
+
+# used for adding sample_id into serdp table
+t <- serdp_bd_genom %>% 
+  select(genetic_id) %>% 
+  mutate(sample_id=genetic_id)
+
+
+```
+
+
 # Capture table
 
 ## penn1 capture
@@ -996,6 +1027,7 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          substrate_temp_c = substrate_temp,
          notes_capture = capture_comments,
          antibody_id = antibodies) %>% 
+  left_join(t, by = c("sample_id")) %>% 
   select(!c(sample_id))
 
 
@@ -1239,6 +1271,9 @@ dbWriteTable(connection, 'aural', aural, overwrite=T)
 
 # capture table load
 dbWriteTable(connection, 'capture', capture, overwrite=T)
+
+# serdp bd genomic data
+dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T)
 
 ```
 

@@ -18,9 +18,50 @@ if (!require(librarian)){
 librarian::shelf(tidyverse, here, janitor,)
 ```
 
+# read in serdp genomic data
+```{r}
+
+raw_serdp_bd_genom <- read_csv(here("data", "serdp", "bd_genomic", "bd_genomic_serd.csv")) %>% 
+  clean_names()
+
+```
+
+# pull out important columns for db
+```{r}
+
+serdp_bd_genom <- raw_serdp_bd_genom %>% 
+  select(sample_id, seq_run, c(n_seqs_187:lineage_dapc_2_99cut))
+
+
+```
+
+
+# connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("dbname"),
+                 host = Sys.getenv("host"), 
+                 port = Sys.getenv("port"),
+                 user = Sys.getenv("user"), 
+                 password = Sys.getenv("password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+
+```
+
+# push data to db
+```{r}
 
 
 
-
-
+```
 
