@@ -1030,6 +1030,14 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
   left_join(t, by = c("sample_id")) %>% 
   select(!c(sample_id))
 
+a <- serdp_capture %>% 
+  select(genetic_id) %>% 
+  unique() 
+
+b <- anti_join(t, a, by = "genetic_id")
+
+missing_ids <- raw_serdp_bd_genom %>% 
+  filter(sample_id %in% b$sample_id)
 
 ```
 
