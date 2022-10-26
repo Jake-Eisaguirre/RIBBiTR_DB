@@ -144,7 +144,8 @@ sn_site_table <- sn_site %>%
   rename(site = id,
          elevation_m = elevation) %>%
   mutate(region = "california",
-        location = "usa") %>%
+        location = "usa",
+        utm_zone = 11) %>%
   select(!c(name, drainage, county, jurisdiction)) %>%
   group_by(site) %>%
   unique()
@@ -159,14 +160,15 @@ write_csv(sn_site_table, here("clean_tables", "sn_site_table.csv"))
 panama_sites <- panama_raw %>% 
   mutate(region = str_to_lower(region),
          site = str_to_lower(site),
-         location = "panama") %>% 
-  select(region, site, location, utme, utmn, elevation_m) %>% 
+         location = "panama",
+         utm_zone = 17) %>% 
+  select(region, site, location, utme, utmn, elevation_m, utm_zone) %>% 
   unique()
 
 
 ```
 
-## pull out serdp sites - TRUE SITE TABLE
+## pull out serdp sites - TRUE SITE TABLE (still need to convert lat and long to proper UTM Zone)
 ```{r}
 
 serdp_sites <- read_csv(here("data", "serdp", "serdp_site_table.csv")) %>% 
@@ -192,8 +194,35 @@ serdp_sites <- read_csv(here("data", "serdp", "serdp_site_table.csv")) %>%
          site = if_else(site_code == "nm30", "n. caballo lake 3", site),
          site = if_else(site_code == "la7", "la7", site),
          site = if_else(site_code == "la8", "la8", site),
-         site = if_else(site == "la06", "la6", site)) %>% 
+         site = if_else(site == "la06", "la6", site),
+         utm_zone = floor((long + 180) / 6) + 1) %>% 
   select(!c( temp_id))
+
+
+#split data by utm_zone
+utmsplit <- split(serdp_sites, serdp_sites$utm_zone)
+
+#apply function to each groupings
+dfs <- lapply(utmsplit, function(dx){
+   utm_zone <- dx$utm_zone[1]  #get utm zone for the group
+   project_string <- paste0("+proj=utm +zone=", utm_zone)
+   
+   v <- vect(dx, c("long", "lat"), crs="+proj=longlat")
+   u <- terra::project(v, project_string)
+   utm <- crds(u)
+
+   #add new columns to data frame
+   cbind(dx, utm)
+})
+
+#combine individuals data frames back into one.
+answer <- dplyr::bind_rows(dfs) %>% 
+  select(site_code, x, y) %>% 
+  rename(utme=x,
+         utmn=y)
+
+serdp_sites <- left_join(serdp_sites, answer, by = c("site_code")) %>% 
+  select(!c(lat, long))
 
 ```
 
@@ -202,7 +231,8 @@ serdp_sites <- read_csv(here("data", "serdp", "serdp_site_table.csv")) %>%
 penn_sites <- read_csv(here("data", "penn", "penn_sites.csv")) %>% 
   clean_names() %>% 
   select(!c(observer,date)) %>% 
-  mutate(region = "pennsylvania")
+  mutate(region = "pennsylvania",
+         utm_zone = 17)
 ```
 ## pull out brazil legacy sites
 ```{r}
@@ -213,7 +243,8 @@ brazil_legacy_sites <- read_csv(here("data", "brazil_legacy", "brazil_site.csv")
          long = longitude_start) %>% 
   select(!c(latitude_end, longitude_end)) %>% 
   mutate(region = "santa virginia",
-         location = "brazil")
+         location = "brazil",
+         utm_zone = "23")
 
 
 v <- vect(brazil_legacy_sites, c("long", "lat"), crs="+proj=longlat")
@@ -239,7 +270,9 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
   group_by(site) %>%
    mutate(across(everything(), ~ .x[order(.x)])) %>%
    slice_head(n = 1) %>%
-   ungroup()
+   ungroup() %>% 
+  mutate(utme = round(as.numeric(utme, 4)),
+         utmn = round(as.numeric(utmn, 4)))
   
 write_csv(sites, here("clean_tables", "sites.csv"))
 
@@ -991,7 +1024,7 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
 panama_capture <- panama_raw %>% 
   filter(detection_type == "capture") %>% 
   select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
-           capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected,
+           capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected, pcr,
            bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
            notes_amphib2, microhab0)) %>% 
   unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
