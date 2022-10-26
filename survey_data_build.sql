@@ -350,7 +350,12 @@ set brazil_legacy_survey_id =
 alter table capture 
 add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) references brazil_legacy_survey (brazil_legacy_survey_id);
 
+------ serdp_bd_genomic to capture (probs need to create seperate IDs until missing data is found)
+alter table serdp_bd_genomic 
+add primary key (genetic_id)
 
+alter table capture 
+add constraint fk_serpd_bd_genomic foreign key (genetic_id) references serdp_bd_genomic;
 
 
 --select l.location, r.region, r.location, s.site, s.region, s.location,
@@ -381,3 +386,5 @@ add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) re
 --select 'serdp', v.date, v.site, s.date, s.site
 --from visit v
 --join serdp_survey s on s.visit_id = v.visit_id;
+
+
