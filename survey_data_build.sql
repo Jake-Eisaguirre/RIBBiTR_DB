@@ -351,12 +351,37 @@ alter table capture
 add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) references brazil_legacy_survey (brazil_legacy_survey_id);
 
 ------ serdp_bd_genomic to capture (probs need to create seperate IDs until missing data is found)
+
 alter table serdp_bd_genomic 
-add primary key (genetic_id)
+add column serdp_bd_genomic_id UUID default (survey_data.uuid_generate_v4());
+
+alter table serdp_bd_genomic 
+add primary key(serdp_bd_genomic_id);
+
+alter table capture
+add column serdp_bd_genomic_id UUID;
+
+update capture c 
+set serdp_bd_genomic_id =
+	(select v.serdp_bd_genomic_id
+	from serdp_bd_genomic v
+	where (v.genetic_id) = (c.genetic_id));
 
 alter table capture 
-add constraint fk_serpd_bd_genomic foreign key (genetic_id) references serdp_bd_genomic;
+add constraint fk_serdp_bd_genomic foreign key (serdp_bd_genomic_id) references serdp_bd_genomic (serdp_bd_genomic_id);
 
+
+-- genomic data check
+--select l.location, r.location, r.region, s.site, s.region, s.location, 
+--v.date, v.site, v.survey_time, ss.date, ss.survey_time, c.site, c.date,
+--c.survey_time, c.genetic_id,  sbg.genetic_id
+--from "location" l 
+--join region r on l.location_id = r.location_id 
+--join site s on r.region_id = s.region_id 
+--join visit v on s.site_id = v.site_id 
+--join serdp_survey ss on v.visit_id = ss.visit_id 
+--join capture c on ss.serdp_survey_id = c.serdp_survey_id 
+--join serdp_bd_genomic sbg on c.serdp_bd_genomic_id = sbg.serdp_bd_genomic_id 
 
 --select l.location, r.region, r.location, s.site, s.region, s.location,
 --v.date, v.site, v.survey_time, ps.site, ps.date, ps.survey_time,
