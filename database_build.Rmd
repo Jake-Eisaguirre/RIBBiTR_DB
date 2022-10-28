@@ -604,11 +604,12 @@ panama_survey_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "su
   mutate(new_survey_id = cur_group_id(),
          detection_type = if_else(detection_type == "call", "aural", detection_type)) %>% 
   filter(!duplicated(new_survey_id)) %>% 
-  select(!c(new_survey_id))
+  select(!c(new_survey_id, e_dna)) %>% 
+  rename(wind_speed_m_s = wind_speed_ms)
 
 panama_survey_table <- panama_raw %>% 
   select(c((1:5), (6:15), (21:35), salinity_large, detection_type)) %>% 
-  select(!c(survey_id, sort_id, merge_id, region, salinity_large)) %>% 
+  select(!c(survey_id, sort_id, merge_id, region, salinity_large, e_dna)) %>% 
   mutate(site = str_replace_all(site, " ", "_")) %>% 
   group_by(date, site, survey_time, detection_type) %>% 
   mutate(new_survey_id = cur_group_id()) %>% 
@@ -629,7 +630,10 @@ panama_survey_table <- panama_raw %>%
          wind_speed_m_s = str_replace_all(wind_speed_m_s, ", gust to 3.7", ""),
         wind_speed_m_s = str_replace_all(wind_speed_m_s, "kt", ""),
         wind_speed_m_s = str_replace_all(wind_speed_m_s, "k/hr", ""),
-        wind_speed_m_s = str_replace_all(wind_speed_m_s, " ", ""))
+        wind_speed_m_s = str_replace_all(wind_speed_m_s, " ", ""),
+        transect = str_to_lower(str_replace_all(transect, " ", "_")),
+        transect = str_replace_all(transect, ",", "_"),
+        transect = str_replace_all(transect, "-", "_"))
 
 
 
@@ -1090,7 +1094,7 @@ panama_capture <- panama_raw %>%
   filter(detection_type == "capture") %>% 
   select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected, pcr,
-           bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
+           bdswab, gen_samp, bacteria_swab, am_ps, e_dna, photo, photo_id, notes_amphib1,
            notes_amphib2, microhab0)) %>% 
   unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
   rename(microhab_moredetail = microhab0,
@@ -1104,6 +1108,7 @@ panama_capture <- panama_raw %>%
   mutate(bdswab = if_else(bdswab=="1", swab_id, NULL),
          am_ps = if_else(am_ps=="1", swab_id, NULL),
          bacteria_swab = if_else(bacteria_swab=="1", swab_id, NULL),
+         e_dna = if_else(e_dna=="1", swab_id, NULL),
          gen_samp = case_when(gen_samp == "toeclip" ~ swab_id,
                               gen_samp == "buccal" ~ swab_id,
                               gen_samp == "1" ~ swab_id),
@@ -1291,13 +1296,55 @@ dbWriteTable(connection, 'site', sites, overwrite=T,
                              wilderness = "varchar(12)"))
 
 #visit table load
-dbWriteTable(connection, 'visit', visit_table, overwrite=T)
+dbWriteTable(connection, 'visit', visit_table, overwrite=T,
+             field.types = c(campaign = "int",
+                             date = "date",
+                             site = "varchar(40)",
+                             survey_time = "varchar(5)",
+                             visit_notes = "varchar",
+                             site_code = "varchar(4)",
+                             visit_status = "varchar(8)"))
 
 #brazil_legacy_survey table load
-dbWriteTable(connection, 'brazil_legacy_survey', brazil_legacy_survey_table, overwrite=T)
+dbWriteTable(connection, 'brazil_legacy_survey', brazil_legacy_survey_table, overwrite=T,
+             field.types = c(start_time = "time",
+                             end_time = "time",
+                             site = "varchar(40)",
+                             date = "date",
+                             survey_time = "varchar(5)",
+                             campaign = "int",
+                             detection_type = "varchar(7)",
+                             duration_minutes = "int"))
 
 #panama_survey table load
-dbWriteTable(connection, 'panama_survey', panama_survey_table, overwrite=T)
+dbWriteTable(connection, 'panama_survey', panama_survey_table, overwrite=T,
+             field.types = c(site = "varchar(40)",
+                             transect = "varchar(15)",
+                             date = "date",
+                             survey_time = "varchar(5)",
+                             frog_presence = "boolean",
+                             observers = "varchar",
+                             number_observers = "int",
+                             start_time = "time",
+                             end_time = "time",
+                             duration_minutes = "int",
+                             samp_loc = "varchar",
+                             pressure_hg = "float8",
+                             humidity_percent = "float8",
+                             wind_speed_m_s = "float8",
+                             air_temp_c = "float8",
+                             water_temp_c = "float8",
+                             dissolved_o2_percent = "float8",
+                             p_h = "float8",
+                             conductivity_uS_cm = "float8",
+                             tds_ppm = "float8",
+                             salinity_ppt = "float8",
+                             cloud_cover_percent = "varchar",
+                             precip = "varchar",
+                             notes_survey = "varchar",
+                             qaqc_survey = "varchar",
+                             detection_type = "varchar(7)",
+                             soil_humidity_m3m3 = "float8"))
 
 #penn_survey table load
 dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T)
