@@ -621,10 +621,12 @@ panama_survey_table <- panama_raw %>%
          salinity_ppt = salinity_small,
          tds_ppm = tds_insertunits) %>% 
   mutate(dissolved_o2_percent = as.numeric(dissolved_o2_percent), 
-         salinity_ppt = if_else(salinity_ppt > "1", "NA", salinity_ppt),
+         salinity_ppt = if_else(salinity_ppt > "1", "", salinity_ppt),
+         salinity_ppt = na_if(salinity_ppt, ""),
          dissolved_o2_percent = case_when(dissolved_o2_percent > 100 ~ 100,
                                           dissolved_o2_percent < 100 ~ dissolved_o2_percent),
-         wind_speed_m_s = if_else(wind_speed_m_s == "23.7", "NA", wind_speed_m_s),
+         wind_speed_m_s = if_else(wind_speed_m_s == "23.7", "", wind_speed_m_s),
+         wind_speed_m_s = na_if(wind_speed_m_s, ""),
         wind_speed_m_s = case_when(str_detect(wind_speed_m_s, "ph", negate = TRUE)~ wind_speed_m_s),
         wind_speed_m_s = str_replace_all(wind_speed_m_s, "/s", ""),
          wind_speed_m_s = str_replace_all(wind_speed_m_s, ", gust to 3.7", ""),
@@ -795,7 +797,8 @@ gc()
 ```{r}
 
 ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>% 
-  mutate(site = str_replace_all(site, " ", "_")) %>% 
+  mutate(site = str_replace_all(site, " ", "_"),
+         sex = if_else(sex == "unkonwn", "unknown", sex)) %>% 
   rename(notes_ves = ves_notes) %>% 
   select(!c(start_time, end_time, duration_minutes))
 
@@ -1347,25 +1350,83 @@ dbWriteTable(connection, 'panama_survey', panama_survey_table, overwrite=T,
                              soil_humidity_m3m3 = "float8"))
 
 #penn_survey table load
-dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T)
+dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T,
+             field.types = c(site = "varchar(13)",
+                             date = "date",
+                             observer = "varchar",
+                             detection_type = "varchar(7)",
+                             start_time = "time",
+                             end_time = "time",
+                             duration_minutes = "int",
+                             survey_time = "varchar(5)"))
 
 #serdp_survey table load
-dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T)
+dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T,
+             field.types = c())
 
 #sn_survey table load
-dbWriteTable(connection, 'sierra_nevada_survey', sn_survey_table, overwrite=T)
+dbWriteTable(connection, 'sierra_nevada_survey', sn_survey_table, overwrite=T,
+             field.types = c(site = "varchar(5)",
+                             date = "date",
+                             detection_type = "varchar(7)",
+                             wind = "varchar(6)",
+                             sky = "varchar(8)",
+                             start_time = "time",
+                             end_time = "time",
+                             duration = "int",
+                             air_temp = "int",
+                             water_temp = "int",
+                             water_time = "time",
+                             fish = "boolean",
+                             description = "varchar",
+                             comment = "varchar",
+                             survey_quality = "varchar(4)",
+                             survey_time = "varchar(5)"))
 
-# ves table load
-dbWriteTable(connection, 'ves', ves, overwrite=T)
+# ves table load - NEED to remove "many" from count in VES data
+dbWriteTable(connection, 'ves', ves, overwrite=T,
+             field.types = c(site = "varchar(18)",
+                             date = "date",
+                             survey_time = "varchar(5)",
+                             species_ves = "varchar",
+                             detection_type = "varchar(7)",
+                             count = "int",
+                             detection_location = "varchar",
+                             microhab = "varchar",
+                             life_stage = "varchar",
+                             sex = "varchar(7)",
+                             notes_ves = "varchar",
+                             microhab_moredetail ="varchar",
+                             visual_animal_state = "varchar(5)"))
 
-# aural table load
-dbWriteTable(connection, 'aural', aural, overwrite=T)
+# aural table load - NEED to remove "many" from count in Aural data
+dbWriteTable(connection, 'aural', aural, overwrite=T,
+             field.types = c(date = "date",
+                             site = "varchar(18)",
+                             species_aural = "varchar",
+                             call_index = "varchar",
+                             notes_aural = "varchar",
+                             detection_type = "varchar(7)",
+                             survey_time = "varchar(5)",
+                             count = "int",
+                             detection_location = "varchar",
+                             microhab = "varchar",
+                             life_stage = "varchar",
+                             sex = "varchar(5)",
+                             microhab_moredetail = "varchar"))
 
 # capture table load
-dbWriteTable(connection, 'capture', capture, overwrite=T)
+dbWriteTable(connection, 'capture', capture, overwrite=T,
+             field.types = c())
 
 # serdp bd genomic data
-dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T)
+dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T,
+             field.types = c(genetic_id = "varchar(20)",
+                             seq_run = "int",
+                             n_seqs_187 = "int",
+                             avg_alleles_per_locus = "float8",
+                             lineage_astral_187 = "varchar",
+                             lineage_dapc_2_99cut = "varchar"))
 
 ```
 
