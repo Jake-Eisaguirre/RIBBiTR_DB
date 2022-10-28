@@ -618,9 +618,15 @@ panama_survey_table <- panama_raw %>%
   plyr::rbind.fill(panama_survey_2022) %>% 
   rename(conductivity_uS_cm = conductivity_insertunits,
          salinity_ppt = salinity_small,
-         tds_ppm = tds_insertunits)
-
-
+         tds_ppm = tds_insertunits) %>% 
+  mutate(dissolved_o2_percent = as.numeric(dissolved_o2_percent), 
+         salinity_ppt = if_else(salinity_ppt > "1", "NA", salinity_ppt),
+         dissolved_o2_percent = case_when(dissolved_o2_percent > 100 ~ 100,
+                                          dissolved_o2_percent < 100 ~ dissolved_o2_percent),
+         wind_speed_m_s = if_else(wind_speed_m_s == "23.7", "NA", wind_speed_m_s),
+        wind_speed_m_s = case_when(str_detect(wind_speed_m_s, "ph", negate = TRUE)~ wind_speed_m_s),
+        wind_speed_m_s = str_replace_all(wind_speed_m_s, "/s", ""),
+         wind_speed_m_s = str_replace_all(wind_speed_m_s, ", gust to 3.7", ""))
 
 
 
@@ -1065,8 +1071,19 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
   select(!c(swab_id, count))
 
 
+# panama data fixes
+panama_rabbit_stream_fix <- panama_raw %>% 
+  filter(site == "rabbit stream",
+         date == "2014-05-27") %>% 
+  group_by(swab_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id)
 
-panama_capture <- panama_raw %>% 
+
+panama_capture <- panama_raw %>%
+  filter(!swab_id %in% panama_rabbit_stream_fix$swab_id) %>% 
+  rbind(panama_rabbit_stream_fix) %>% 
   filter(detection_type == "capture") %>% 
   select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected, pcr,
@@ -1099,7 +1116,8 @@ panama_capture <- panama_raw %>%
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive")) %>% 
   select(!c(swab_id)) %>% 
-  plyr::rbind.fill(panama_capture_2022)
+  plyr::rbind.fill(panama_capture_2022) 
+  
 
 
 ```
