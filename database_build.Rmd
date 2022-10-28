@@ -626,7 +626,10 @@ panama_survey_table <- panama_raw %>%
          wind_speed_m_s = if_else(wind_speed_m_s == "23.7", "NA", wind_speed_m_s),
         wind_speed_m_s = case_when(str_detect(wind_speed_m_s, "ph", negate = TRUE)~ wind_speed_m_s),
         wind_speed_m_s = str_replace_all(wind_speed_m_s, "/s", ""),
-         wind_speed_m_s = str_replace_all(wind_speed_m_s, ", gust to 3.7", ""))
+         wind_speed_m_s = str_replace_all(wind_speed_m_s, ", gust to 3.7", ""),
+        wind_speed_m_s = str_replace_all(wind_speed_m_s, "kt", ""),
+        wind_speed_m_s = str_replace_all(wind_speed_m_s, "k/hr", ""),
+        wind_speed_m_s = str_replace_all(wind_speed_m_s, " ", ""))
 
 
 
@@ -1263,13 +1266,29 @@ tryCatch({
 dbExecute(connection, "set search_path to survey_data")
 
 #location table load
-dbWriteTable(connection, 'location', location_table, overwrite=T)
+dbWriteTable(connection, 'location', location_table, overwrite=T,
+             field.types = c(location = "varchar(6)"))
 
 #region table load
-dbWriteTable(connection, 'region', regions, overwrite=T)
+dbWriteTable(connection, 'region', regions, overwrite=T,
+             field.types = c(region = "varchar(16)",
+                             location = "varchar(6)"))
 
 #site table load
-dbWriteTable(connection, 'site', sites, overwrite=T)
+dbWriteTable(connection, 'site', sites, overwrite=T,
+             field.types = c(site = "varchar(40)",
+                             region = "varchar(16)", 
+                             location = "varchar(6)",
+                             utm_zone = "int",
+                             utme = "int",
+                             utmn = "int",
+                             site_code = "varchar(4)",
+                             site_comments = "varchar",
+                             elevation_m = "int",
+                             area_sqr_m = "int",
+                             depth_m = "float8",
+                             topo = "varchar(20)",
+                             wilderness = "varchar(12)"))
 
 #visit table load
 dbWriteTable(connection, 'visit', visit_table, overwrite=T)
