@@ -668,7 +668,13 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          duration_minutes = if_else(end_time < start_time,
                             as_hms(86400) - start_time + end_time,
                             end_time - start_time),
-         duration_minutes = duration_minutes/60)
+         duration_minutes = duration_minutes/60) %>% 
+  unite("wind_speed_mpers_min", c("wind_speed_mpers_min", "wind_speed_min_mpers"), na.rm = T) %>% 
+  unite("wind_speed_mpers_max", c("wind_speed_mpers_max", "wind_speed_max_mpers"), na.rm = T) %>% 
+  unite("pressure_hg", c("pressure_in_hg", "pressure_in"), na.rm = T) %>% 
+  select(!c(pressure_mb)) %>% 
+  mutate(percent_vegetation_cover = if_else(percent_vegetation_cover == "huge lake", "", percent_vegetation_cover)) %>% 
+  mutate_all(na_if, "")
 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
@@ -878,7 +884,9 @@ raw_serdp_bd_genom <- read_csv(here("data", "serdp", "bd_genomic", "bd_genomic_s
 
 serdp_bd_genom <- raw_serdp_bd_genom %>% 
   select(sample_id, seq_run, c(n_seqs_187:lineage_dapc_2_99cut)) %>% 
-  rename(genetic_id = sample_id)
+  rename(genetic_id = sample_id) %>% 
+  filter(!genetic_id %in% c("180223-01C-LA02-LICA", "180223-04D-LA02-LICA", "180223-01F-LA02-LICA",
+            "180223-04A-LA02-LICA", "180223-01B-LA02-LISP", "180223-01D-LA02-LISP"))
 
 write_csv(serdp_bd_genom, here("clean_tables", "serdp_bd_genom.csv"))
 
@@ -1046,14 +1054,14 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
   left_join(t, by = c("sample_id")) %>% 
   select(!c(sample_id))
 
-a <- serdp_capture %>% 
-  select(genetic_id) %>% 
-  unique() 
-
-b <- anti_join(t, a, by = "genetic_id")
-
-missing_ids <- raw_serdp_bd_genom %>% 
-  filter(sample_id %in% b$sample_id)
+# a <- serdp_capture %>% 
+#   select(genetic_id) %>% 
+#   unique() 
+# 
+# b <- anti_join(t, a, by = "genetic_id")
+# 
+# missing_ids <- raw_serdp_bd_genom %>% 
+#   filter(sample_id %in% b$sample_id)
 
 ```
 
@@ -1362,7 +1370,54 @@ dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T,
 
 #serdp_survey table load
 dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T,
-             field.types = c())
+             field.types = c(date = "date",
+                             site_code = "varchar(4)",
+                             survey_time = "varchar(5)",
+                             no_of_investigators = "varchar",
+                             investigator_i_ds = "varchar",
+                             start_time = "time",
+                             end_time = "time",
+                             wind_speed_scale = "int",
+                             precipitation_during_visit = "varchar",
+                             precipitation_last_48_h = "varchar",
+                             temperature_last_48_h = "varchar",
+                             percent_cloud_cover = "int",
+                             weather_condition_notes = "varchar",
+                             pressure_psi = "float8",
+                             pressure_psi_drop = "float8",
+                             relative_humidity = "float8",
+                             relative_humidity_drop = "float8",
+                             wind_speed_mpers_min = "float8",
+                             wind_speed_mpers_max = "float8",
+                             air_temp_deg_c = "float8",
+                             air_temp_deg_c_drop = "float8",
+                             water_temp_deg_c = "float8",
+                             p_h = "float8",
+                             conductivity = "float8",
+                             total_dissolved_solids = "float8",
+                             densiometer_d1_num_covered = "boolean",
+                             d1_n = "int",
+                             d1_s = "int",
+                             d1_e = "int",
+                             d1_w = "int",
+                             d1_percent_cover = "float8",
+                             densiometer_d2_num_covered = "boolean",
+                             d2_n = "int",
+                             d2_s = "int",
+                             d2_e = "int",
+                             d2_w = "int",
+                             d2_percent_cover = "float8",
+                             depth_of_water_from_d2_cm = "float8",
+                             percent_vegetation_cover = "int",
+                             vegetation_notes = "varchar",
+                             e_dna_sample = "boolean",
+                             survey_notes = "varchar",
+                             pressure_hg = "float8",
+                             wind_speed_mpers = "float8",
+                             secchi_depth_cm = "int",
+                             site = "varchar",
+                             detection_type = "varchar(7)",
+                             duration_minutes = "int"))
 
 #sn_survey table load
 dbWriteTable(connection, 'sierra_nevada_survey', sn_survey_table, overwrite=T,
