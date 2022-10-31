@@ -1491,9 +1491,19 @@ dbExecute(connection, "set search_path to hobo")
 
 # hobo table loads
 ## hobo site
-dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T)
+dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T,
+             field.types = c(site_code = "varchar(4)",
+                             region = "varchar(12)",
+                             site = "varchar",
+                             site_comments = "varchar",
+                             location = "varchar(6)",
+                             utm_zone = "int",
+                             utme = "float8",
+                             utmn = "float8"))
 ## hobo shade
-dbWriteTable(connection, 'shade_hobo', shade_hobo, overwrite=T)
+dbWriteTable(connection, 'shade_hobo', shade_hobo, overwrite=T,
+             field.types = c(date_time = "timestamp",
+                             ))
 ## hobo soil
 dbWriteTable(connection, 'soil_hobo', soil_hobo, overwrite=T)
 ## hobo sun
