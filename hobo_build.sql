@@ -1,15 +1,19 @@
 set search_path = "hobo";
 
+-- add UUID extension 
+create extension if not exists "uuid-ossp";
+alter extension "uuid-ossp" set schema hobo;
+
 -- Hobo site table
 alter table hobo_site
-add column hobo_site_id UUID default (public.uuid_generate_v4());
+add column hobo_site_id UUID default (hobo.uuid_generate_v4());
 
 alter table hobo_site 
 add primary key(hobo_site_id);
 
 -- Soil hobo: add unique ID, join f.key, on site_code
 alter table soil_hobo 
-add column soil_hobo_id UUID default (public.uuid_generate_v4());
+add column soil_hobo_id UUID default (hobo.uuid_generate_v4());
 
 alter table soil_hobo 
 add column hobo_site_id UUID;
@@ -28,7 +32,7 @@ add constraint fk_soil_hobo foreign key (hobo_site_id) references hobo_site (hob
 
 -- Water hobo: add unique ID, join f.key, on site_code
 alter table water_hobo 
-add column water_hobo_id UUId default (public.uuid_generate_v4());
+add column water_hobo_id UUId default (hobo.uuid_generate_v4());
 
 alter table water_hobo 
 add column hobo_site_id UUID;
@@ -47,7 +51,7 @@ add constraint fk_water_hobo foreign key (hobo_site_id) references hobo_site (ho
 
 -- Sun hobo: add unique ID, join f.key, on site_code
 alter table sun_hobo 
-add column sun_hobo_id UUID default (public.uuid_generate_v4());
+add column sun_hobo_id UUID default (hobo.uuid_generate_v4());
 
 alter table sun_hobo 
 add column hobo_site_id UUID;
@@ -66,7 +70,7 @@ add constraint fk_sun_hobo foreign key (hobo_site_id) references hobo_site (hobo
 
 -- Shade hobo: add unique ID, join f.key, on site_code
 alter table shade_hobo 
-add column shade_hobo_id UUID default (public.uuid_generate_v4());
+add column shade_hobo_id UUID default (hobo.uuid_generate_v4());
 
 alter table shade_hobo 
 add column hobo_site_id UUID;
@@ -82,4 +86,22 @@ set hobo_site_id =
 
 alter table shade_hobo 
 add constraint fk_shade_hobo foreign key (hobo_site_id) references hobo_site (hobo_site_id);
+
+-- drop columns
+
+---- drop shade_hobo columns
+alter table shade_hobo  
+drop column site_code;
+
+---- drop soil_hobo columns
+alter table soil_hobo 
+drop column site_code;
+
+---- drop sun_hobo columns
+alter table sun_hobo 
+drop column site_code;
+
+---- drop water_hobo columns
+alter table water_hobo 
+drop column site_code;
 	

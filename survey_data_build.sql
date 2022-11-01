@@ -2,6 +2,7 @@ set search_path = "survey_data";
 
 -- add UUID extension 
 create extension if not exists "uuid-ossp";
+alter extension "uuid-ossp" set schema survey_data;
 
 -- Location: add unique ID and p.key
 alter table "location" 
@@ -350,8 +351,8 @@ set brazil_legacy_survey_id =
 alter table capture 
 add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) references brazil_legacy_survey (brazil_legacy_survey_id);
 
------- serdp_bd_genomic to capture (probs need to create seperate IDs until missing data is found)
 
+---- serdp_bd_genomic to capture: create new foreign key approach for serdp_bd_genomic
 alter table serdp_bd_genomic 
 add column serdp_bd_genomic_id UUID default (survey_data.uuid_generate_v4());
 
@@ -369,6 +370,135 @@ set serdp_bd_genomic_id =
 
 alter table capture 
 add constraint fk_serdp_bd_genomic foreign key (serdp_bd_genomic_id) references serdp_bd_genomic (serdp_bd_genomic_id);
+
+
+
+
+
+
+
+
+
+-- drop columns
+
+---- drop columns region
+alter table region 
+drop column location;
+
+---- drop columns site
+alter table site 
+drop column region;
+
+alter table site 
+drop column location;
+
+---- drop columns visit
+alter table visit 
+drop column site;
+
+---- drop columns panama_survey
+alter table panama_survey 
+drop column site;
+
+alter table panama_survey 
+drop column date;
+
+alter table panama_survey 
+drop column survey_time;
+
+alter table panama_survey 
+drop column detection_type;
+
+---- drop columns penn_survey
+alter table penn_survey 
+drop column site;
+
+alter table penn_survey 
+drop column date;
+
+alter table penn_survey 
+drop column detection_type;
+
+alter table penn_survey 
+drop column survey_time;
+
+---- drop columns brazil_legacy_survey
+alter table brazil_legacy_survey 
+drop column site;
+
+alter table brazil_legacy_survey 
+drop column date;
+
+alter table brazil_legacy_survey 
+drop column survey_time;
+
+alter table brazil_legacy_survey 
+drop column detection_type;
+
+---- drop columns sierra_nevada_survey
+alter table sierra_nevada_survey 
+drop column site;
+
+alter table sierra_nevada_survey 
+drop column date;
+
+alter table sierra_nevada_survey 
+drop column detection_type;
+
+alter table sierra_nevada_survey 
+drop column survey_time;
+
+---- drop columns serdp_survey
+alter table serdp_survey 
+drop column site;
+
+alter table serdp_survey 
+drop column date;
+
+alter table serdp_survey 
+drop column detection_type;
+
+alter table serdp_survey 
+drop column survey_time;
+
+---- drop columns aural
+alter table aural 
+drop column date;
+
+alter table aural
+drop column site;
+
+alter table aural 
+drop column detection_type;
+
+alter table aural 
+drop column survey_time;
+
+---- drop columns ves
+alter table ves 
+drop column date;
+
+alter table ves 
+drop column site;
+
+alter table ves 
+drop column survey_time;
+
+alter table ves 
+drop column detection_type;
+
+---- drop column capture
+alter table capture 
+drop column date;
+
+alter table capture 
+drop column site;
+
+alter table capture 
+drop column survey_time;
+
+alter table capture 
+drop column detection_type;
 
 
 -- genomic data check
