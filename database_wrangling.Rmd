@@ -150,7 +150,7 @@ sn_site_table <- sn_site %>%
   group_by(site) %>%
   unique()
 
-write_csv(sn_site_table, here("clean_tables", "sn_site_table.csv"))
+#write_csv(sn_site_table, here("clean_tables", "sn_site_table.csv"))
 ```
 
 
@@ -481,7 +481,7 @@ sn_visit_table <- sn_visit %>%
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id))
 
-write_csv(sn_visit_table, here("clean_tables", "sn_visit.csv"))
+#write_csv(sn_visit_table, here("clean_tables", "sn_visit.csv"))
 
 rm(sn_visit)
 gc()
@@ -571,7 +571,7 @@ brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_sur
 brazil_legacy_survey_table$duration_minutes <- str_sub(brazil_legacy_survey_table$duration_minutes, -4) %>% 
   as.numeric()
 
-write_csv(brazil_legacy_survey_table, here("clean_tables", "survey_tables", "brazil_legacy_survey.csv"))
+write_csv(brazil_legacy_survey_table, here("clean_tables", "brazil_legacy_survey.csv"))
 ```
 
 ## penn survey table
@@ -590,7 +590,7 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
          date = format_iso_8601(date)) %>% 
   rename(duration_minutes = duration_min)
 
-write_csv(penn_survey_table, here("clean_tables", "survey_tables", "penn_survey.csv"))
+write_csv(penn_survey_table, here("clean_tables", "penn_survey.csv"))
   
 
 ```
@@ -639,7 +639,7 @@ panama_survey_table <- panama_raw %>%
 
 
 
-write_csv(panama_survey_table, here("clean_tables", "survey_tables", "panama_survey.csv"))
+write_csv(panama_survey_table, here("clean_tables", "panama_survey.csv"))
 ```
 
 ## read in serdp survey table
@@ -679,7 +679,7 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
 
-write_csv(serdp_survey_table, here("clean_tables", "survey_tables", "serdp_survey.csv"))
+write_csv(serdp_survey_table, here("clean_tables", "serdp_survey.csv"))
 ```
 
 ## sn survey table
@@ -792,7 +792,7 @@ sn_ves_table <- sn_ves %>%
          life_stage = visual_life_stage)
 
 
-write_csv(sn_ves_table, here("clean_tables", "sn_ves_table.csv"))
+#write_csv(sn_ves_table, here("clean_tables", "sn_ves_table.csv"))
 
 rm(sn_ves)
 gc()
@@ -806,7 +806,10 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>%
   mutate(site = str_replace_all(site, " ", "_"),
          sex = if_else(sex == "unkonwn", "unknown", sex)) %>% 
   rename(notes_ves = ves_notes) %>% 
-  select(!c(start_time, end_time, duration_minutes))
+  select(!c(start_time, end_time, duration_minutes)) %>% 
+  mutate(count = if_else(count == "many", "100", count)) # need to find better fix to "many"
+
+write_csv(ves, here("clean_tables", "ves.csv"))
 
 rm(panama_ves, penn_ves, sn_ves_table)
 gc()
@@ -860,7 +863,11 @@ panama_aural <- panama_raw %>%
 ## bind aural table
 ```{r}
 
-aural <- plyr::rbind.fill(penn_aural, panama_aural)
+aural <- plyr::rbind.fill(penn_aural, panama_aural) %>% 
+  mutate(count = if_else(count == "many", "100", count),
+         sex = if_else(sex == "unkonwn", "unknown", sex)) # need to find better fix for "many"
+
+write_csv(aural, here("clean_tables", "aural.csv"))
   
 #rm(penn_aural, panama_aural)
 gc()
@@ -986,7 +993,7 @@ sn_capture_table <- sn_capture %>%
          capture_utmn = utmn)
 
   
-write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
+#write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
 ```
 
 
@@ -1005,7 +1012,8 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
          site = str_replace_all(site, " ", "_"),
          species_capture = str_replace_all(species_capture, " ", "_"),
          bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NULL),
-         genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NULL))
+         genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NULL),
+         time_of_capture = if_else(time_of_capture == "NA:00", "", time_of_capture))
 
 v <- vect(brazil_legacy_capture, c("capture_longitude", "capture_latitude"), crs="+proj=longlat")
 u <- terra::project(v, "+proj=utm +zone=23")
@@ -1104,7 +1112,7 @@ panama_capture <- panama_raw %>%
   rbind(panama_rabbit_stream_fix) %>% 
   filter(detection_type == "capture") %>% 
   select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
-           capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, infected, pcr,
+           capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, #infected, pcr,
            bdswab, gen_samp, bacteria_swab, am_ps, e_dna, photo, photo_id, notes_amphib1,
            notes_amphib2, microhab0)) %>% 
   unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
@@ -1151,7 +1159,10 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
          site = str_replace_all(site, " ", "_"),
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
-         detection_type = "capture")
+         detection_type = "capture") %>% 
+  mutate_all(na_if, "")
+
+write_csv(capture, here("clean_tables", "capture.csv"))
 
 # lat_long <- capture %>% 
 #   select(c(utme, utmn)) %>% 
@@ -1170,6 +1181,8 @@ gc()
 hobo_site <- serdp_sites  %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "-", "_"))
+
+write_csv(hobo_site, here("clean_tables", "hobo_site.csv"))
 ```
 
 ## read in serdp hobo data
@@ -1185,10 +1198,15 @@ shade_hobo <- raw_shade_hobo %>%
   rename(shade_temperature_c = temperature,
          relative_humidity = rh,
          site_code = site,
-         enviro_location = location) %>% 
+         enviro_location = location,
+         dew_point_c = dew_point) %>% 
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
+                                                                  "mdy HMS", "mdy"))),
+         dew_point_c = if_else(dew_point_c == "Logged", "", dew_point_c)) %>% 
+  mutate_all(na_if, "")
+
+write_csv(shade_hobo, here("clean_tables", "shade_hobo.csv"))
 
 rm(raw_shade_hobo)
 gc()
@@ -1208,6 +1226,8 @@ soil_hobo <- raw_soil_hobo %>%
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
+write_csv(soil_hobo, here("clean_tables", "soil_hobo.csv"))
+
 rm(raw_soil_hobo)
 gc()
 ```
@@ -1227,6 +1247,8 @@ sun_hobo <- raw_sun_hobo %>%
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
 
+write_csv(sun_hobo, here("clean_tables", "sun_hobo.csv"))
+
 rm(raw_sun_hobo)
 gc()
 ```
@@ -1245,270 +1267,13 @@ water_hobo <- raw_water_hobo %>%
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))),
-         light = if_else(light == "Logged", "", light))
+         light = if_else(light == "Logged", "", light))%>% 
+  mutate_all(na_if, "")
+
+write_csv(water_hobo, here("clean_tables", "water_hobo.csv"))
 
 rm(raw_water_hobo)
 gc()
 ```
 
-
-# Database
-
-## connect to `RIBBiTR` database
-```{r}
-
-tryCatch({
-    drv <- dbDriver("Postgres")
-    print("Connecting to Database…")
-    connection <- dbConnect(drv, 
-                 dbname = Sys.getenv("dbname"),
-                 host = Sys.getenv("host"), 
-                 port = Sys.getenv("port"),
-                 user = Sys.getenv("user"), 
-                 password = Sys.getenv("password"),
-                 timezone=NULL)
-    print("Database Connected!")
-    },
-    error=function(cond) {
-            print("Unable to connect to Database.")
-    })
-
-
-```
-
-## upload unique tables to `RIBBiTR` DB - `survey_data` schema
-```{r}
-# set schema path
-dbExecute(connection, "set search_path to survey_data")
-
-#location table load
-dbWriteTable(connection, 'location', location_table, overwrite=T,
-             field.types = c(location = "varchar(6)"))
-
-#region table load
-dbWriteTable(connection, 'region', regions, overwrite=T,
-             field.types = c(region = "varchar(16)",
-                             location = "varchar(6)"))
-
-#site table load
-dbWriteTable(connection, 'site', sites, overwrite=T,
-             field.types = c(site = "varchar(40)",
-                             region = "varchar(16)", 
-                             location = "varchar(6)",
-                             utm_zone = "int",
-                             utme = "int",
-                             utmn = "int",
-                             site_code = "varchar(4)",
-                             site_comments = "varchar",
-                             elevation_m = "int",
-                             area_sqr_m = "int",
-                             depth_m = "float8",
-                             topo = "varchar(20)",
-                             wilderness = "varchar(12)"))
-
-#visit table load
-dbWriteTable(connection, 'visit', visit_table, overwrite=T,
-             field.types = c(campaign = "int",
-                             date = "date",
-                             site = "varchar(40)",
-                             survey_time = "varchar(5)",
-                             visit_notes = "varchar",
-                             site_code = "varchar(4)",
-                             visit_status = "varchar(8)"))
-
-#brazil_legacy_survey table load
-dbWriteTable(connection, 'brazil_legacy_survey', brazil_legacy_survey_table, overwrite=T,
-             field.types = c(start_time = "time",
-                             end_time = "time",
-                             site = "varchar(40)",
-                             date = "date",
-                             survey_time = "varchar(5)",
-                             campaign = "int",
-                             detection_type = "varchar(7)",
-                             duration_minutes = "int"))
-
-#panama_survey table load
-dbWriteTable(connection, 'panama_survey', panama_survey_table, overwrite=T,
-             field.types = c(site = "varchar(40)",
-                             transect = "varchar(15)",
-                             date = "date",
-                             survey_time = "varchar(5)",
-                             frog_presence = "boolean",
-                             observers = "varchar",
-                             number_observers = "int",
-                             start_time = "time",
-                             end_time = "time",
-                             duration_minutes = "int",
-                             samp_loc = "varchar",
-                             pressure_hg = "float8",
-                             humidity_percent = "float8",
-                             wind_speed_m_s = "float8",
-                             air_temp_c = "float8",
-                             water_temp_c = "float8",
-                             dissolved_o2_percent = "float8",
-                             p_h = "float8",
-                             conductivity_uS_cm = "float8",
-                             tds_ppm = "float8",
-                             salinity_ppt = "float8",
-                             cloud_cover_percent = "varchar",
-                             precip = "varchar",
-                             notes_survey = "varchar",
-                             qaqc_survey = "varchar",
-                             detection_type = "varchar(7)",
-                             soil_humidity_m3m3 = "float8"))
-
-#penn_survey table load
-dbWriteTable(connection, 'penn_survey', penn_survey_table, overwrite=T,
-             field.types = c(site = "varchar(13)",
-                             date = "date",
-                             observer = "varchar",
-                             detection_type = "varchar(7)",
-                             start_time = "time",
-                             end_time = "time",
-                             duration_minutes = "int",
-                             survey_time = "varchar(5)"))
-
-#serdp_survey table load
-dbWriteTable(connection, 'serdp_survey', serdp_survey_table, overwrite=T,
-             field.types = c(date = "date",
-                             site_code = "varchar(4)",
-                             survey_time = "varchar(5)",
-                             no_of_investigators = "varchar",
-                             investigator_i_ds = "varchar",
-                             start_time = "time",
-                             end_time = "time",
-                             wind_speed_scale = "int",
-                             precipitation_during_visit = "varchar",
-                             precipitation_last_48_h = "varchar",
-                             temperature_last_48_h = "varchar",
-                             percent_cloud_cover = "int",
-                             weather_condition_notes = "varchar",
-                             pressure_psi = "float8",
-                             pressure_psi_drop = "float8",
-                             relative_humidity = "float8",
-                             relative_humidity_drop = "float8",
-                             wind_speed_mpers_min = "float8",
-                             wind_speed_mpers_max = "float8",
-                             air_temp_deg_c = "float8",
-                             air_temp_deg_c_drop = "float8",
-                             water_temp_deg_c = "float8",
-                             p_h = "float8",
-                             conductivity = "float8",
-                             total_dissolved_solids = "float8",
-                             densiometer_d1_num_covered = "boolean",
-                             d1_n = "int",
-                             d1_s = "int",
-                             d1_e = "int",
-                             d1_w = "int",
-                             d1_percent_cover = "float8",
-                             densiometer_d2_num_covered = "boolean",
-                             d2_n = "int",
-                             d2_s = "int",
-                             d2_e = "int",
-                             d2_w = "int",
-                             d2_percent_cover = "float8",
-                             depth_of_water_from_d2_cm = "float8",
-                             percent_vegetation_cover = "int",
-                             vegetation_notes = "varchar",
-                             e_dna_sample = "boolean",
-                             survey_notes = "varchar",
-                             pressure_hg = "float8",
-                             wind_speed_mpers = "float8",
-                             secchi_depth_cm = "int",
-                             site = "varchar",
-                             detection_type = "varchar(7)",
-                             duration_minutes = "int"))
-
-#sn_survey table load
-dbWriteTable(connection, 'sierra_nevada_survey', sn_survey_table, overwrite=T,
-             field.types = c(site = "varchar(5)",
-                             date = "date",
-                             detection_type = "varchar(7)",
-                             wind = "varchar(6)",
-                             sky = "varchar(8)",
-                             start_time = "time",
-                             end_time = "time",
-                             duration = "int",
-                             air_temp = "int",
-                             water_temp = "int",
-                             water_time = "time",
-                             fish = "boolean",
-                             description = "varchar",
-                             comment = "varchar",
-                             survey_quality = "varchar(4)",
-                             survey_time = "varchar(5)"))
-
-# ves table load - NEED to remove "many" from count in VES data
-dbWriteTable(connection, 'ves', ves, overwrite=T,
-             field.types = c(site = "varchar(18)",
-                             date = "date",
-                             survey_time = "varchar(5)",
-                             species_ves = "varchar",
-                             detection_type = "varchar(7)",
-                             count = "int",
-                             detection_location = "varchar",
-                             microhab = "varchar",
-                             life_stage = "varchar",
-                             sex = "varchar(7)",
-                             notes_ves = "varchar",
-                             microhab_moredetail ="varchar",
-                             visual_animal_state = "varchar(5)"))
-
-# aural table load - NEED to remove "many" from count in Aural data
-dbWriteTable(connection, 'aural', aural, overwrite=T,
-             field.types = c(date = "date",
-                             site = "varchar(18)",
-                             species_aural = "varchar",
-                             call_index = "varchar",
-                             notes_aural = "varchar",
-                             detection_type = "varchar(7)",
-                             survey_time = "varchar(5)",
-                             count = "int",
-                             detection_location = "varchar",
-                             microhab = "varchar",
-                             life_stage = "varchar",
-                             sex = "varchar(5)",
-                             microhab_moredetail = "varchar"))
-
-# capture table load
-dbWriteTable(connection, 'capture', capture, overwrite=T,
-             field.types = c())
-
-# serdp bd genomic data
-dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T,
-             field.types = c(genetic_id = "varchar(20)",
-                             seq_run = "int",
-                             n_seqs_187 = "int",
-                             avg_alleles_per_locus = "float8",
-                             lineage_astral_187 = "varchar",
-                             lineage_dapc_2_99cut = "varchar"))
-
-```
-
-## upload data to `hobo` schema
-```{r}
-dbExecute(connection, "set search_path to hobo")
-
-# hobo table loads
-## hobo site
-dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T,
-             field.types = c(site_code = "varchar(4)",
-                             region = "varchar(12)",
-                             site = "varchar",
-                             site_comments = "varchar",
-                             location = "varchar(6)",
-                             utm_zone = "int",
-                             utme = "float8",
-                             utmn = "float8"))
-## hobo shade
-dbWriteTable(connection, 'shade_hobo', shade_hobo, overwrite=T,
-             field.types = c(date_time = "timestamp",
-                             ))
-## hobo soil
-dbWriteTable(connection, 'soil_hobo', soil_hobo, overwrite=T)
-## hobo sun
-dbWriteTable(connection, 'sun_hobo', sun_hobo, overwrite=T)
-## hobo water
-dbWriteTable(connection, 'water_hobo', water_hobo, overwrite=T)
-```
 
