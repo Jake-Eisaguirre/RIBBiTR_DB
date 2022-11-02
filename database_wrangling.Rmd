@@ -1,5 +1,5 @@
 ---
-title: "Database_Build"
+title: "Database_Wrangle"
 author: "Jake Eisaguirre"
 date: "2022-09-23"
 output: html_document
@@ -1172,6 +1172,27 @@ write_csv(capture, here("clean_tables", "capture.csv"))
 rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
 ```
+
+
+# Microbiome data
+
+## Newt data - contains ID for microbiome and mucosome and bacterial column...I think
+```{r}
+
+newt <- read_csv(here("data", "serdp", "newt", "microbiome_antifungal_TTX_mucosome.csv"))
+
+```
+
+
+# AMP data
+
+## SERPD AMP - contains ID for amp column and antibody column
+```{r}
+
+serdp_amp <- read_csv(here("data", "serdp", "amp", "SERDP_AMP.csv"))
+
+```
+
 
 # legacy hobo data
 
