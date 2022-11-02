@@ -315,6 +315,38 @@ dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T,
                              lineage_astral_187 = "varchar",
                              lineage_dapc_2_99cut = "varchar"))
 
+# serdp newt microbiome mucosome antifungal
+dbWriteTable(connection, 'serdp_newt_microbiome_mucosome_antifungal', serdp_newt_microbiome_mucosome_antifungal, 
+             overwrite=T,
+             field.types = c(swab_id = "varchar",
+                             observed_features = "int",
+                             faith_pd = "float8",
+                             shannon_entropy = "float8",
+                             pielou_evenness = "float8",
+                             exp_shannon = "float8",
+                             all_seqs_richness = "int",
+                             total_all_seqs = "int",
+                             propor_total_all_seqs = "float8",
+                             propor_total_all_seqs_richness = "float8",
+                             facilitating_richness = "int",
+                             total_facilitating = "int",
+                             propor_total_facilitating = "float8",
+                             propor_total_facilitating_richness = "float8",
+                             anti_fungal_richness = "int",
+                             total_anti_fungal = "int",
+                             propor_total_anti_fungal = "float8",
+                             propor_total_anti_fungal_richness = "float8",
+                             ttx_richness = "int",
+                             total_ttx = "int",
+                             propor_total_ttx = "float8",
+                             corrected_viability = "float8",
+                             extraction_kit = "varchar",
+                             shedding_ct = "float8",
+                             shedding_bd_mean = "float8",
+                             shedding_bd_swab = "float8",
+                             shedding_infected = "varchar",
+                             mucosome_id = "varchar",
+                             microbiome_swab_id = "varchar"))
 ```
 
 ## upload data to `hobo` schema

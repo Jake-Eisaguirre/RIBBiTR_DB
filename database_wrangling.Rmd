@@ -868,7 +868,7 @@ aural <- plyr::rbind.fill(penn_aural, panama_aural) %>%
          sex = if_else(sex == "unkonwn", "unknown", sex)) # need to find better fix for "many"
 
 write_csv(aural, here("clean_tables", "aural.csv"))
-  
+
 #rm(penn_aural, panama_aural)
 gc()
 ```
@@ -905,6 +905,27 @@ t <- serdp_bd_genom %>%
 
 ```
 
+# Microbiome data
+
+## Newt serdp data - contains ID for microbiome and mucosome and bacterial column...I think
+need to add before capture table since serdp newt data is not accurate for binary microbiome column. Missing some data points
+```{r}
+
+newt <- read_csv(here("data", "serdp", "newt", "microbiome_antifungal_TTX_mucosome.csv")) %>% 
+  mutate(mucosome_id = swab_id,
+         microbiome_swab_id = swab_id)
+
+newt <- newt[rowSums(is.na(newt)) != ncol(newt[,2:27]), ]
+
+write_csv(newt, here("clean_tables", "serdp_newt_microbiome_mucosome_antifungal.csv"))
+
+# use for back logging 62 missing IDs
+all_newt_ids <- newt %>% 
+  select(microbiome_swab_id, mucosome_id, swab_id)
+
+```
+
+
 
 # Capture table
 
@@ -936,8 +957,8 @@ penn_capture <- penn1_capture %>%
          body_and_bag_mass_g = body_and_bag_mass,
          body_mass_g = body_mass,
          substrate_temp_c = microhabitat_temperature_c,
-         bacterial_swab_id = bd_swab_tube_id, #glycerol
-         microbiome_swab_id = bacterial_swab_tube_id, #culture bd
+         bacterial_swab_id =  bacterial_swab_tube_id, #glycerol/culture
+         microbiome_swab_id = bd_swab_tube_id, #sequence/dry swab
          photo_id = bag_photo,
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
@@ -986,7 +1007,7 @@ sn_capture_table <- sn_capture %>%
          microhabitat_type = location,
          processor = surveyor_id) %>% 
   mutate(microbiome_swab_id = if_else(str_detect(swab_id, "AJS"), swab_id, NULL), #metagenomic sequencing so micro
-         bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL),
+         bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL), #culture/glycerol
          mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL)) %>% 
   rename(bd_swab_id = swab_id,
          capture_utme = utme,
@@ -1005,7 +1026,7 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
   rename(species_capture = scientific_name,
          notes_capture = comments,
          bd_swab_id = swab_id,
-         bacterial_swab_id = glycerol,
+         bacterial_swab_id = glycerol, #culture/glycerol
          genetic_id = tissue) %>% 
   unite(site, area:environment, sep = "_") %>% 
   mutate(detection_type = "capture",
@@ -1048,8 +1069,8 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          site = str_replace_all(site, " ", "_"),
          bd_swab = if_else(bd_swab == 1, sample_id, NULL),
          mucosome = if_else(mucosome == 1, sample_id, NULL),
-         bacterial_swab_id = if_else(microbiome == 1, sample_id, NULL),
-         microbiome = if_else(microbiome == 1, sample_id, NULL),
+         bacterial_swab_id = if_else(microbiome == 1, sample_id, NULL), #culture/glycerol bd
+         microbiome = if_else(microbiome == 1, sample_id, NULL), #sequce/dry swab
          am_ps = if_else(am_ps == 1, sample_id, NULL),
          antibodies = if_else(antibodies == 1, sample_id, NULL)) %>% 
   rename(bd_swab_id = bd_swab,
@@ -1062,14 +1083,19 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
   left_join(t, by = c("sample_id")) %>% 
   select(!c(sample_id))
 
-# a <- serdp_capture %>% 
-#   select(genetic_id) %>% 
-#   unique() 
-# 
-# b <- anti_join(t, a, by = "genetic_id")
-# 
-# missing_ids <- raw_serdp_bd_genom %>% 
-#   filter(sample_id %in% b$sample_id)
+
+# back log missing 62 mucosome and microbiome ids
+back_log_microb_muc <- serdp_capture %>%
+  filter(!is.na(microbiome_swab_id)) %>% 
+  select(microbiome_swab_id, mucosome_id, bd_swab_id) %>% 
+  filter(bd_swab_id %in% all_newt_ids$swab_id)
+
+Ids_to_back_log <- anti_join(all_newt_ids, back_log_microb_muc, by = c("swab_id" = "bd_swab_id"))
+
+serdp_capture <- left_join(serdp_capture, Ids_to_back_log, by = c("bd_swab_id"="swab_id")) %>% 
+  unite(microbiome_swab_id, c("microbiome_swab_id.x", "microbiome_swab_id.y"), na.rm = T) %>% 
+  unite(mucosome_id, c("mucosome_id.x", "mucosome_id.y"), na.rm = T)
+
 
 ```
 
@@ -1084,16 +1110,16 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
          bacterial_swab_id = glycerolswab, #culture bd
          genetic_id = oralswab,
          amp_id = amps,
-         microbiome_swab_id = bacteriaswab) %>% 
+         microbiome_swab_id = bacteriaswab) %>% # dry swab for sequencing 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive"),
          bd_swab_id = if_else(bd_swab_id == "1", swab_id, NULL),
          mucosome_id = if_else(mucosome_id == "1", swab_id, NULL),
-         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL), #culture/sequence
+         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL), #culture/glycerol 
          genetic_id = if_else(genetic_id == "1", swab_id, NULL),
          amp_id = if_else(amp_id == "1", swab_id, NULL),
          ampshcl = if_else(ampshcl == "1", ampshcl, NULL),
-         microbiome_swab_id = if_else(microbiome_swab_id == "1", swab_id, NULL)) %>% #bac swab for microbiome
+         microbiome_swab_id = if_else(microbiome_swab_id == "1", swab_id, NULL)) %>% 
   select(!c(swab_id, count))
 
 
@@ -1137,7 +1163,7 @@ panama_capture <- panama_raw %>%
   rename(amp_id = am_ps,
          genetic_id = gen_samp,
          bd_swab_id = bdswab,
-         bacterial_swab_id = bacteria_swab, #culutre/sequence/glycerol
+         microbiome_swab_id = bacteria_swab, #dry swab frozen
          species_capture = species,
          capture_animal_state = dead) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
@@ -1164,25 +1190,18 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
 
 write_csv(capture, here("clean_tables", "capture.csv"))
 
-# lat_long <- capture %>% 
-#   select(c(utme, utmn)) %>% 
-#   cbind() %>% 
-#   vect(crs = "+proj=utm +zone=10 +datum=WGS84  +units=m")
+# dups <- capture %>% 
+#   group_by(bd_swab_id) %>% 
+#   mutate(temp_id = cur_group_id()) %>% 
+#   filter(duplicated(temp_id)) %>% 
+#   drop_na(bd_swab_id)
+# 
+# z <- capture %>% 
+#   filter(bd_swab_id == "32") # one is control
 
 rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
 ```
-
-
-# Microbiome data
-
-## Newt data - contains ID for microbiome and mucosome and bacterial column...I think
-```{r}
-
-newt <- read_csv(here("data", "serdp", "newt", "microbiome_antifungal_TTX_mucosome.csv"))
-
-```
-
 
 # AMP data
 
