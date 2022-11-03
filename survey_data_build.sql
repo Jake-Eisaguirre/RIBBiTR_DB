@@ -352,31 +352,20 @@ alter table capture
 add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) references brazil_legacy_survey (brazil_legacy_survey_id);
 
 
----- serdp_bd_genomic to capture: create new foreign key approach for serdp_bd_genomic
-alter table serdp_bd_genomic 
-add column serdp_bd_genomic_id UUID default (survey_data.uuid_generate_v4());
+---- serdp_bd_genomic create primary key
 
 alter table serdp_bd_genomic 
-add primary key(serdp_bd_genomic_id);
-
-alter table capture
-add column serdp_bd_genomic_id UUID;
-
-update capture c 
-set serdp_bd_genomic_id =
-	(select v.serdp_bd_genomic_id
-	from serdp_bd_genomic v
-	where (v.genetic_id) = (c.genetic_id));
-
-alter table capture 
-add constraint fk_serdp_bd_genomic foreign key (serdp_bd_genomic_id) references serdp_bd_genomic (serdp_bd_genomic_id);
+add primary key(genetic_id);
 
 
+----- serdp newt create mult primary key
+alter table serdp_newt_microbiome_mucosome_antifungal 
+add primary key(microbiome_swab_id, mucosome_id);
 
 
-
-
-
+---- serdp amp create primary key
+alter table serdp_amp 
+add primary key(amp_id);
 
 
 -- drop columns
@@ -499,6 +488,9 @@ drop column survey_time;
 
 alter table capture 
 drop column detection_type;
+
+alter table capture
+drop column site_code;
 
 
 -- genomic data check

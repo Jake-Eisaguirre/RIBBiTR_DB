@@ -1189,6 +1189,7 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
   mutate_all(na_if, "")
 
 write_csv(capture, here("clean_tables", "capture.csv"))
+  
 
 # dups <- capture %>% 
 #   group_by(bd_swab_id) %>% 
@@ -1208,7 +1209,17 @@ gc()
 ## SERPD AMP - contains ID for amp column and antibody column
 ```{r}
 
-serdp_amp <- read_csv(here("data", "serdp", "amp", "SERDP_AMP.csv"))
+serdp_amp <- read_csv(here("data", "serdp", "amp", "SERDP_AMP.csv")) %>% 
+  clean_names() %>% 
+  select(!c(date, site, dod_location, entry, day_night, dod_location_2, site_code, frog_id_x, frog_number, species_code,
+            time, microhabitat_notes, microhabitat_category, svl_mm, tail_length_mm, mass_of_animal_in_bag, mass_of_bag_g,
+            mass_of_animal_g, bd_swab, mucosome, microbiome, am_ps, antibodies, body_temp, substrate_temp, sex, life_stage,
+            field_notes, number_of_mites, c(49:101), month, day, year_2)) %>% 
+  rename(amp_id = swab_id) %>% 
+  mutate(censor = if_else(is.na(censor), "N", censor),
+         date_gia = parse_date(date_gia))
+
+write_csv(serdp_amp, here("clean_tables", "serdp_amp.csv"))
 
 ```
 
