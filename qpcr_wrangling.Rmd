@@ -51,6 +51,7 @@ select * from bd_load
 ## clean sn qpcr data
 
 
+
 # SERDP
 
 ## load serdp qpcr data
@@ -67,8 +68,34 @@ qpcr_2019 <- read_csv(here("qpcr_data", "SERDP qPCR results 2019_220721.csv")) %
 
 serdp_bd <- plyr::rbind.fill(qpcr_2017, qpcr_2018, qpcr_2019) %>% 
   rename(bd_load = sample_bd_swab_qty) %>% 
-  select(c(sample_id, qpcr_diluted, sample_rerun, sample_bd_qty, bd_load))
+  select(sample_id, qpcr_date, c(qpcr_neg_cont:bd_load), notes) %>% 
+  rename(bd_swab_id = sample_id) %>% 
+  drop_na(bd_swab_id) %>% 
+  mutate(qpcr_date = parse_date(qpcr_date))
 
+
+# missing ~141 IDs in capture table to align with qpcr table
+test <- serdp_capture %>% 
+  filter(!is.na(sample_id),
+         sample_id %in% serdp_bd$bd_swab_id)
+
+t <- anti_join(serdp_bd, test,  by = c("bd_swab_id" = "sample_id"))
+
+
+
+```
+
+# Panama
+
+## load panama qpcr data
+```{r}
+
+panama_qpcr <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>% 
+  clean_names() %>% 
+  select(swab_id, pcr) %>% 
+  drop_na(swab_id, pcr) %>% 
+  rename(bd_load = pcr,
+         bd_swab_id = swab_id)
 
 ```
 
