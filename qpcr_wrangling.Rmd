@@ -55,6 +55,11 @@ select * from bd_load
 sierra_nevada_bd <- sn_bd %>% 
   rename(bd_swab_id = sample_id)
 
+g <- sierra_nevada_bd %>% 
+  group_by(bd_swab_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(duplicated(temp_id))
+
 write_csv(sierra_nevada_bd, here("clean_tables", "sierra_nevada_bd.csv"))
 
 ```
@@ -79,9 +84,19 @@ serdp_bd <- plyr::rbind.fill(qpcr_2017, qpcr_2018, qpcr_2019) %>%
   select(sample_id, qpcr_date, c(qpcr_neg_cont:bd_load), notes) %>% 
   rename(bd_swab_id = sample_id) %>% 
   drop_na(bd_swab_id) %>% 
-  mutate(qpcr_date = parse_date(qpcr_date))
+  mutate(qpcr_date = parse_date(qpcr_date),
+         sample_ipc = str_to_lower(sample_ipc),
+         sample_rerun = str_to_lower(sample_rerun)) %>% 
+  filter(!bd_swab_id %in% c("NEG EXTRACT CONTROL", "POS EXTRACT CONTROL", 
+                            "191020-16-PA05-LICL", "170709-NM-NM")) # <- temp remove last ID until we know what to do with it
 
 write_csv(serdp_bd, here("clean_tables", "serdp_bd.csv"))
+
+# pure dubs "191020-16-PA05-LICL" and "170709-NM-NM"
+dups <- serdp_bd %>% 
+  group_by(bd_swab_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(duplicated(temp_id))
 
 # missing ~141 IDs in capture table to align with qpcr table
 test <- serdp_capture %>% 
@@ -99,14 +114,17 @@ t <- anti_join(serdp_bd, test,  by = c("bd_swab_id" = "sample_id"))
 ## load panama qpcr data
 ```{r}
 
-panama_qpcr <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>% 
+panama_qpcr <- read_csv(here("data", "panama_legacy", "clean_tables", "clean_pan_cap.csv")) %>% 
   clean_names() %>% 
-  select(swab_id, pcr) %>% 
-  drop_na(swab_id, pcr) %>% 
-  rename(bd_load = pcr,
-         bd_swab_id = swab_id)
+  select(bd_swab_id, pcr) %>% 
+  drop_na(pcr) %>% 
+  rename(bd_load = pcr) %>% 
+  filter(!bd_swab_id == "150608_01") # temp remove "150608_01" until we know what to do with it
 
 write_csv(panama_qpcr, here("clean_tables", "panama_bd_temp.csv"))
 
+#dub id "150608_01"
+l <- panama_qpcr %>% 
+  filter(duplicated(bd_swab_id))
 ```
 

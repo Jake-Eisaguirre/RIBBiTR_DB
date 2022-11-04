@@ -22,6 +22,8 @@ librarian::shelf(tidyverse, DBI, RPostgres, here)
 ## read in all `clean_tables` .csv files
 ```{r}
 
+# slow method for reading csv files
+
 filenames <- gsub("\\.csv$","", list.files(here("clean_tables")))
 
 for(i in filenames){
@@ -402,6 +404,34 @@ dbWriteTable(connection, 'serdp_amp', serdp_amp, overwrite=T,
                              delta_air2w = "float8",
                              delta_air1m = "float8",
                              degreedays = "int"))
+
+# serdp bd_load
+dbWriteTable(connection, 'serdp_bd', serdp_bd, overwrite=T,
+             field.types = c(bd_swab_id = "varchar",
+                             qpcr_date = "date",
+                             qpcr_neg_cont = "varchar",
+                             sample_quality = "varchar",
+                             sample_ipc = "varchar",
+                             sample_rerun = "varchar",
+                             sample_bd = "varchar",
+                             sample_bd_ct = "float8",
+                             sample_bd_qty = "float8",
+                             bd_load = "float8",
+                             notes = "varchar"))
+
+# sierra bd_load
+dbWriteTable(connection, 'sierra_nevada_bd', sierra_nevada_bd, overwrite=T,
+             field.types = c(bd_swab_id = "varchar",
+                             replicate = "int",
+                             start_quant = "float8",
+                             std_type = "varchar",
+                             dilution = "int",
+                             bd_load = "float8"))
+
+#panama temp bd_load
+dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
+             field.types = c(bd_swab_id = "varchar",
+                             bd_load = "float8"))
 ```
 
 ## upload data to `hobo` schema
