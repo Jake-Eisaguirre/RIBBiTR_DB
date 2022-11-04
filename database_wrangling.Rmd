@@ -1140,7 +1140,7 @@ panama_capture <- panama_raw %>%
   select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, #infected, pcr,
            bdswab, gen_samp, bacteria_swab, am_ps, e_dna, photo, photo_id, notes_amphib1,
-           notes_amphib2, microhab0)) %>% 
+           notes_amphib2, microhab0, pcr)) %>% 
   unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
   rename(microhab_moredetail = microhab0,
          time_of_capture = capture_time,
@@ -1172,7 +1172,7 @@ panama_capture <- panama_raw %>%
   plyr::rbind.fill(panama_capture_2022) 
   
 
-
+write_csv(panama_capture, here("data", "panama_legacy", "clean_tables", "clean_pan_cap.csv"))
 ```
 
 ## bind all capture tables
