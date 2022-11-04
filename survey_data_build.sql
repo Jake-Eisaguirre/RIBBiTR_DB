@@ -352,20 +352,33 @@ alter table capture
 add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) references brazil_legacy_survey (brazil_legacy_survey_id);
 
 
----- serdp_bd_genomic create primary key
-
+-- serdp_bd_genomic create primary key
 alter table serdp_bd_genomic 
 add primary key(genetic_id);
 
 
------ serdp newt create mult primary key
+-- serdp newt create mult primary key
 alter table serdp_newt_microbiome_mucosome_antifungal 
 add primary key(microbiome_swab_id, mucosome_id);
 
 
----- serdp amp create primary key
+-- serdp amp create primary key
 alter table serdp_amp 
 add primary key(amp_id);
+
+
+-- serdp bd create primary key - dub IDs
+alter table serdp_bd 
+add primary key(bd_swab_id);
+
+-- temp panama bd creat primary key - dub IDs
+alter table panama_bd_temp 
+add primary key(bd_swab_id);
+
+-- sn bd create primary key 
+alter table sierra_nevada_bd 
+add primary key(bd_swab_id);
+
 
 
 -- drop columns
@@ -450,6 +463,9 @@ drop column detection_type;
 alter table serdp_survey 
 drop column survey_time;
 
+alter table serdp_survey
+drop column site_code;
+
 ---- drop columns aural
 alter table aural 
 drop column date;
@@ -491,6 +507,13 @@ drop column detection_type;
 
 alter table capture
 drop column site_code;
+
+alter table capture 
+drop column pcr;
+
+---- drop column serd_newt_microbiomi....
+alter table serdp_newt_microbiome_mucosome_antifungal 
+drop column swab_id;
 
 
 -- genomic data check
