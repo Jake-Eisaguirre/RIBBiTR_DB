@@ -50,6 +50,14 @@ select * from bd_load
 
 ## clean sn qpcr data
 
+```{r}
+
+sierra_nevada_bd <- sn_bd %>% 
+  rename(bd_swab_id = sample_id)
+
+write_csv(sierra_nevada_bd, here("clean_tables", "sierra_nevada_bd.csv"))
+
+```
 
 
 # SERDP
@@ -73,6 +81,7 @@ serdp_bd <- plyr::rbind.fill(qpcr_2017, qpcr_2018, qpcr_2019) %>%
   drop_na(bd_swab_id) %>% 
   mutate(qpcr_date = parse_date(qpcr_date))
 
+write_csv(serdp_bd, here("clean_tables", "serdp_bd.csv"))
 
 # missing ~141 IDs in capture table to align with qpcr table
 test <- serdp_capture %>% 
@@ -96,6 +105,8 @@ panama_qpcr <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
   drop_na(swab_id, pcr) %>% 
   rename(bd_load = pcr,
          bd_swab_id = swab_id)
+
+write_csv(panama_qpcr, here("clean_tables", "panama_bd_temp.csv"))
 
 ```
 
