@@ -23,5 +23,6 @@ librarian::shelf(tidyverse, here, janitor, RPostgres)
 iso <- read_csv(here("data", "antifungal_isolate_ref.csv")) %>% 
   clean_names()
 
+write_csv(iso, here("clean_tables", "antifungal_isolate_ref.csv"))
 ```
 

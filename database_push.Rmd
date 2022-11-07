@@ -483,3 +483,12 @@ dbWriteTable(connection, 'water_hobo', water_hobo, overwrite=T,
                              time_zone = "varchar"))
 ```
 
+## upload data to `antifungal_isolate` schmea
+```{r}
+dbExecute(connection, "set search_path to antifungal_isolate")
+
+dbWriteTable(connection, 'antifungal_isolate_ref', antifungal_isolate_ref, overwrite=T)
+
+
+```
+
