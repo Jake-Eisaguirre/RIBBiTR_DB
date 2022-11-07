@@ -511,6 +511,10 @@ drop column site_code;
 alter table capture 
 drop column pcr;
 
+alter table capture
+drop column campaign;
+
+
 ---- drop column serd_newt_microbiomi....
 alter table serdp_newt_microbiome_mucosome_antifungal 
 drop column swab_id;
