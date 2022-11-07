@@ -274,11 +274,12 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
   mutate(utme = round(as.numeric(utme, 4)),
          utmn = round(as.numeric(utmn, 4))) %>% 
   rename(area_sqr_m = area,
-         depth_m = depth)
+         depth_m = depth) %>% 
+  relocate(site_comments, .after = wilderness)
   
 write_csv(sites, here("clean_tables", "sites.csv"))
 
-rm(panama_sites, brazil_legacy_sites, penn_sites, sn_site, sn_site_table)
+#rm(panama_sites, brazil_legacy_sites, penn_sites, sn_site, sn_site_table)
 gc()
 ```
 
@@ -451,7 +452,7 @@ penn_visit_table <- plyr::rbind.fill(penn1_aural_visit, penn1_VES_visit, penn1_c
   filter(!duplicated(temp_id)) %>% 
   select(!c(detection_type, temp_id))
 
-rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
+#rm(penn1_aural_visit, penn1_VES_visit, penn1_capture_visit)
 gc()
 ```
 
@@ -483,7 +484,7 @@ sn_visit_table <- sn_visit %>%
 
 #write_csv(sn_visit_table, here("clean_tables", "sn_visit.csv"))
 
-rm(sn_visit)
+#rm(sn_visit)
 gc()
 ```
 
@@ -544,12 +545,16 @@ brazil_legacy_visit_table <- read_csv(here("data", "brazil_legacy", "brazil_visi
 
 visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table,
                                 penn_visit_table, serdp_visit_table, sn_visit_table) %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date)) %>% 
+  rename(visit_comments = visit_notes) %>% 
+  relocate(visit_comments, .after = visit_status) %>% 
+  relocate(date, .before = campaign) %>% 
+  relocate(survey_time, .after = date)
 
 write_csv(visit_table, here("clean_tables", "visit.csv"))
 
-rm(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table,
-   sn_visit_table)
+# rm(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table,
+#    sn_visit_table)
 gc()
 
 ```
@@ -588,7 +593,8 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
          site = str_replace(site, "-", "_"),
          detection_type = if_else(detection_type == "acoustic", "aural", detection_type),
          date = format_iso_8601(date)) %>% 
-  rename(duration_minutes = duration_min)
+  rename(duration_minutes = duration_min) %>% 
+  relocate(observer, .after = duration_minutes)
 
 write_csv(penn_survey_table, here("clean_tables", "penn_survey.csv"))
   
@@ -619,7 +625,8 @@ panama_survey_table <- panama_raw %>%
   plyr::rbind.fill(panama_survey_2022) %>% 
   rename(conductivity_uS_cm = conductivity_insertunits,
          salinity_ppt = salinity_small,
-         tds_ppm = tds_insertunits) %>% 
+         tds_ppm = tds_insertunits,
+         survey_comments = notes_survey) %>% 
   mutate(dissolved_o2_percent = as.numeric(dissolved_o2_percent), 
          salinity_ppt = if_else(salinity_ppt > "1", "", salinity_ppt),
          salinity_ppt = na_if(salinity_ppt, ""),
@@ -635,7 +642,11 @@ panama_survey_table <- panama_raw %>%
         wind_speed_m_s = str_replace_all(wind_speed_m_s, " ", ""),
         transect = str_to_lower(str_replace_all(transect, " ", "_")),
         transect = str_replace_all(transect, ",", "_"),
-        transect = str_replace_all(transect, "-", "_"))
+        transect = str_replace_all(transect, "-", "_")) %>% 
+  relocate(start_time, .before = transect) %>% 
+  relocate(end_time, .after = start_time) %>% 
+  relocate(survey_comments, .after = soil_humidity_m3m3) %>% 
+  relocate(duration_minutes, .after = end_time)
 
 
 
@@ -674,7 +685,11 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
   unite("pressure_hg", c("pressure_in_hg", "pressure_in"), na.rm = T) %>% 
   select(!c(pressure_mb)) %>% 
   mutate(percent_vegetation_cover = if_else(percent_vegetation_cover == "huge lake", "", percent_vegetation_cover)) %>% 
-  mutate_all(na_if, "")
+  mutate_all(na_if, "") %>% 
+  relocate(start_time, .before = site_code) %>% 
+  relocate(end_time, .after = start_time) %>% 
+  relocate(duration_minutes, .after = end_time) %>% 
+  rename(survey_comments = survey_notes)
 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
@@ -701,7 +716,8 @@ join survey s on s.visit_id = v.id;
 sn_survey_table <- sn_survey %>%
   select(!c(id, visit_id)) %>% 
   rename(detection_type = survey_type,
-         date = visit_date) %>% 
+         date = visit_date,
+         survey_comments = comment) %>% 
   mutate(survey_time = "day",
          detection_type = as.character(detection_type),
          detection_type = if_else(detection_type == "cmr", "capture", detection_type),
@@ -794,7 +810,7 @@ sn_ves_table <- sn_ves %>%
 
 #write_csv(sn_ves_table, here("clean_tables", "sn_ves_table.csv"))
 
-rm(sn_ves)
+#rm(sn_ves)
 gc()
 ```
 
@@ -805,13 +821,13 @@ gc()
 ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          sex = if_else(sex == "unkonwn", "unknown", sex)) %>% 
-  rename(notes_ves = ves_notes) %>% 
+  rename(ves_comments = ves_notes) %>% 
   select(!c(start_time, end_time, duration_minutes)) %>% 
   mutate(count = if_else(count == "many", "100", count)) # need to find better fix to "many"
 
 write_csv(ves, here("clean_tables", "ves.csv"))
 
-rm(panama_ves, penn_ves, sn_ves_table)
+#rm(panama_ves, penn_ves, sn_ves_table)
 gc()
 ```
 
@@ -865,7 +881,9 @@ panama_aural <- panama_raw %>%
 
 aural <- plyr::rbind.fill(penn_aural, panama_aural) %>% 
   mutate(count = if_else(count == "many", "100", count),
-         sex = if_else(sex == "unkonwn", "unknown", sex)) # need to find better fix for "many"
+         sex = if_else(sex == "unkonwn", "unknown", sex)) %>% # need to find better fix for "many"
+  rename(aural_comments = notes_aural)
+  
 
 write_csv(aural, here("clean_tables", "aural.csv"))
 
@@ -1186,7 +1204,10 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
          detection_type = "capture") %>% 
-  mutate_all(na_if, "")
+  mutate_all(na_if, "") %>% 
+  relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
+  relocate(c(mucosome_id:ampshcl), .after = e_dna) %>% 
+  relocate(c(crispr_id:antibody_id_4), .after = ampshcl)
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
@@ -1200,7 +1221,7 @@ write_csv(capture, here("clean_tables", "capture.csv"))
 # z <- capture %>% 
 #   filter(bd_swab_id == "32") # one is control
 
-rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
+#rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
 ```
 
