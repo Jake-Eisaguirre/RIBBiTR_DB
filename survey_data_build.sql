@@ -376,8 +376,8 @@ alter table panama_bd_temp
 add primary key(bd_swab_id);
 
 -- sn bd create primary key 
-alter table sierra_nevada_bd 
-add primary key(bd_swab_id);
+--alter table sierra_nevada_bd 
+--add primary key(bd_swab_id);
 
 
 
@@ -397,6 +397,9 @@ drop column location;
 ---- drop columns visit
 alter table visit 
 drop column site;
+
+alter table visit 
+drop column site_code;
 
 ---- drop columns panama_survey
 alter table panama_survey 
@@ -436,6 +439,9 @@ drop column survey_time;
 
 alter table brazil_legacy_survey 
 drop column detection_type;
+
+alter table brazil_legacy_survey 
+drop column campaign;
 
 ---- drop columns sierra_nevada_survey
 alter table sierra_nevada_survey 
@@ -544,21 +550,34 @@ drop column swab_id;
 --
 ---- Data Check
 --
---select 'penn' as survey, v.date as visit_date, v.site as visit_site, 
---  ps.date as survey_date, ps.site as survey_site
---from visit v 
---join penn_survey ps on ps.visit_id = v.visit_id 
---union 
---select 'brazil', v.date, v.site, b.date, b.site
---from visit v 
---join brazil_legacy_survey b on b.visit_id = v.visit_id 
---union
---select 'sn', v.date, v.site, sn.date, sn.site
---from visit v
---join sierra_nevada_survey sn on sn.visit_id = v.visit_id 
---union 
---select 'serdp', v.date, v.site, s.date, s.site
---from visit v
---join serdp_survey s on s.visit_id = v.visit_id;
+select 'penn' as survey, v.date as visit_date, v.site as visit_site, 
+  ps.date as survey_date, ps.site as survey_site
+from visit v 
+join penn_survey ps on ps.visit_id = v.visit_id 
+union 
+select 'brazil', v.date, v.site, b.date, b.site
+from visit v 
+join brazil_legacy_survey b on b.visit_id = v.visit_id 
+union
+select 'sn', v.date, v.site, sn.date, sn.site
+from visit v
+join sierra_nevada_survey sn on sn.visit_id = v.visit_id 
+union 
+select 'serdp', v.date, v.site, s.date, s.site
+from visit v
+join serdp_survey s on s.visit_id = v.visit_id;
+
+select count(panama_survey_id)
+from capture
+
+select count(bra)
+from serdp_survey ss 
 
 
+
+select count(c.bd_swab_id), count(sbg.bd_swab_id)
+from capture c
+join serdp_bd sbg on c.bd_swab_id  = sbg.bd_swab_id  
+
+select count(sb.bd_swab_id)
+from serdp_bd sb 
