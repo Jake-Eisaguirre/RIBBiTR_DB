@@ -689,7 +689,9 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
   relocate(start_time, .before = site_code) %>% 
   relocate(end_time, .after = start_time) %>% 
   relocate(duration_minutes, .after = end_time) %>% 
-  rename(survey_comments = survey_notes)
+  rename(survey_comments = survey_notes,
+         conductivity_uS_cm = conductivity,
+         tds_ppm = total_dissolved_solids)
 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
@@ -1207,7 +1209,9 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
   mutate_all(na_if, "") %>% 
   relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
   relocate(c(mucosome_id:ampshcl), .after = e_dna) %>% 
-  relocate(c(crispr_id:antibody_id_4), .after = ampshcl)
+  relocate(c(crispr_id:antibody_id_4), .after = ampshcl) %>% 
+  relocate(notes_capture, .after = antibody_id_4) %>% 
+  rename(capture_comments = notes_capture)
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
