@@ -1231,7 +1231,7 @@ gc()
 
 # AMP data
 
-## SERPD AMP - contains ID for amp column and antibody column
+## SERPD AMP - contains ID for amp column and antibody column - PA
 ```{r}
 
 serdp_amp <- read_csv(here("data", "serdp", "amp", "SERDP_AMP.csv")) %>% 
@@ -1245,6 +1245,17 @@ serdp_amp <- read_csv(here("data", "serdp", "amp", "SERDP_AMP.csv")) %>%
          date_gia = parse_date(date_gia))
 
 write_csv(serdp_amp, here("clean_tables", "serdp_amp.csv"))
+
+```
+
+## SERDP AMP - TN
+```{r}
+
+serdp_amp_tn <- read_csv(here("data", "serdp", "amp", "serdpAMP_TN.csv")) %>% 
+  clean_names() %>% 
+  select(!c(date:microhabitat_category)) %>% 
+  select(!c(svl_mm:life_stage)) %>% 
+  select(!c(number_of_mites:notes_y), clearcut, buckets, temp_gun_2, flir_2, sample_id_old, year, season)
 
 ```
 
