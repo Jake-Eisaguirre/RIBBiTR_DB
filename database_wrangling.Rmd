@@ -1244,7 +1244,7 @@ serdp_amp_pa <- read_csv(here("data", "serdp", "amp", "SERDP_AMP.csv")) %>%
   mutate(censor = if_else(is.na(censor), "N", censor),
          date_gia = parse_date(date_gia))
 
-write_csv(serdp_amp_pa, here("clean_tables", "serdp_amp_pa.csv"))
+#write_csv(serdp_amp_pa, here("clean_tables", "serdp_amp_pa.csv"))
 
 ```
 
@@ -1258,11 +1258,22 @@ serdp_amp_tn <- read_csv(here("data", "serdp", "amp", "serdpAMP_TN.csv")) %>%
   select(!c(c(number_of_mites:notes_y), clearcut, buckets, temp_gun_2, flir_2, sample_id_old, year, month, day,
             location_y, x_y)) %>% 
   rename(gia_final_reading = final_reading,
-         amp_id = swab_id) %>% 
+         amp_id = swab_id,
+         gia_plate_pos_growth = plate_pos) %>% 
   mutate(censor = if_else(is.na(censor), "N", censor),
          date_gia = parse_date(date_gia))
 
 ```
+
+## combine serdp amp data
+```{r}
+
+serdp_amp <- plyr::rbind.fill(serdp_amp_pa, serdp_amp_tn)
+
+write_csv(serdp_amp, here("clean_tables", "serdp_amp.csv"))
+
+```
+
 
 
 # legacy hobo data
