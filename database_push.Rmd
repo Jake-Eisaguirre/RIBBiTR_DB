@@ -432,6 +432,11 @@ dbWriteTable(connection, 'sierra_nevada_bd', sierra_nevada_bd, overwrite=T,
 dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
              field.types = c(bd_swab_id = "varchar",
                              bd_load = "float8"))
+
+# serdp e_dna
+dbWriteTable(connection, "serdp_edna", serdp_edna, overwrite=T)
+
+
 ```
 
 ## upload data to `hobo` schema
