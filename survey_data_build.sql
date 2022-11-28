@@ -375,9 +375,30 @@ add primary key(bd_swab_id);
 alter table panama_bd_temp 
 add primary key(bd_swab_id);
 
--- sn bd create primary key 
---alter table sierra_nevada_bd 
---add primary key(bd_swab_id);
+
+
+-- serdp_edna table
+alter table serdp_edna
+add column serdp_edna_id UUID default (survey_data.uuid_generate_v4());
+
+alter table serdp_edna 
+add primary key(serdp_edna_id);
+
+alter table serdp_survey 
+add column serdp_edna_id UUID;
+
+alter table serdp_edna  
+alter column date_collected type date using (date_collected::text::date);
+
+update serdp_survey v 
+set serdp_edna_id = 
+	(select s.serdp_edna_id
+	from serdp_edna s
+	where (s.site_code, s.date_collected) = (v.site_code, v."date"));
+
+alter table serdp_survey  
+add constraint fk_serdp_edna foreign key (serdp_edna_id) references serdp_edna (serdp_edna_id);
+
 
 
 
@@ -524,6 +545,14 @@ drop column campaign;
 ---- drop column serd_newt_microbiomi....
 alter table serdp_newt_microbiome_mucosome_antifungal 
 drop column swab_id;
+
+
+---- drop columns serdp_edna
+alter table serdp_edna 
+drop column site_code;
+
+alter table serdp_edna 
+drop column date_collected;
 
 
 -- genomic data check
