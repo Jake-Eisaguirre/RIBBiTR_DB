@@ -1,0 +1,52 @@
+---
+title: "edna_db"
+author: "Jake Eisaguirre"
+date: "2022-12-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
+                 anytime, terra, sp, rgdal, RWmisc, proj4)
+```
+
+# edan site table
+```{r}
+
+site_edna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
+  clean_names() %>% 
+  select(c(state, site_number, date_collected))
+
+
+```
+
+
+# SERDP eDNA
+
+```{r}
+
+e_dna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
+  clean_names() %>% 
+  mutate(date_collected = parse_date(date_collected),
+         ext_date = format_iso_8601(parse_date(ext_date)),
+         date_ran = format_iso_8601(parse_date(date_ran)),
+         state = str_to_lower(state)) %>% 
+  select(!c(year, month)) %>% 
+  unite("site_code", c("state", "site_number"), sep = "", na.rm = T) %>% 
+  rename(edna_comments = notes) %>% 
+  group_by(date_collected, site_code) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
+
+write_csv(e_dna, here("clean_tables", "serdp_edna.csv"))
+
+```
