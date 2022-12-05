@@ -21,9 +21,23 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI
 # edan site table
 ```{r}
 
-site_edna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
+serdp_site_edna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
   clean_names() %>% 
-  select(c(state, site_number, date_collected))
+  select(c(state, site_number, date_collected)) %>% 
+  unite(site_code, state:site_number,  sep = "", na.rm = T, remove = F) %>% 
+  mutate(site_code = str_to_lower(site_code),
+         date_collected = parse_date(date_collected)) %>% 
+  mutate(region = case_when(state == "PA" ~ "pennsylvania",
+                           state == "NM" ~ "new_mexico",
+                           state == "LA" ~ "louisiana",
+                           state == "TN" ~ "tennessee",
+                           state == "VT" ~ "vermont")) %>% 
+  select(!c(state, site_number)) %>% 
+  group_by(site_code, date_collected) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
+  
 
 
 ```

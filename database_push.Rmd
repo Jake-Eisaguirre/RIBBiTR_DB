@@ -433,8 +433,7 @@ dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
              field.types = c(bd_swab_id = "varchar",
                              bd_load = "float8"))
 
-# serdp e_dna
-#dbWriteTable(connection, "serdp_edna", serdp_edna, overwrite=T)
+
 
 
 ```
@@ -493,6 +492,26 @@ dbWriteTable(connection, 'water_hobo', water_hobo, overwrite=T,
 dbExecute(connection, "set search_path to antifungal_isolate")
 
 dbWriteTable(connection, 'antifungal_isolate_ref', antifungal_isolate_ref, overwrite=T)
+
+
+```
+
+## upload data to `e_dna` schema
+```{r}
+# set search path
+dbExecute(connection, "set search_path to e_dna")
+
+#location table load
+dbWriteTable(connection, 'location', location, overwrite=T,
+             field.types = c(location = "varchar(6)"))
+
+#region table load
+dbWriteTable(connection, 'region', regions, overwrite=T,
+             field.types = c(region = "varchar(16)",
+                             location = "varchar(6)"))
+
+
+
 
 
 ```
