@@ -18,15 +18,26 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI
                  anytime, terra, sp, rgdal, RWmisc, proj4)
 ```
 
-# edan site table
+# serdp edna data
+
+# full serdp edna data
+
 ```{r}
 
-serdp_site_edna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
-  clean_names() %>% 
+full_serdp_edna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
+  clean_names()
+
+```
+
+
+## serdp edan site table
+```{r}
+
+serdp_site_edna <- full_serdp_edna %>%
   select(c(state, site_number, date_collected)) %>% 
   unite(site_code, state:site_number,  sep = "", na.rm = T, remove = F) %>% 
   mutate(site_code = str_to_lower(site_code),
-         date_collected = parse_date(date_collected)) %>% 
+         date_collected = format_iso_8601(parse_date(date_collected))) %>% 
   mutate(region = case_when(state == "PA" ~ "pennsylvania",
                            state == "NM" ~ "new_mexico",
                            state == "LA" ~ "louisiana",
@@ -39,6 +50,73 @@ serdp_site_edna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>%
   select(!c(temp_id))
   
 
+
+```
+
+
+## serdp_edna_collection
+```{r}
+
+collection_serdp_edna <- full_serdp_edna %>%
+  clean_names() %>% 
+  unite(site_code, state:site_number,  sep = "", na.rm = T, remove = F) %>% 
+  mutate(site_code = str_to_lower(site_code),
+         date_collected = format_iso_8601(parse_date(date_collected))) %>% 
+  mutate(region = case_when(state == "PA" ~ "pennsylvania",
+                           state == "NM" ~ "new_mexico",
+                           state == "LA" ~ "louisiana",
+                           state == "TN" ~ "tennessee",
+                           state == "VT" ~ "vermont"),
+         control = case_when(control_experimental == "C" ~ 1,
+                             control_experimental == "E" ~ 0)) %>% 
+  select(!c(state, site_number)) %>% 
+  group_by(site_code, date_collected) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id, year, month, control_experimental)) %>% 
+  relocate(control, .after = number_filters)
+
+```
+
+
+# panama edna
+
+## full panama edna data
+```{r}
+pan_site_edna2022 <- read_csv(here("data", "panama_legacy", "pan_site_edna22.csv")) %>% 
+  clean_names() %>% 
+  select(fulcrum_id, region, site, start_date)
+
+pan_edna_22 <- read_csv(here("data", "panama_legacy", "pan_edna_22.csv")) %>% 
+  clean_names() %>% 
+  select(fulcrum_parent_id, geometry, id_edna_sample:notes_of_edna_sample)
+
+full_pan_edna <- left_join(pan_site_edna2022, pan_edna_22, by = (c( "fulcrum_id" = "fulcrum_parent_id")))
+```
+
+## panama edna site table
+```{r}
+  
+
+pan_sites_edna <- full_pan_edna %>% 
+  select(region, site, start_date) %>% 
+  mutate(region = str_replace(str_to_lower(region), " ", "_"),
+         site = str_replace(str_to_lower(site), " ", "_"),
+         start_date = format_iso_8601(parse_date(start_date)))
+
+```
+
+## pan edna metadata
+```{r}
+
+pan_edna_metadata <- full_pan_edna %>% 
+    mutate(region = str_replace(str_to_lower(region), " ", "_"),
+         site = str_replace(str_to_lower(site), " ", "_"),
+         start_date = format_iso_8601(parse_date(start_date))) %>% 
+  select(!c(fulcrum_id)) %>% 
+  drop_na(geometry) %>% 
+  rename(edn_comments = notes_of_edna_sample)
+  
 
 ```
 
