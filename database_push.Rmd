@@ -434,7 +434,7 @@ dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
                              bd_load = "float8"))
 
 # serdp e_dna
-dbWriteTable(connection, "serdp_edna", serdp_edna, overwrite=T)
+#dbWriteTable(connection, "serdp_edna", serdp_edna, overwrite=T)
 
 
 ```
