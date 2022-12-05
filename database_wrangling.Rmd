@@ -276,7 +276,8 @@ sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_s
   rename(area_sqr_m = area,
          depth_m = depth) %>% 
   relocate(site_comments, .after = wilderness)
-  
+
+
 write_csv(sites, here("clean_tables", "sites.csv"))
 
 #rm(panama_sites, brazil_legacy_sites, penn_sites, sn_site, sn_site_table)
@@ -556,6 +557,19 @@ write_csv(visit_table, here("clean_tables", "visit.csv"))
 # rm(brazil_legacy_visit_table, panama_visit_table, penn_visit_table, serdp_visit_table,
 #    sn_visit_table)
 gc()
+
+
+
+# a <- sites %>% 
+#   select(site) %>% 
+#   unique()
+# 
+# b <- visit_table %>% 
+#   select(site) %>% 
+#   unique()
+# 
+# # sites never visites #12
+# z <- anti_join(a, b, by = c("site")) 
 
 ```
 
