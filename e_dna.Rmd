@@ -121,18 +121,6 @@ pan_edna_metadata <- full_pan_edna %>%
   unite(end_time, c(finish_time_negative_control_edna_filtering, finish_time_sample_edna_filtering), na.rm = T) %>% 
    relocate(control, .after=id_edna_sample)
 
-pan_metadata <- pivot_longer(
-  pan_edna_metadata, 
-  c(start_time_negative_control_edna_filtering, finish_time_negative_control_edna_filtering,
-    start_time_sample_edna_filtering, finish_time_sample_edna_filtering), 
-  names_pattern = "(start|finish)_time(.*)_edna_filtering",
-  names_to = c(".value", "control")) %>% 
-  relocate(edn_comments, .after=finish) %>% 
-  mutate(control = case_when(control == "_sample" ~ 0,
-                             control == "_negative_control" ~ 1)) %>% 
-  rename(start_time = start,
-         end_time = finish)
-
   
 
 ```
