@@ -115,30 +115,24 @@ pan_edna_metadata <- full_pan_edna %>%
          start_date = format_iso_8601(parse_date(start_date))) %>% 
   select(!c(fulcrum_id)) %>% 
   drop_na(geometry) %>% 
-  rename(edn_comments = notes_of_edna_sample)
+  rename(edna_comments = notes_of_edna_sample) %>% 
+  mutate(control = if_else(is.na(start_time_negative_control_edna_filtering), 0, 1)) %>% 
+  unite(start_time, c(start_time_negative_control_edna_filtering, start_time_sample_edna_filtering), na.rm = T) %>% 
+  unite(end_time, c(finish_time_negative_control_edna_filtering, finish_time_sample_edna_filtering), na.rm = T) %>% 
+   relocate(control, .after=id_edna_sample)
+
+pan_metadata <- pivot_longer(
+  pan_edna_metadata, 
+  c(start_time_negative_control_edna_filtering, finish_time_negative_control_edna_filtering,
+    start_time_sample_edna_filtering, finish_time_sample_edna_filtering), 
+  names_pattern = "(start|finish)_time(.*)_edna_filtering",
+  names_to = c(".value", "control")) %>% 
+  relocate(edn_comments, .after=finish) %>% 
+  mutate(control = case_when(control == "_sample" ~ 0,
+                             control == "_negative_control" ~ 1)) %>% 
+  rename(start_time = start,
+         end_time = finish)
+
   
-
-```
-
-
-# SERDP eDNA
-
-```{r}
-
-e_dna <- read_csv(here("data", "serdp", "edna", "serdp_edna.csv")) %>% 
-  clean_names() %>% 
-  mutate(date_collected = parse_date(date_collected),
-         ext_date = format_iso_8601(parse_date(ext_date)),
-         date_ran = format_iso_8601(parse_date(date_ran)),
-         state = str_to_lower(state)) %>% 
-  select(!c(year, month)) %>% 
-  unite("site_code", c("state", "site_number"), sep = "", na.rm = T) %>% 
-  rename(edna_comments = notes) %>% 
-  group_by(date_collected, site_code) %>% 
-  mutate(temp_id = cur_group_id()) %>% 
-  filter(!duplicated(temp_id)) %>% 
-  select(!c(temp_id))
-
-write_csv(e_dna, here("clean_tables", "serdp_edna.csv"))
 
 ```
