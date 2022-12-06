@@ -378,26 +378,26 @@ add primary key(bd_swab_id);
 
 
 -- serdp_edna table
-alter table serdp_edna
-add column serdp_edna_id UUID default (survey_data.uuid_generate_v4());
+--alter table serdp_edna
+--add column serdp_edna_id UUID default (survey_data.uuid_generate_v4());
 
-alter table serdp_edna 
-add primary key(serdp_edna_id);
+--alter table serdp_edna 
+--add primary key(serdp_edna_id);
 
-alter table serdp_survey 
-add column serdp_edna_id UUID;
+--alter table serdp_survey 
+--add column serdp_edna_id UUID;
 
-alter table serdp_edna  
-alter column date_collected type date using (date_collected::text::date);
+--alter table serdp_edna  
+--alter column date_collected type date using (date_collected::text::date);
 
-update serdp_survey v 
-set serdp_edna_id = 
-	(select s.serdp_edna_id
-	from serdp_edna s
-	where (s.site_code, s.date_collected) = (v.site_code, v."date"));
+--update serdp_survey v 
+--set serdp_edna_id = 
+	--(select s.serdp_edna_id
+	--from serdp_edna s
+	--where (s.site_code, s.date_collected) = (v.site_code, v."date"));
 
-alter table serdp_survey  
-add constraint fk_serdp_edna foreign key (serdp_edna_id) references serdp_edna (serdp_edna_id);
+--alter table serdp_survey  
+--add constraint fk_serdp_edna foreign key (serdp_edna_id) references serdp_edna (serdp_edna_id);
 
 
 
