@@ -502,13 +502,78 @@ dbWriteTable(connection, 'antifungal_isolate_ref', antifungal_isolate_ref, overw
 dbExecute(connection, "set search_path to e_dna")
 
 #location table load
-dbWriteTable(connection, 'location', location, overwrite=T,
+dbWriteTable(connection, 'edna_location', location, overwrite=T,
              field.types = c(location = "varchar(6)"))
 
 #region table load
-dbWriteTable(connection, 'region', regions, overwrite=T,
+dbWriteTable(connection, 'edna_region', regions, overwrite=T,
              field.types = c(region = "varchar(16)",
                              location = "varchar(6)"))
+
+#site table load
+dbWriteTable(connection, 'edna_site', edna_site, overwrite=T,
+             field.types = c(region = "varchar(16)",
+                             site = "varchar",
+                             date_collected = "date",
+                             site_code = "varchar(4)"))
+
+#edna visit load
+dbWriteTable(connection, 'edna_visit', edna_visit, overwrite=T,
+             field.types = c(site = "varchar",
+                             date_collected = "date",
+                             year = "int",
+                             month = "int",
+                             day = "int",
+                             site_code = "varchar(4)"))
+#edna serdp processed
+dbWriteTable(connection, 'edna_serdp_bd', edna_serdp_bd, overwrite=T,
+             field.types = c(pool_id = "varchar",
+                             pool_id_regardless_of_half = "varchar",
+                             h1_or_h2 = "varchar",
+                             sample_pass = "boolean",
+                             site_code = "varchar",
+                             date_collected = "date",
+                             number_filters = "int",
+                             control = "boolean",
+                             num_replicates = "int",
+                             resus_vol = "int",
+                             ext_date = "date",
+                             ext_method = "varchar",
+                             ext_tech = "varchar",
+                             ext_location = "varchar",
+                             date_ran = "date",
+                             q_pcr_lab = "varchar",
+                             q_pcr_tech = "varchar",
+                             bd_positive = "boolean",
+                             qpcr_well_pos = "varchar",
+                             bd_pos_neg_per_replicate = "varchar",
+                             ct_mean = "varchar",
+                             quantity_mean_rep1 = "float8",
+                             quantity_mean_rep2 = "float8",
+                             quantity_mean_rep3 = "float8",
+                             quantity_mean_ave = "float8",
+                             bd_per_liter = "float8",
+                             bsal_positive = "boolean",
+                             ipc = "varchar",
+                             dilution_multiplier = "varchar",
+                             qpcr_neg_control_pass = "boolean",
+                             sample_rerun = "boolean",
+                             q_pcr_results_file = "varchar",
+                             edna_comments = "varchar",
+                             region = "varchar"))
+
+#edna pan metadata
+dbWriteTable(connection, 'edna_panama_survey', edna_panama_survey, overwrite=T,
+             field.types = c(region = "varchar",
+                             site = "varchar",
+                             date_collected = "date",
+                             geometry = "point",
+                             control = "boolean",
+                             transect_meters_sampled_m = "int",
+                             start_time = "time",
+                             end_time = "time",
+                             volume_of_filtered_sample_ml = "int",
+                             edna_comments = "varchar"))
 
 
 

@@ -86,7 +86,9 @@ collection_serdp_edna <- full_serdp_edna %>%
   clean_names() %>% 
   unite(site_code, state:site_number,  sep = "", na.rm = T, remove = F) %>% 
   mutate(site_code = str_to_lower(site_code),
-         date_collected = format_iso_8601(parse_date(date_collected))) %>% 
+         date_collected = format_iso_8601(parse_date(date_collected)),
+         ext_date = format_iso_8601(parse_date(ext_date)),
+         date_ran = format_iso_8601(parse_date(date_ran))) %>% 
   mutate(region = case_when(state == "PA" ~ "pennsylvania",
                            state == "NM" ~ "new_mexico",
                            state == "LA" ~ "louisiana",
@@ -99,7 +101,21 @@ collection_serdp_edna <- full_serdp_edna %>%
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id, year, month, control_experimental)) %>% 
-  relocate(control, .after = number_filters)
+  relocate(control, .after = number_filters) %>% 
+  mutate(sample_pass_fail = case_when(sample_pass_fail == "P" ~ 1,
+                                      sample_pass_fail == "F, neg ext control had Bd" ~ 0),
+         bd_pos_neg = case_when(bd_pos_neg == "N" ~ 0,
+                                bd_pos_neg == "P" ~ 1),
+         bsal_pos_neg = case_when(bsal_pos_neg == "N" ~ 0,
+                                  bsal_pos_neg == "N;N;N" ~ 0),
+         q_pcr_neg_control = case_when(q_pcr_neg_control == "Neg" ~ 1),
+         sample_rerun = str_to_upper(sample_rerun),
+         resus_vol = str_replace_all(resus_vol, "\\*", ""))  %>% 
+  rename(sample_pass = sample_pass_fail,
+         bd_positive = bd_pos_neg,
+         bsal_positive = bsal_pos_neg,
+         qpcr_neg_control_pass = q_pcr_neg_control,
+         edna_comments = notes)
 
 write_csv(collection_serdp_edna, here("clean_tables", "edna_serdp_bd.csv"))
 
@@ -164,7 +180,10 @@ pan_edna_metadata <- full_pan_edna %>%
   unite(start_time, c(start_time_negative_control_edna_filtering, start_time_sample_edna_filtering), na.rm = T) %>% 
   unite(end_time, c(finish_time_negative_control_edna_filtering, finish_time_sample_edna_filtering), na.rm = T) %>% 
    relocate(control, .after=id_edna_sample)%>% 
-  rename(date_collected = start_date)
+  rename(date_collected = start_date) %>% 
+  mutate(geometry = str_remove(geometry, "POINT "),
+         geometry = str_remove_all(geometry, "[()]"),
+         geometry = str_replace(geometry, " ", ","))
 
 
 write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
