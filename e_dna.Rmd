@@ -48,8 +48,33 @@ serdp_site_edna <- full_serdp_edna %>%
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id))
+
+codes_to_names <- read_csv(here("data", "serdp", "edna", "join_site.csv")) %>% 
+  mutate(site = str_replace_all(site, " ", "_"),
+         site = str_replace(site, " ", "-"))
+
+
+serdp_edna_visit <- left_join(serdp_site_edna, codes_to_names, by = c("site_code")) 
+
+serdp_edna_sitetable <- serdp_edna_visit %>% ungroup() %>% 
+  select(!c(date_collected)) %>% 
+  group_by(site_code) %>% 
+  filter(!duplicated(site_code))
+  
   
 
+```
+
+
+## serdp_edna_date_table
+```{r}
+
+serdp_edna_visit_table <- serdp_edna_visit %>% 
+  mutate(year = year(date_collected),
+         month = month(date_collected),
+         day = day(date_collected)) %>% 
+  select(!c(region, site))
+  
 
 ```
 
@@ -76,6 +101,8 @@ collection_serdp_edna <- full_serdp_edna %>%
   select(!c(temp_id, year, month, control_experimental)) %>% 
   relocate(control, .after = number_filters)
 
+write_csv(collection_serdp_edna, here("clean_tables", "edna_serdp_bd.csv"))
+
 ```
 
 
@@ -100,18 +127,35 @@ full_pan_edna <- left_join(pan_site_edna2022, pan_edna_22, by = (c( "fulcrum_id"
 
 pan_sites_edna <- full_pan_edna %>% 
   select(region, site, start_date) %>% 
-  mutate(region = str_replace(str_to_lower(region), " ", "_"),
-         site = str_replace(str_to_lower(site), " ", "_"),
-         start_date = format_iso_8601(parse_date(start_date)))
+  mutate(region = str_replace_all(str_to_lower(region), " ", "_"),
+         site = str_replace_all(str_to_lower(site), " ", "_"),
+         start_date = format_iso_8601(parse_date(start_date))) %>% 
+  rename(date_collected = start_date)
 
 ```
+
+## panama date table
+```{r}
+
+pan_date_table <- full_pan_edna %>% 
+  select(site, start_date) %>% 
+  mutate(site = str_replace_all(str_to_lower(site), " ", "_"),
+         start_date = format_iso_8601(parse_date(start_date)),
+         year = year(start_date),
+         month = month(start_date),
+         day = day(start_date))%>% 
+  rename(date_collected = start_date)
+
+
+```
+
 
 ## pan edna metadata
 ```{r}
 
 pan_edna_metadata <- full_pan_edna %>% 
-    mutate(region = str_replace(str_to_lower(region), " ", "_"),
-         site = str_replace(str_to_lower(site), " ", "_"),
+    mutate(region = str_replace_all(str_to_lower(region), " ", "_"),
+         site = str_replace_all(str_to_lower(site), " ", "_"),
          start_date = format_iso_8601(parse_date(start_date))) %>% 
   select(!c(fulcrum_id)) %>% 
   drop_na(geometry) %>% 
@@ -119,8 +163,29 @@ pan_edna_metadata <- full_pan_edna %>%
   mutate(control = if_else(is.na(start_time_negative_control_edna_filtering), 0, 1)) %>% 
   unite(start_time, c(start_time_negative_control_edna_filtering, start_time_sample_edna_filtering), na.rm = T) %>% 
   unite(end_time, c(finish_time_negative_control_edna_filtering, finish_time_sample_edna_filtering), na.rm = T) %>% 
-   relocate(control, .after=id_edna_sample)
+   relocate(control, .after=id_edna_sample)%>% 
+  rename(date_collected = start_date)
 
-  
+
+write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
 
 ```
+
+
+# bind site tables 
+```{r}
+
+edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable)
+
+write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
+
+```
+# bind date/visit table
+```{r}
+
+visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table)
+
+write_csv(visit_table, here("clean_tables", "edna_visit.csv"))
+
+```
+

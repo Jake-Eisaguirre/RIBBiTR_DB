@@ -224,6 +224,10 @@ answer <- dplyr::bind_rows(dfs) %>%
 serdp_sites <- left_join(serdp_sites, answer, by = c("site_code")) %>% 
   select(!c(lat, long))
 
+# t <- serdp_sites %>% 
+#   select(site, site_code) %>% 
+#   write_csv(here("data", "serdp", "edna", "join_site.csv"))
+
 ```
 
 ## load penn ribbitr sites
