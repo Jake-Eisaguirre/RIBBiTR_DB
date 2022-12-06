@@ -43,11 +43,11 @@ serdp_site_edna <- full_serdp_edna %>%
                            state == "LA" ~ "louisiana",
                            state == "TN" ~ "tennessee",
                            state == "VT" ~ "vermont")) %>% 
-  select(!c(state, site_number)) %>% 
-  group_by(site_code, date_collected) %>% 
-  mutate(temp_id = cur_group_id()) %>% 
-  filter(!duplicated(temp_id)) %>% 
-  select(!c(temp_id))
+  select(!c(state, site_number)) #%>% 
+  # group_by(site_code, date_collected) %>% 
+  # mutate(temp_id = cur_group_id()) %>% 
+  # filter(!duplicated(temp_id)) %>% 
+  # select(!c(temp_id))
 
 codes_to_names <- read_csv(here("data", "serdp", "edna", "join_site.csv")) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
@@ -57,7 +57,6 @@ codes_to_names <- read_csv(here("data", "serdp", "edna", "join_site.csv")) %>%
 serdp_edna_visit <- left_join(serdp_site_edna, codes_to_names, by = c("site_code")) 
 
 serdp_edna_sitetable <- serdp_edna_visit %>% ungroup() %>% 
-  select(!c(date_collected)) %>% 
   group_by(site_code) %>% 
   filter(!duplicated(site_code))
   
@@ -73,7 +72,12 @@ serdp_edna_visit_table <- serdp_edna_visit %>%
   mutate(year = year(date_collected),
          month = month(date_collected),
          day = day(date_collected)) %>% 
-  select(!c(region, site))
+  select(!c(region)) %>% 
+  group_by(site, date_collected) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id)) %>% 
+  mutate(site = str_replace_all(site, "-", "_"))
   
 
 ```
@@ -146,7 +150,11 @@ pan_sites_edna <- full_pan_edna %>%
   mutate(region = str_replace_all(str_to_lower(region), " ", "_"),
          site = str_replace_all(str_to_lower(site), " ", "_"),
          start_date = format_iso_8601(parse_date(start_date))) %>% 
-  rename(date_collected = start_date)
+  rename(date_collected = start_date) %>% 
+  group_by(site) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
 
 ```
 
@@ -160,7 +168,11 @@ pan_date_table <- full_pan_edna %>%
          year = year(start_date),
          month = month(start_date),
          day = day(start_date))%>% 
-  rename(date_collected = start_date)
+  rename(date_collected = start_date) %>% 
+  group_by(site, date_collected) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
 
 
 ```
