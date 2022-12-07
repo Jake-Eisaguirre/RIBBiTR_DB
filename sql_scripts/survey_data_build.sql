@@ -547,12 +547,7 @@ alter table serdp_newt_microbiome_mucosome_antifungal
 drop column swab_id;
 
 
----- drop columns serdp_edna
-alter table serdp_edna 
-drop column site_code;
 
-alter table serdp_edna 
-drop column date_collected;
 
 
 -- genomic data check
