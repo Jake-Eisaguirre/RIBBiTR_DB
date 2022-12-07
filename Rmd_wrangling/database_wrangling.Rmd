@@ -360,9 +360,15 @@ penn1_capture <- right_join(right_join(munged_Amphibian_Captured_Information,
          location = "usa",
          detection_type = "capture") %>% 
   select(!c(species_capture_other))%>% 
-  mutate(survey_time = if_else(is.na(survey_time), "night", survey_time))
+  mutate(survey_time = if_else(is.na(survey_time), "night", survey_time),
+          duration_min = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_min = duration_min/60) %>%
+  relocate(duration_min, .after = end_time)
 
-
+penn1_capture$duration_min <- str_sub(penn1_capture$duration_min, -4) %>% 
+  as.numeric()
 
 ```
 
@@ -392,9 +398,15 @@ penn1_VES <- left_join(munged_VisualEncounter_Survey, munged_VisualEncounter_Sur
          detection_type = "visual") %>% 
   select(!c(start_hour, end_hour))%>% 
   mutate(survey_time = if_else(is.na(survey_time), "night", survey_time),
-         site = if_else(is.na(site), "phelps pond", site))
+         site = if_else(is.na(site), "phelps pond", site),
+         duration_min = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_min = duration_min/60)%>%
+  relocate(duration_min, .before = species_ves)
 
-
+penn1_VES$duration_min <- str_sub(penn1_VES$duration_min, -4) %>% 
+  as.numeric()
 ```
 
 #### aural
@@ -677,8 +689,8 @@ write_csv(panama_survey_table, here("clean_tables", "panama_survey.csv"))
 serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) %>% 
   mutate(survey_notes = str_to_lower(survey_notes),
          precipitation_last_48_h = str_to_lower(precipitation_last_48_h),
-         survey_notes = str_replace_all(survey_notes, "[^[:alnum:]]", ""),
-         weather_condition_notes = str_replace_all(weather_condition_notes, "[^[:alnum:]]", ""),
+         survey_notes = str_replace_all(survey_notes, "[^[:alnum:]]", " "),
+         weather_condition_notes = str_replace_all(weather_condition_notes, "[^[:alnum:]]", " "),
          site = str_to_lower(site),
          site = str_replace(site, "-", "_"),
          site = str_remove(site, "\\."),
@@ -840,7 +852,8 @@ gc()
 
 ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
-         sex = if_else(sex == "unkonwn", "unknown", sex)) %>% 
+         sex = if_else(sex == "unkonwn", "unknown", sex),
+         species_ves = str_replace_all(species_ves, " ", "_")) %>% 
   rename(ves_comments = ves_notes) %>% 
   select(!c(start_time, end_time, duration_minutes)) %>% 
   mutate(count = if_else(count == "many", "100", count)) # need to find better fix to "many"
@@ -975,21 +988,21 @@ penn_capture <- penn1_capture %>%
             observer)) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "-", "_"),
-         species_capture = str_replace_all(species_capture, " ", "_"),
-         bd_swab_tube_id = if_else(bd_swab_tube_id == "BdSwab00000", "NA", bd_swab_tube_id),
-         dry_swab_tube_id=if_else(dry_swab_tube_id == "DrySwab00000", "NA", dry_swab_tube_id),
-         crispr_swab_tube_id=if_else(crispr_swab_tube_id == "CRSwab00000", "NA", crispr_swab_tube_id),
-         bacterial_swab_tube_id=if_else(bacterial_swab_tube_id == "BacSwab00000", "NA", bacterial_swab_tube_id),
-         mucosome_id=if_else(mucusome_id == "MucBath00000", "NA", mucusome_id),
-         amp_id_1=if_else(amp_id_1 == "AMPBath00000", "NA", amp_id_1),
-         amp_id_2=if_else(amp_id_2 == "AMPBath00000", "NA", amp_id_2),
-         amp_id_3=if_else(amp_id_3 == "AMPBath00000", "NA", amp_id_3),
-         amp_id_4=if_else(amp_id_4 == "AMPBath00000", "NA", amp_id_4),
-         antibody_id_1=if_else(antibody_id_1 == "AntiBod00000", "NA", antibody_id_1),
-         antibody_id_2=if_else(antibody_id_2 == "AntiBod00000", "NA", antibody_id_2),
-         antibody_id_3=if_else(antibody_id_3 == "AntiBod00000", "NA", antibody_id_3),
-         antibody_id_4=if_else(antibody_id_4 == "AntiBod00000", "NA", antibody_id_4),
-         toe_clip_tube_id=if_else(toe_clip_tube_id == "ToeClip00000", "NA", toe_clip_tube_id)) %>% 
+         species_capture = str_replace_all(species_capture, " ", "_")) %>% 
+         # bd_swab_tube_id = if_else(bd_swab_tube_id == "BdSwab00000", "NA", bd_swab_tube_id),
+         # dry_swab_tube_id=if_else(dry_swab_tube_id == "DrySwab00000", "NA", dry_swab_tube_id),
+         # crispr_swab_tube_id=if_else(crispr_swab_tube_id == "CRSwab00000", "NA", crispr_swab_tube_id),
+         # bacterial_swab_tube_id=if_else(bacterial_swab_tube_id == "BacSwab00000", "NA", bacterial_swab_tube_id),
+         # mucosome_id=if_else(mucusome_id == "MucBath00000", "NA", mucusome_id),
+         # amp_id_1=if_else(amp_id_1 == "AMPBath00000", "NA", amp_id_1),
+         # amp_id_2=if_else(amp_id_2 == "AMPBath00000", "NA", amp_id_2),
+         # amp_id_3=if_else(amp_id_3 == "AMPBath00000", "NA", amp_id_3),
+         # amp_id_4=if_else(amp_id_4 == "AMPBath00000", "NA", amp_id_4),
+         # antibody_id_1=if_else(antibody_id_1 == "AntiBod00000", "NA", antibody_id_1),
+         # antibody_id_2=if_else(antibody_id_2 == "AntiBod00000", "NA", antibody_id_2),
+         # antibody_id_3=if_else(antibody_id_3 == "AntiBod00000", "NA", antibody_id_3),
+         # antibody_id_4=if_else(antibody_id_4 == "AntiBod00000", "NA", antibody_id_4),
+         # toe_clip_tube_id=if_else(toe_clip_tube_id == "ToeClip00000", "NA", toe_clip_tube_id)) %>% 
   rename(bag_mass_g = bag_mass,
          svl_mm = snout_vent_length,
          body_and_bag_mass_g = body_and_bag_mass,
