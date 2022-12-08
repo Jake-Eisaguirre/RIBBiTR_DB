@@ -757,7 +757,8 @@ sn_survey_table <- sn_survey %>%
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
-  select(!c(temp_id))
+  select(!c(temp_id)) %>% 
+  rename(duration_minutes = duration)
   
 write_csv(sn_survey_table, here("clean_tables", "sn_survey_table.csv"))
 
