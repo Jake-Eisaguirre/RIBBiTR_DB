@@ -673,11 +673,13 @@ panama_survey_table <- panama_raw %>%
         wind_speed_m_s = str_replace_all(wind_speed_m_s, " ", ""),
         transect = str_to_lower(str_replace_all(transect, " ", "_")),
         transect = str_replace_all(transect, ",", "_"),
-        transect = str_replace_all(transect, "-", "_")) %>% 
+        transect = str_replace_all(transect, "-", "_"),
+        pressure_hg = (as.numeric(pressure_hg) * 0.4911)) %>% 
   relocate(start_time, .before = transect) %>% 
   relocate(end_time, .after = start_time) %>% 
   relocate(survey_comments, .after = soil_humidity_m3m3) %>% 
-  relocate(duration_minutes, .after = end_time)
+  relocate(duration_minutes, .after = end_time) %>% 
+  rename(pressure_psi = pressure_hg)
 
 
 
@@ -714,8 +716,8 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
   unite("wind_speed_mpers_min", c("wind_speed_mpers_min", "wind_speed_min_mpers"), na.rm = T) %>% 
   unite("wind_speed_mpers_max", c("wind_speed_mpers_max", "wind_speed_max_mpers"), na.rm = T) %>% 
   unite("pressure_hg", c("pressure_in_hg", "pressure_in"), na.rm = T) %>% 
-  select(!c(pressure_mb)) %>% 
-  mutate(percent_vegetation_cover = if_else(percent_vegetation_cover == "huge lake", "", percent_vegetation_cover))
+  select(!c(pressure_mb, e_dna_sample, pressure_hg)) %>% 
+  mutate(percent_vegetation_cover = if_else(percent_vegetation_cover == "huge lake", "", percent_vegetation_cover)) %>% 
   mutate_all(na_if, "") %>% 
   relocate(start_time, .before = site_code) %>% 
   relocate(end_time, .after = start_time) %>% 
