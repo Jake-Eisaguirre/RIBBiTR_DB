@@ -103,7 +103,7 @@ dbWriteTable(connection, 'visit', visit, overwrite=T,
                              visit_status = "varchar(8)"))
 
 #brazil_legacy_survey table load
-dbWriteTable(connection, 'brazil_legacy_survey', brazil_legacy_survey, overwrite=T,
+dbWriteTable(connection, 'brazil_survey', brazil_legacy_survey, overwrite=T,
              field.types = c(start_time = "time",
                              end_time = "time",
                              site = "varchar(40)",
