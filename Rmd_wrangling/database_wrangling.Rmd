@@ -83,7 +83,7 @@ panama_regions <- panama_raw %>%
 ## manually create brazil legacy data region (santa virginia)
 ```{r}
 
-brazil_regions <- data.frame(c("santa virginia"), c("brazil"))
+brazil_regions <- data.frame(c("santa virginia", "boraceia"), c("brazil"))
 
 colnames(brazil_regions) <- c("region", "location")
 
@@ -238,7 +238,7 @@ penn_sites <- read_csv(here("data", "penn", "penn_sites.csv")) %>%
   mutate(region = "pennsylvania",
          utm_zone = 17)
 ```
-## pull out brazil legacy sites
+## pull out brazil sites
 ```{r}
 
 brazil_legacy_sites <- read_csv(here("data", "brazil_legacy", "brazil_site.csv")) %>% 
@@ -261,12 +261,28 @@ brazil_legacy_sites[i, c("utme", "utmn")] <- utm
 brazil_legacy_sites <- brazil_legacy_sites %>% 
   select(!c(long, lat))
 
+brazil_sites <- read_csv(here("data", "brazil", "brazil.csv")) %>% 
+  clean_names() %>% 
+  rename(region = region_id,
+         site = site_id) %>% 
+  select(region, site) %>% 
+  mutate(utm_zone = "23") %>% 
+  mutate(site = str_to_lower(site),
+         site = str_replace_all(site, " ", "_"),
+         region = str_to_lower(region),
+         region = str_replace_all(region, " ", "_"),
+         location = "brazil") %>% 
+  group_by(site) %>% 
+  unique()
+
+final_brazil_sites <- plyr::rbind.fill(brazil_sites, brazil_legacy_sites)
+
 ```
 
 ## combine site tables
 ```{r}
 
-sites <- plyr::rbind.fill(brazil_legacy_sites, penn_sites, serdp_sites, panama_sites, sn_site_table) %>% 
+sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_sites, sn_site_table) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          region = str_replace_all(region, " ", "_"),
          site = str_replace_all(site, "-", "_"),
@@ -549,18 +565,32 @@ panama_visit_table <- panama_raw %>%
 
 ```
 
-## read in brazil legacy data unique visits
+## read in brazil data unique visits
 ```{r}
 
 brazil_legacy_visit_table <- read_csv(here("data", "brazil_legacy", "brazil_visit.csv")) %>% 
   mutate(site = str_replace_all(site, "[[:space:]]", ""))
+
+brazil_visit_table <- read_csv(here("data", "brazil", "brazil.csv")) %>% 
+  clean_names() %>% 
+  select(date, site_id, survey_time) %>% 
+  rename(site = site_id) %>% 
+  mutate(site = str_to_lower(site),
+         site = str_replace(site, " ", "_")) %>% 
+  group_by(site, date, survey_time) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id)
+
+brazil_visit <- rbind(brazil_visit_table, brazil_legacy_visit_table)
+  
 
 ```
 
 ## bind all visit tables
 ```{r}
 
-visit_table <- plyr::rbind.fill(brazil_legacy_visit_table, panama_visit_table,
+visit_table <- plyr::rbind.fill(brazil_visit, panama_visit_table,
                                 penn_visit_table, serdp_visit_table, sn_visit_table) %>% 
   mutate(date = format_iso_8601(date)) %>% 
   rename(visit_comments = visit_notes) %>% 
@@ -606,7 +636,18 @@ brazil_legacy_survey_table <- read_csv(here("data", "brazil_legacy", "brazil_sur
 brazil_legacy_survey_table$duration_minutes <- str_sub(brazil_legacy_survey_table$duration_minutes, -4) %>% 
   as.numeric()
 
-write_csv(brazil_legacy_survey_table, here("clean_tables", "brazil_legacy_survey.csv"))
+new_brazil_survey <- read_csv(here("data", "brazil", "brazil.csv")) %>% 
+  clean_names() %>% 
+  rename(site = site_id) %>% 
+  select(site, date, survey_time, observer) %>% 
+  group_by(site, date, survey_time) %>% 
+  unique() %>% 
+  mutate(date = format_iso_8601(date))
+
+brazil_survey <- plyr::rbind.fill(new_brazil_survey, brazil_legacy_survey_table)
+  
+
+write_csv(brazil_survey, here("clean_tables", "brazil_legacy_survey.csv"))
 ```
 
 ## penn survey table
@@ -775,6 +816,13 @@ write_csv(sn_survey_table, here("clean_tables", "sn_survey_table.csv"))
 
 rm(sn_survey)
 gc()
+```
+
+## bind all survey tables
+```{r}
+
+survey <- plyr::rbind.fill(sn_survey_table, panama_survey_table, serdp_survey_table, penn_survey_table, brazil_survey)
+
 ```
 
 
@@ -1087,13 +1135,14 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
   select(!c(17:20)) %>% 
   select(!c(count, family)) %>% 
   rename(species_capture = scientific_name,
-         notes_capture = comments,
+         capture_comments = comments,
          bd_swab_id = swab_id,
          bacterial_swab_id = glycerol, #culture/glycerol
          genetic_id = tissue) %>% 
   unite(site, area:environment, sep = "_") %>% 
   mutate(detection_type = "capture",
-         site = str_replace_all(site, " ", "_"),
+         site = str_replace(site, " ", "_"),
+         site = str_remove(site, " "),
          species_capture = str_replace_all(species_capture, " ", "_"),
          bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NULL),
          genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NULL),
@@ -1109,12 +1158,24 @@ brazil_legacy_capture[i, c("capture_utme", "capture_utmn")] <- utm
 brazil_legacy_capture <- brazil_legacy_capture %>% 
   select(!c(capture_longitude, capture_latitude))
 
+new_brazil_capture <- read_csv(here("data", "brazil", "brazil.csv")) %>% 
+  clean_names() %>% 
+  rename(site = site_id) %>% 
+  select(site, date, survey_time, c(species_capture:capture_comments)) %>% 
+  mutate(capture_type = "new",
+         site = str_to_lower(site),
+         site = str_replace_all(site, " ", "_"),
+         species_capture = str_to_lower(species_capture)) %>% 
+  rename(bacterial_swab_id =  bacterial_swab_tube_id, #glycerol/culture
+         microbiome_swab_id = bd_swab_tube_id, #sequence/dry swab
+         svl_mm = snout_vent_length,
+         genetic_id = toe_clip_tube_id,
+         amp_id = amp_id_1,
+         bd_swab_id = dry_swab_tube_id,
+         antibody_id = antibody_id_1)
 
-# translation <- brazil_legacy_capture %>% 
-#   select(notes_capture) %>% 
-#   unique() %>% 
-#   mutate(translation = "") %>% 
-#   write_csv(here("legacy_brazil_translation.csv"))
+brazil_capture <- plyr::rbind.fill(brazil_legacy_capture, new_brazil_capture)
+
 ```
 
 ## serdp capture table
@@ -1253,8 +1314,7 @@ capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture,
   relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
   relocate(c(mucosome_id:ampshcl), .after = e_dna) %>% 
   relocate(c(crispr_id:antibody_id_4), .after = ampshcl) %>% 
-  relocate(notes_capture, .after = antibody_id_4) %>% 
-  rename(capture_comments = notes_capture)
+  relocate(notes_capture, .after = antibody_id_4)
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
