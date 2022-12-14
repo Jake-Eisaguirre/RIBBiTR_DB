@@ -644,7 +644,7 @@ new_brazil_survey <- read_csv(here("data", "brazil", "brazil.csv")) %>%
   unique() %>% 
   mutate(date = format_iso_8601(date))
 
-brazil_survey <- plyr::rbind.fill(new_brazil_survey, brazil_legacy_survey_table)
+brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey)
   
 
 write_csv(brazil_survey, here("clean_tables", "brazil_legacy_survey.csv"))
@@ -802,7 +802,8 @@ sn_survey_table <- sn_survey %>%
   mutate(survey_time = "day",
          detection_type = as.character(detection_type),
          detection_type = if_else(detection_type == "cmr", "capture", detection_type),
-         detection_type = if_else(detection_type == "swab", "capture", detection_type)) %>% 
+         detection_type = if_else(detection_type == "swab", "capture", detection_type),
+         site = as.character(site)) %>% 
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
@@ -821,7 +822,7 @@ gc()
 ## bind all survey tables
 ```{r}
 
-survey <- plyr::rbind.fill(sn_survey_table, panama_survey_table, serdp_survey_table, penn_survey_table, brazil_survey)
+# survey <- plyr::rbind.fill(sn_survey_table, panama_survey_table, serdp_survey_table, penn_survey_table, brazil_survey)
 
 ```
 
@@ -1167,11 +1168,11 @@ new_brazil_capture <- read_csv(here("data", "brazil", "brazil.csv")) %>%
          site = str_replace_all(site, " ", "_"),
          species_capture = str_to_lower(species_capture)) %>% 
   rename(bacterial_swab_id =  bacterial_swab_tube_id, #glycerol/culture
-         microbiome_swab_id = bd_swab_tube_id, #sequence/dry swab
+         microbiome_swab_id = dry_swab_tube_id, #sequence/dry swab
          svl_mm = snout_vent_length,
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
-         bd_swab_id = dry_swab_tube_id,
+         bd_swab_id = bd_swab_tube_id,
          antibody_id = antibody_id_1)
 
 brazil_capture <- plyr::rbind.fill(brazil_legacy_capture, new_brazil_capture)
