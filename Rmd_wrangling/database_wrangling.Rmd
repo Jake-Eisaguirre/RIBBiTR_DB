@@ -646,7 +646,9 @@ new_brazil_survey <- read_csv(here("data", "brazil", "brazil.csv")) %>%
          site = str_to_lower(site),
          detection_type = "capture")
 
-brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey)
+brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey) %>% 
+  mutate(start_time = as.character(start_time),
+         end_time = as.character(end_time))
   
 
 write_csv(brazil_survey, here("clean_tables", "brazil_legacy_survey.csv"))
@@ -665,7 +667,9 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace(site, "-", "_"),
          detection_type = if_else(detection_type == "acoustic", "aural", detection_type),
-         date = format_iso_8601(date)) %>% 
+         date = format_iso_8601(date),
+         start_time = as.character(start_time),
+         end_time = as.character(end_time)) %>% 
   rename(duration_minutes = duration_min) %>% 
   relocate(observer, .after = duration_minutes)
 
@@ -722,7 +726,8 @@ panama_survey_table <- panama_raw %>%
   relocate(end_time, .after = start_time) %>% 
   relocate(survey_comments, .after = soil_humidity_m3m3) %>% 
   relocate(duration_minutes, .after = end_time) %>% 
-  rename(pressure_psi = pressure_hg)
+  rename(pressure_psi = pressure_hg,
+         observer = observers)
 
 
 
@@ -755,7 +760,9 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          duration_minutes = if_else(end_time < start_time,
                             as_hms(86400) - start_time + end_time,
                             end_time - start_time),
-         duration_minutes = duration_minutes/60) %>% 
+         duration_minutes = duration_minutes/60,
+         start_time = as.character(start_time),
+         end_time = as.character(end_time)) %>% 
   unite("wind_speed_mpers_min", c("wind_speed_mpers_min", "wind_speed_min_mpers"), na.rm = T) %>% 
   unite("wind_speed_mpers_max", c("wind_speed_mpers_max", "wind_speed_max_mpers"), na.rm = T) %>% 
   unite("pressure_hg", c("pressure_in_hg", "pressure_in"), na.rm = T) %>% 
@@ -805,7 +812,10 @@ sn_survey_table <- sn_survey %>%
          detection_type = as.character(detection_type),
          detection_type = if_else(detection_type == "cmr", "capture", detection_type),
          detection_type = if_else(detection_type == "swab", "capture", detection_type),
-         site = as.character(site)) %>% 
+         site = as.character(site),
+         date = format_iso_8601(date),
+         start_time = as.character(start_time),
+         end_time = as.character(end_time)) %>% 
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
@@ -817,14 +827,16 @@ sn_survey_table <- sn_survey %>%
   
 write_csv(sn_survey_table, here("clean_tables", "sn_survey_table.csv"))
 
-rm(sn_survey)
+#rm(sn_survey)
 gc()
 ```
 
 ## bind all survey tables
 ```{r}
 
-# survey <- plyr::rbind.fill(sn_survey_table, panama_survey_table, serdp_survey_table, penn_survey_table, brazil_survey)
+survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, panama_survey_table, serdp_survey_table)
+
+write_csv(survey, here("clean_tables", "survey.csv"))
 
 ```
 
