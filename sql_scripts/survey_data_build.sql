@@ -138,26 +138,26 @@ set visit_id =
 alter table serdp_survey 
 add constraint fk_serdp_survey foreign key (visit_id) references visit (visit_id);
 
--- Brazil_legacy_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
-alter table brazil_legacy_survey 
-add column brazil_legacy_survey_id UUID default (survey_data.uuid_generate_v4());
+-- brazil_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
+alter table brazil_survey 
+add column brazil_survey_id UUID default (survey_data.uuid_generate_v4());
 
-alter table brazil_legacy_survey 
-add primary key(brazil_legacy_survey_id);
+alter table brazil_survey 
+add primary key(brazil_survey_id);
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 add column visit_id UUID;
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 alter column "date" type date using ("date"::text::date);
 
-update brazil_legacy_survey bl
+update brazil_survey bl
 set visit_id =
 	(select v.visit_id
 	from visit v
-	where (v.site, v."date", v.survey_time, v.campaign) = (bl.site, bl."date", bl.survey_time, bl.campaign));
+	where (v.site, v."date", v.survey_time) = (bl.site, bl."date", bl.survey_time));
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 add constraint fk_brazil_legacy_survey foreign key (visit_id) references visit (visit_id);
 
 -- sierra_nevada_survey: add unique ID, p.key, join id on site/date/survey_time, and create f.key
@@ -284,7 +284,7 @@ alter table capture
 add column penn_survey_id uuid;
 
 alter table capture 
-add column brazil_legacy_survey_id uuid;
+add column brazil_survey_id uuid;
 
 alter table capture 
 add column serdp_survey_id uuid;
@@ -341,15 +341,15 @@ alter table capture
 add constraint fk_capture_serdp foreign key (serdp_survey_id) references serdp_survey (serdp_survey_id);
 
 
------- Capture to brazil_legacy_survey 
+------ Capture to brazil_survey 
 update capture c 
-set brazil_legacy_survey_id = 
-	(select z.brazil_legacy_survey_id
-	from brazil_legacy_survey z
+set brazil_survey_id = 
+	(select z.brazil_survey_id
+	from brazil_survey z
 	where (z.site, z."date", z.survey_time, z.detection_type) = (c.site, c."date", c.survey_time, c.detection_type));
 
 alter table capture 
-add constraint fk_capture_brazil_legacy foreign key (brazil_legacy_survey_id) references brazil_legacy_survey (brazil_legacy_survey_id);
+add constraint fk_capture_brazil_legacy foreign key (brazil_survey_id) references brazil_survey (brazil_survey_id);
 
 
 -- serdp_bd_genomic create primary key
@@ -448,20 +448,20 @@ drop column detection_type;
 alter table penn_survey 
 drop column survey_time;
 
----- drop columns brazil_legacy_survey
-alter table brazil_legacy_survey 
+---- drop columns brazil_survey
+alter table brazil_survey 
 drop column site;
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 drop column date;
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 drop column survey_time;
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 drop column detection_type;
 
-alter table brazil_legacy_survey 
+alter table brazil_survey 
 drop column campaign;
 
 ---- drop columns sierra_nevada_survey
@@ -570,38 +570,25 @@ drop column swab_id;
 --join site s on r.region_id = s.region_id 
 --join visit v on s.site_id = v.site_id 
 --join panama_survey ps on v.visit_id = ps.visit_id 
---join brazil_legacy_survey pes on v.visit_id = pes.visit_id 
+--join brazil_survey pes on v.visit_id = pes.visit_id 
 --
 ---- Data Check
 --
-select 'penn' as survey, v.date as visit_date, v.site as visit_site, 
-  ps.date as survey_date, ps.site as survey_site
-from visit v 
-join penn_survey ps on ps.visit_id = v.visit_id 
-union 
-select 'brazil', v.date, v.site, b.date, b.site
-from visit v 
-join brazil_legacy_survey b on b.visit_id = v.visit_id 
-union
-select 'sn', v.date, v.site, sn.date, sn.site
-from visit v
-join sierra_nevada_survey sn on sn.visit_id = v.visit_id 
-union 
-select 'serdp', v.date, v.site, s.date, s.site
-from visit v
-join serdp_survey s on s.visit_id = v.visit_id;
-
-select count(panama_survey_id)
-from capture
-
-select count(bra)
-from serdp_survey ss 
+--select 'penn' as survey, v.date as visit_date, v.site as visit_site, 
+--  ps.date as survey_date, ps.site as survey_site
+--from visit v 
+--join penn_survey ps on ps.visit_id = v.visit_id 
+--union 
+--select 'brazil', v.date, v.site, b.date, b.site
+--from visit v 
+--join brazil_survey b on b.visit_id = v.visit_id 
+--union
+--select 'sn', v.date, v.site, sn.date, sn.site
+--from visit v
+--join sierra_nevada_survey sn on sn.visit_id = v.visit_id 
+--union 
+--select 'serdp', v.date, v.site, s.date, s.site
+--from visit v
+--join serdp_survey s on s.visit_id = v.visit_id;
 
 
-
-select count(c.bd_swab_id), count(sbg.bd_swab_id)
-from capture c
-join serdp_bd sbg on c.bd_swab_id  = sbg.bd_swab_id  
-
-select count(sb.bd_swab_id)
-from serdp_bd sb 
