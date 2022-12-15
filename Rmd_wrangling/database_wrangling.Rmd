@@ -642,7 +642,8 @@ new_brazil_survey <- read_csv(here("data", "brazil", "brazil.csv")) %>%
   select(site, date, survey_time, observer) %>% 
   group_by(site, date, survey_time) %>% 
   unique() %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date),
+         site = str_to_lower(site))
 
 brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey)
   
