@@ -643,7 +643,8 @@ new_brazil_survey <- read_csv(here("data", "brazil", "brazil.csv")) %>%
   group_by(site, date, survey_time) %>% 
   unique() %>% 
   mutate(date = format_iso_8601(date),
-         site = str_to_lower(site))
+         site = str_to_lower(site),
+         detection_type = "capture")
 
 brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey)
   
@@ -1121,7 +1122,12 @@ sn_capture_table <- sn_capture %>%
          processor = surveyor_id) %>% 
   mutate(microbiome_swab_id = if_else(str_detect(swab_id, "AJS"), swab_id, NULL), #metagenomic sequencing so micro
          bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL), #culture/glycerol
-         mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL)) %>% 
+         mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL),
+         species_capture = case_when(species_capture == "ramu" ~ "rana_muscosa",
+                                     species_capture == "hyre" ~ "hyliola_regilla",
+                                     species_capture == "bubo" ~ "anaxyrus_boreas",
+                                     species_capture == "buca" ~ "anaxyrus_canorus",
+                                     species_capture == "tato" ~ "taricha_torosa")) %>% 
   rename(bd_swab_id = swab_id,
          capture_utme = utme,
          capture_utmn = utmn)
@@ -1167,7 +1173,8 @@ new_brazil_capture <- read_csv(here("data", "brazil", "brazil.csv")) %>%
   mutate(capture_type = "new",
          site = str_to_lower(site),
          site = str_replace_all(site, " ", "_"),
-         species_capture = str_to_lower(species_capture)) %>% 
+         species_capture = str_to_lower(species_capture),
+         detection_type = "capture") %>% 
   rename(bacterial_swab_id =  bacterial_swab_tube_id, #glycerol/culture
          microbiome_swab_id = dry_swab_tube_id, #sequence/dry swab
          svl_mm = snout_vent_length,
@@ -1304,7 +1311,7 @@ write_csv(panama_capture, here("data", "panama_legacy", "clean_tables", "clean_p
 ## bind all capture tables
 ```{r}
 
-capture <- plyr::rbind.fill(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture,
+capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_capture,
                             sn_capture_table) %>% 
   mutate(notes_capture = str_replace_all(notes_capture, "[[:punct:]]", ""),
          site = str_replace_all(site, "-", "_"),
