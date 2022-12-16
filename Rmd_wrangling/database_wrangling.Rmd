@@ -767,7 +767,10 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
   unite("wind_speed_mpers_max", c("wind_speed_mpers_max", "wind_speed_max_mpers"), na.rm = T) %>% 
   unite("pressure_hg", c("pressure_in_hg", "pressure_in"), na.rm = T) %>% 
   select(!c(pressure_mb, e_dna_sample, pressure_hg)) %>% 
-  mutate(percent_vegetation_cover = if_else(percent_vegetation_cover == "huge lake", "", percent_vegetation_cover)) %>% 
+  mutate(percent_vegetation_cover = if_else(percent_vegetation_cover == "huge lake", "", percent_vegetation_cover),
+         wind_speed_mpers = wind_speed_mpers * 0.447,
+         wind_speed_mpers_max = as.numeric(wind_speed_mpers_max) * 0.447,
+         wind_speed_mpers_min = as.numeric(wind_speed_mpers_min) * 0.447) %>% 
   mutate_all(na_if, "") %>% 
   relocate(start_time, .before = site_code) %>% 
   relocate(end_time, .after = start_time) %>% 
@@ -779,7 +782,12 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          water_temp_c = water_temp_deg_c,
          air_temp_c_drop = air_temp_deg_c_drop,
          relative_humidity_percent = relative_humidity,
-         relative_humidity_drop_percent = relative_humidity_drop)
+         relative_humidity_drop_percent = relative_humidity_drop,
+         number_observers = no_of_investigators,
+         wind_speed_max_m_s = wind_speed_mpers_max,
+         wind_speed_min_m_s = wind_speed_mpers_min,
+         wind_speed_m_s = wind_speed_mpers,
+         observer = investigator_i_ds)
 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
