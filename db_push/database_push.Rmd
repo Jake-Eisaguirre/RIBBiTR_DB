@@ -464,7 +464,8 @@ dbWriteTable(connection, 'hobo_location', hobo_location, overwrite=T,
 
 ## hobo region
 dbWriteTable(connection, 'hobo_region', hobo_region, overwrite=T,
-             field.types = c(region = "varchar"))
+             field.types = c(region = "varchar",
+                             location = "varchar"))
 
 ## hobo site
 dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T,

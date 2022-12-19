@@ -1420,6 +1420,7 @@ write_csv(hobo_site, here("clean_tables", "hobo_site.csv"))
 
 hobo_region <- hobo_site %>% 
   select(region) %>% 
+  mutate(location = "usa") %>% 
   group_by(region) %>% 
   unique()
 
