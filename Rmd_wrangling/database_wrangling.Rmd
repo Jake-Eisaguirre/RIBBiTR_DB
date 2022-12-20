@@ -1100,7 +1100,8 @@ penn_capture <- penn1_capture %>%
          body_temp_c = body_temperature_c,
          bd_swab_id = dry_swab_tube_id,
          crispr_id = crispr_swab_tube_id,
-         antibody_id = antibody_id_1) %>% 
+         antibody_id = antibody_id_1,
+         mucosome_id = mucusome_id) %>% 
   unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T) %>% 
   mutate(date = format_iso_8601(date))
   
