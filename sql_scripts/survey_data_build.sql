@@ -249,6 +249,12 @@ drop column survey_time;
 alter table survey 
 drop column detection_type;
 
+alter table survey 
+drop column campaign;
+
+alter table survey 
+drop column site_code;
+
 ---- drop columns aural
 alter table aural 
 drop column date;
@@ -301,8 +307,6 @@ drop column campaign;
 ---- drop column serd_newt_microbiomi....
 alter table serdp_newt_microbiome_mucosome_antifungal 
 drop column swab_id;
-
-
 
 
 
