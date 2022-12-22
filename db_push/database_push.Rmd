@@ -22,6 +22,9 @@ librarian::shelf(tidyverse, DBI, RPostgres, here)
 ## read in all `clean_tables` .csv files
 ```{r}
 
+# clear environment
+rm(list=ls())
+
 # slow method for reading csv files
 
 filenames <- gsub("\\.csv$","", list.files(here("clean_tables")))
@@ -69,12 +72,15 @@ dbExecute(connection, "set search_path to survey_data")
 
 #location table load
 dbWriteTable(connection, 'location', location, overwrite=T,
-             field.types = c(location = "varchar(6)"))
+             field.types = c(location = "varchar(6)",
+                             location_id = "uuid"))
 
 #region table load
 dbWriteTable(connection, 'region', regions, overwrite=T,
              field.types = c(region = "varchar(16)",
-                             location = "varchar(6)"))
+                             location = "varchar(6)",
+                             region_id = "uuid",
+                             location_id = "uuid"))
 
 #site table load
 dbWriteTable(connection, 'site', sites, overwrite=T,
@@ -90,7 +96,9 @@ dbWriteTable(connection, 'site', sites, overwrite=T,
                              area_sqr_m = "int",
                              depth_m = "float8",
                              topo = "varchar(20)",
-                             wilderness = "varchar(12)"))
+                             wilderness = "varchar(12)",
+                             site_id = "uuid",
+                             region_id = "uuid"))
 
 #visit table load
 dbWriteTable(connection, 'visit', visit, overwrite=T,
@@ -100,10 +108,14 @@ dbWriteTable(connection, 'visit', visit, overwrite=T,
                              survey_time = "varchar(5)",
                              visit_comments = "varchar",
                              site_code = "varchar(4)",
-                             visit_status = "varchar(8)"))
+                             visit_status = "varchar(8)",
+                             visit_id = "uuid",
+                             site_id = "uuid"))
 
 # all surveys table
-dbWriteTable(connection, 'survey', survey, overwrite=T)
+dbWriteTable(connection, 'survey', survey, overwrite=T,
+             field.types = c(survey_id = "uuid",
+                             visit_id = "uuid"))
 
 # #brazil_legacy_survey table load
 # dbWriteTable(connection, 'brazil_survey', brazil_legacy_survey, overwrite=T,
@@ -239,7 +251,9 @@ dbWriteTable(connection, 'ves', ves, overwrite=T,
                              sex = "varchar(7)",
                              ves_comments = "varchar",
                              microhab_moredetail ="varchar",
-                             visual_animal_state = "varchar(5)"))
+                             visual_animal_state = "varchar(5)",
+                             ves_id = "uuid",
+                             survey_id = "uuid"))
 
 # aural table load - NEED to remove "many" from count in Aural data
 dbWriteTable(connection, 'aural', aural, overwrite=T,
@@ -255,7 +269,9 @@ dbWriteTable(connection, 'aural', aural, overwrite=T,
                              microhab = "varchar",
                              life_stage = "varchar",
                              sex = "varchar(7)",
-                             microhab_moredetail = "varchar"))
+                             microhab_moredetail = "varchar",
+                             aural_id = "uuid",
+                             survey_id = "uuid"))
 
 # capture table load
 dbWriteTable(connection, 'capture', capture, overwrite=T,
@@ -313,7 +329,9 @@ dbWriteTable(connection, 'capture', capture, overwrite=T,
                              clearcut = "varchar",
                              number_of_mites = "varchar",
                              flir = "varchar",
-                             tad_stage = "int"))
+                             tad_stage = "int",
+                             capture_id = "uuid",
+                             survey_id = "uuid"))
 
 # serdp bd genomic data
 dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T,
@@ -460,12 +478,15 @@ dbExecute(connection, "set search_path to hobo")
 
 ## hobo location
 dbWriteTable(connection, 'hobo_location', hobo_location, overwrite=T,
-             field.types = c(location = "varchar"))
+             field.types = c(location = "varchar",
+                             hobo_location_id = "uuid"))
 
 ## hobo region
 dbWriteTable(connection, 'hobo_region', hobo_region, overwrite=T,
              field.types = c(region = "varchar",
-                             location = "varchar"))
+                             location = "varchar",
+                             hobo_region_id = "uuid",
+                             hobo_location_id = "uuid"))
 
 ## hobo site
 dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T,
@@ -476,7 +497,9 @@ dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T,
                              location = "varchar(6)",
                              utm_zone = "int",
                              utme = "float8",
-                             utmn = "float8"))
+                             utmn = "float8",
+                             hobo_site_id = "uuid",
+                             hobo_region_id = "uuid"))
 
 ## all hobo
 dbWriteTable(connection, 'hobo', hobo, overwrite=T,
@@ -490,7 +513,10 @@ dbWriteTable(connection, 'hobo', hobo, overwrite=T,
                              sun_temperature_c = "float8",
                              sun_light_lux = "float8",
                              water_temperature_c = "float8",
-                             water_light_lux = "float8"))
+                             water_light_lux = "float8",
+                             hobo_id = "uuid",
+                             hobo_site_id = "uuid"))
+
 
 ## hobo shade
 # dbWriteTable(connection, 'shade_hobo', shade_hobo, overwrite=T,

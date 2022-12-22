@@ -15,7 +15,7 @@ if (!require(librarian)){
 
 # librarian downloads, if not already downloaded, and reads in needed packages
 librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
-                 anytime, terra, sp, rgdal, RWmisc, proj4)
+                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
 ```
 
 # create location table (panama, brazil, usa)
@@ -24,6 +24,10 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI
 location_table <- data.frame(c("panama", "brazil", "usa"))
 
 colnames(location_table) <- c("location")
+
+location_table <- location_table %>% 
+  group_by(location) %>% 
+  mutate(location_id = UUIDgenerate())
 
 write_csv(location_table, here("clean_tables", "location.csv"))
 
@@ -93,7 +97,10 @@ colnames(brazil_regions) <- c("region", "location")
 ```{r}
 
 regions <- rbind(brazil_regions, panama_regions, usa_regions) %>% 
-  mutate(region = str_replace_all(region, " ", "_"))
+  mutate(region = str_replace_all(region, " ", "_")) %>% 
+  group_by(region) %>% 
+  mutate(region_id = UUIDgenerate(output = c("uuid")),
+         location_id = as.UUID(""))
 
 write_csv(regions, here("clean_tables", "regions.csv"))
 
@@ -295,7 +302,10 @@ sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_si
          utmn = round(as.numeric(utmn, 4))) %>% 
   rename(area_sqr_m = area,
          depth_m = depth) %>% 
-  relocate(site_comments, .after = wilderness)
+  relocate(site_comments, .after = wilderness) %>% 
+  group_by(site) %>% 
+  mutate(site_id = UUIDgenerate(output = c("uuid")),
+         region_id = as.UUID(""))
 
 
 write_csv(sites, here("clean_tables", "sites.csv"))
@@ -539,7 +549,11 @@ serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit_table.csv")) %>
          site = if_else(site_code == "la7", "la7", site),
          site = if_else(site_code == "la8", "la8", site),
          site = if_else(site == "la06", "la6", site)) %>% 
-  rename(visit_notes = notes)
+  rename(visit_notes = notes) %>% 
+  group_by(site, date, survey_time) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
 
 ```
 
@@ -596,7 +610,10 @@ visit_table <- plyr::rbind.fill(brazil_visit, panama_visit_table,
   rename(visit_comments = visit_notes) %>% 
   relocate(visit_comments, .after = visit_status) %>% 
   relocate(date, .before = campaign) %>% 
-  relocate(survey_time, .after = date)
+  relocate(survey_time, .after = date) %>% 
+  group_by(site, date, survey_time) %>% 
+  mutate(visit_id = UUIDgenerate(output = c("uuid")),
+         site_id = as.UUID(""))
 
 write_csv(visit_table, here("clean_tables", "visit.csv"))
 
@@ -787,7 +804,11 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          wind_speed_max_m_s = wind_speed_mpers_max,
          wind_speed_min_m_s = wind_speed_mpers_min,
          wind_speed_m_s = wind_speed_mpers,
-         observer = investigator_i_ds)
+         observer = investigator_i_ds)%>% 
+  group_by(site, date, survey_time, detection_type) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
@@ -842,7 +863,10 @@ gc()
 ## bind all survey tables
 ```{r}
 
-survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, panama_survey_table, serdp_survey_table)
+survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, panama_survey_table, serdp_survey_table) %>% 
+  group_by(site, date, survey_time, detection_type) %>% 
+  mutate(survey_id = UUIDgenerate(output = c("uuid")),
+         visit_id = as.UUID(""))
 
 write_csv(survey, here("clean_tables", "survey.csv"))
 
@@ -939,7 +963,10 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>%
          species_ves = str_replace_all(species_ves, " ", "_")) %>% 
   rename(ves_comments = ves_notes) %>% 
   select(!c(start_time, end_time, duration_minutes)) %>% 
-  mutate(count = if_else(count == "many", "100", count)) # need to find better fix to "many"
+  mutate(count = if_else(count == "many", "100", count)) %>% # need to find better fix to "many"
+  #group_by() %>% 
+  mutate(ves_id = UUIDgenerate(output = "uuid", n = n()),
+         survey_id = as.UUID(""))
 
 write_csv(ves, here("clean_tables", "ves.csv"))
 
@@ -998,7 +1025,9 @@ panama_aural <- panama_raw %>%
 aural <- plyr::rbind.fill(penn_aural, panama_aural) %>% 
   mutate(count = if_else(count == "many", "100", count),
          sex = if_else(sex == "unkonwn", "unknown", sex)) %>% # need to find better fix for "many"
-  rename(aural_comments = notes_aural)
+  rename(aural_comments = notes_aural) %>% 
+  mutate(aural_id = UUIDgenerate(output = c("uuid"), n = n()),
+         survey_id = as.UUID(""))
   
 
 write_csv(aural, here("clean_tables", "aural.csv"))
@@ -1343,7 +1372,9 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
   relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
   relocate(c(mucosome_id:ampshcl), .after = e_dna) %>% 
   relocate(c(crispr_id:antibody_id_4), .after = ampshcl) %>% 
-  relocate(notes_capture, .after = antibody_id_4)
+  relocate(notes_capture, .after = antibody_id_4) %>% 
+  mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
+         survey_id = as.UUID(""))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
@@ -1414,7 +1445,11 @@ write_csv(serdp_amp, here("clean_tables", "serdp_amp.csv"))
 
 hobo_site <- serdp_sites  %>% 
   mutate(site = str_replace_all(site, " ", "_"),
-         site = str_replace_all(site, "-", "_"))
+         site = str_replace_all(site, "-", "_")) %>% 
+  group_by(site) %>% 
+  mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
+         hobo_region_id = as.UUID("")) %>% 
+  ungroup()
 
 write_csv(hobo_site, here("clean_tables", "hobo_site.csv"))
 
@@ -1422,13 +1457,17 @@ hobo_region <- hobo_site %>%
   select(region) %>% 
   mutate(location = "usa") %>% 
   group_by(region) %>% 
-  unique()
+  unique() %>% 
+  mutate(hobo_region_id = UUIDgenerate(output = c("uuid")),
+         hobo_location_id = as.UUID(""))
 
 write_csv(hobo_region, here("clean_tables", "hobo_region.csv"))
 
 hobo_location <- hobo_site %>% 
   select(location) %>% 
-  unique()
+  group_by(location) %>% 
+  unique() %>% 
+  mutate(hobo_location_id = UUIDgenerate(output = c("uuid")))
 
 write_csv(hobo_location, here("clean_tables", "hobo_location.csv"))
 
@@ -1534,7 +1573,9 @@ all_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_time")) 
   left_join(sun_hobo, by = c("site_code", "date_time")) %>% 
   left_join(water_hobo, by = c("site_code", "date_time")) %>% 
   select(!c(time_zone.y, time_zone.x.x, time_zone.y.y)) %>% 
-  rename(time_zone = time_zone.x)
+  rename(time_zone = time_zone.x) %>% 
+  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
+         hobo_site_id = as.UUID(""))
 
 write_csv(all_hobos, here("clean_tables", "hobo.csv"))  
 
