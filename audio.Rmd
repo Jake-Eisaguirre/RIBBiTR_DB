@@ -17,17 +17,21 @@ if (!require(librarian)){
 librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate)
 ```
 
-# 2022 brazil audio
+# 2022 brazil audio - need memory card IDs
 ```{r}
 
 brazil_path <- here("data", "brazil", "audio", "brazil_audio_2022.xlsx")
 
 brazil_sheets <- openxlsx::getSheetNames(brazil_path)
+
 brazil_sheet_list <- lapply(brazil_sheets,openxlsx::read.xlsx,xlsxFile=brazil_path)
+
 names(brazil_sheet_list) <- brazil_sheets
+
 
 raw_brazil <- plyr::rbind.fill(brazil_sheet_list) %>% 
   clean_names()
+
 
 brazil_audio <- raw_brazil %>% 
   rename(location = country,
@@ -45,7 +49,7 @@ brazil_audio <- raw_brazil %>%
 
 ```
 
-# 2022 penn audio
+# 2022 penn audio - Need date for when audio recorders were picked up
 ```{r}
 
 raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), sheet = 1) %>% 
@@ -56,7 +60,7 @@ raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), she
 
 ```
 
-# 2022 sn audio
+# 2022 sn audio - Need memory card IDs
 ```{r}
 
 raw_sn_dep <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = 1) %>% 
@@ -65,7 +69,8 @@ raw_sn_dep <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), shee
          x, y)
 
 raw_sn_pick <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = 2) %>% 
-  clean_names()
+  clean_names() %>% 
+  select(site_name_id, song_meter_micro_or_audio_moth_hydrophone, other_audio_device_id, )
 
 ```
 
