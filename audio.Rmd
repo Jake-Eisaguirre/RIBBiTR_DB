@@ -1,0 +1,71 @@
+---
+title: "audio"
+author: "Jake Eisaguirre"
+date: "2023-01-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate)
+```
+
+# 2022 brazil audio
+```{r}
+
+brazil_path <- here("data", "brazil", "audio", "brazil_audio_2022.xlsx")
+
+brazil_sheets <- openxlsx::getSheetNames(brazil_path)
+brazil_sheet_list <- lapply(brazil_sheets,openxlsx::read.xlsx,xlsxFile=brazil_path)
+names(brazil_sheet_list) <- brazil_sheets
+
+raw_brazil <- plyr::rbind.fill(brazil_sheet_list) %>% 
+  clean_names()
+
+brazil_audio <- raw_brazil %>% 
+  rename(location = country,
+         region = site,
+         site = transect_id,
+         audio_comments = notes,
+         recorder_id = micro_id,
+         surveyor = person_id) %>% 
+  mutate_all(.funs=str_to_lower) %>% 
+  select(!c(configuration, date_of_activation)) %>% 
+  mutate(date_of_deployment = str_replace(date_of_deployment, "oct", "10"),
+         date_of_deployment = str_replace(date_of_deployment, "nov", "11"),
+         date_of_deployment = str_replace_all(date_of_deployment, "_", "-"),
+         date_of_deployment = as.Date(date_of_deployment, c("%d-%m-%Y")))
+
+```
+
+# 2022 penn audio
+```{r}
+
+raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), sheet = 1) %>% 
+  clean_names() %>% 
+  select(survey, dropoff_or_pickup, site_name, dropoff_recorder_id, retrieved_recorder_id, deployment_notes_21,
+         turn_device_off, new_batteries_card, existing_card_id, new_card_id, deployment_notes_26, turn_device_on,
+         review_and_confirm, user_id, date_and_time, x, y)
+
+```
+
+# 2022 sn audio
+```{r}
+
+raw_sn_dep <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = 1) %>% 
+  clean_names() %>% 
+  select(point_id, audio_device_id, deployment_notes, user_id, date_and_time, site_name_and_id, song_meter_micro_or_audio_moth_hydrophone,
+         x, y)
+
+raw_sn_pick <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = 2) %>% 
+  clean_names()
+
+```
+
