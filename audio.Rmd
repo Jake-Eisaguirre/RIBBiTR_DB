@@ -17,35 +17,44 @@ if (!require(librarian)){
 librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate)
 ```
 
-# 2022 brazil audio - need memory card IDs
+# 2022 brazil audio - clean
 ```{r}
 
-brazil_path <- here("data", "brazil", "audio", "brazil_audio_2022.xlsx")
-
-brazil_sheets <- openxlsx::getSheetNames(brazil_path)
-
-brazil_sheet_list <- lapply(brazil_sheets,openxlsx::read.xlsx,xlsxFile=brazil_path)
-
-names(brazil_sheet_list) <- brazil_sheets
-
-
-raw_brazil <- plyr::rbind.fill(brazil_sheet_list) %>% 
+raw_sv <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.xlsx"), sheet = "Santa_Virginia") %>% 
   clean_names()
+
+raw_b <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.xlsx"), sheet = "Boraceia") %>% 
+  clean_names()
+
+brazil_card_id <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.xlsx"), sheet = "card device pairings") %>% 
+  clean_names() %>% 
+  mutate_all(.funs = str_to_lower) %>% 
+  rename(recorder_id = recoder_code,
+         card_id = card_code)
+
+raw_brazil <- plyr::rbind.fill(raw_sv, raw_b)
 
 
 brazil_audio <- raw_brazil %>% 
   rename(location = country,
          region = site,
          site = transect_id,
-         audio_comments = notes,
+         deployment_comments = notes,
          recorder_id = micro_id,
-         surveyor = person_id) %>% 
+         surveyor_deploy = person_id,
+         latitude = latitute) %>% 
   mutate_all(.funs=str_to_lower) %>% 
   select(!c(configuration, date_of_activation)) %>% 
   mutate(date_of_deployment = str_replace(date_of_deployment, "oct", "10"),
          date_of_deployment = str_replace(date_of_deployment, "nov", "11"),
          date_of_deployment = str_replace_all(date_of_deployment, "_", "-"),
-         date_of_deployment = as.Date(date_of_deployment, c("%d-%m-%Y")))
+         date_of_deployment = as.Date(date_of_deployment, c("%d-%m-%Y")),
+         audio_device = "songmeter_micro",
+         pickup_comments = "",
+         surveyor_pickup = "",
+         card_comments = "",
+         date_of_pickup = "") %>% 
+  left_join(brazil_card_id, by = c("recorder_id"))
 
 ```
 
@@ -54,23 +63,122 @@ brazil_audio <- raw_brazil %>%
 
 raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), sheet = 1) %>% 
   clean_names() %>% 
-  select(survey, dropoff_or_pickup, site_name, dropoff_recorder_id, retrieved_recorder_id, deployment_notes_21,
-         turn_device_off, new_batteries_card, existing_card_id, new_card_id, deployment_notes_26, turn_device_on,
-         review_and_confirm, user_id, date_and_time, x, y)
+  select(dropoff_or_pickup, site_name, dropoff_recorder_id,deployment_notes_21,
+         new_batteries_card, existing_card_id, new_card_id, deployment_notes_26,
+         user_id, date_and_time, x, y)
+
+pen_audio <- raw_pen %>% 
+  mutate_all(.funs = str_to_lower) %>% 
+  mutate(existing_card_id = paste("msd-", existing_card_id, sep = ""),
+         existing_card_id = str_replace(existing_card_id, "msd-msd-", "msd-"),
+         existing_card_id = str_replace(existing_card_id, "msd-NA", "NA"),
+         existing_card_id = na_if(existing_card_id, "NA"),
+         location = "usa",
+         region = "pennsylvania",
+         date_of_pickup = "",
+         surveyor_pickup = "",
+         pickup_comments = "",
+         audio_device = "songmeter micro",
+         card_comments = "") %>% 
+  rename(date_of_deployment = date_and_time,
+         deployment_comments = deployment_notes_21,
+         recorder_id = dropoff_recorder_id,
+         card_id = new_card_id,
+         surveyor_deploy = user_id,
+         longitude = x,
+         latitude = y,
+         site = site_name) %>% 
+  filter(!dropoff_or_pickup == "pickup") %>% 
+  select(!c(dropoff_or_pickup, new_batteries_card, existing_card_id)) %>% 
+  mutate(site = case_when(site == "tuttle" ~ "tuttle_pond",
+                          site == "rv pond" ~ "rv_pond",
+                          site == "phelps pond" ~ "phelps_pond",
+                          site == "admin" ~ "admin_pond",
+                          site == "tryon weber" ~ "tryon_weber",
+                          site == "vorisek pond" ~ "vorisek_pond",
+                          site == "verisek pond small wood frog" ~ "vorisek_pond",
+                          site == "wood lab" ~ "wood_lab",
+                          site == "tryon-weber woods" ~ "tryon_weber",
+                          site == "admin site" ~ "admin_pond",
+                          site == "tuttle i" ~ "tuttle_pond",
+                          site == "phelps" ~ "phelps_pond",
+                          site == "voriseck back pond" ~ "vorisek_pond",
+                          site == "voriseck - near house" ~ "vorisek_pond"),
+         surveyor_pickup = paste(surveyor_deploy)) %>% 
+  unite(deployment_comments, c("deployment_comments", "deployment_notes_26"), sep = "", na.rm = T)
+
+
+
+
 
 ```
 
-# 2022 sn audio - Need memory card IDs
+# 2022 sn audio - clean
 ```{r}
 
-raw_sn_dep <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = 1) %>% 
+raw_sn_dep <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = "deployments") %>% 
   clean_names() %>% 
-  select(point_id, audio_device_id, deployment_notes, user_id, date_and_time, site_name_and_id, song_meter_micro_or_audio_moth_hydrophone,
+  select(audio_device_id, deployment_notes, user_id, date_and_time, site_name_and_id, song_meter_micro_or_audio_moth_hydrophone,
          x, y)
 
-raw_sn_pick <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = 2) %>% 
+sn_dep <- raw_sn_dep %>% 
+  mutate_all(.funs = str_to_lower) %>% 
+  mutate(site_name_and_id = substr(site_name_and_id, 1, 6 ),
+         region = "california",
+         location = "usa") %>% 
+  rename(date_of_deployment = date_and_time,
+         longitude = x,
+         latitude = y,
+         audio_device = song_meter_micro_or_audio_moth_hydrophone,
+         surveyor_deploy = user_id,
+         site = site_name_and_id,
+         recorder_id = audio_device_id,
+         deployment_comments = deployment_notes)
+
+
+
+raw_sn_pick <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = "pickups") %>% 
   clean_names() %>% 
-  select(site_name_id, song_meter_micro_or_audio_moth_hydrophone, other_audio_device_id, )
+  select(other_audio_device_id, new_sd_card_id, other_new_sd_card_id, user_id, date_and_time)
+
+sn_pick <- raw_sn_pick %>% 
+  mutate_all(.funs = str_to_lower) %>% 
+  rename(surveyor_pickup = user_id,
+         recorder_id = other_audio_device_id,
+         date_of_pickup = date_and_time) %>% 
+  unite(pickup_comments, c(new_sd_card_id:other_new_sd_card_id), sep = ",", na.rm = T)
+
+
+
+sn_card_ids <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), sheet = "post field card check") %>% 
+  clean_names() %>% 
+  mutate_all(.funs = str_to_lower) %>% 
+  select(sd_card_id, songmeter_micro_id, comment) %>% 
+  rename(card_id = sd_card_id,
+         recorder_id = songmeter_micro_id,
+         card_comments = comment)
+  
+
+
+sn_audio <- left_join(sn_dep, sn_pick, by = c("recorder_id")) %>% 
+  left_join(sn_card_ids, by = c("recorder_id"))
+
+
+```
+
+# 2022 panama audio - Need to meet with Jamie and Delhia to understand data
+```{r}
+
+raw_pan <- read_excel(here("data", "panama", "audio", "panama_audio_2022.xlsx"), sheet = "deployment and pickup info") %>% 
+  clean_names() %>% 
+  select(date_1, region_2, site_4, bioacoustic_deploypickup, bioacoustics_existingnew_point,
+         bioacoustic_device_deployed, bioacoustic_sd_deployed, bioacoustic_device_recovered, bioacoustic_sd_recovered, notes_bioacoustic_devicesd,
+         utmz, utmn, utmn, observers)
+
+pan_audio <- raw_pan %>% 
+  rename()
+
+
 
 ```
 
