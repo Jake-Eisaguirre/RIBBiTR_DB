@@ -53,12 +53,14 @@ brazil_audio <- raw_brazil %>%
          pickup_comments = "",
          surveyor_pickup = "",
          card_comments = "",
-         date_of_pickup = "") %>% 
+         date_of_pickup = "",
+         recorder_id = if_else(recorder_id == "smm#####", "smm03810", recorder_id)) %>% 
   left_join(brazil_card_id, by = c("recorder_id"))
+
 
 ```
 
-# 2022 penn audio - Need date for when audio recorders were picked up
+# 2022 penn audio - Need date for audio recorder pick up
 ```{r}
 
 raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), sheet = 1) %>% 
