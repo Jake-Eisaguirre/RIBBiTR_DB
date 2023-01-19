@@ -1,5 +1,5 @@
 # RIBBiTR Database
-The scripts found with in this repository are used to create the Resilience Institute Bridging Biological and Technological Research database, an NSF funded institute. The data contained within the database has individual level characteristics for Amphibian and Batrachochytrium dendrobatidis (Bd) populations, as well as, antimicrobial peptide, antibody, and microbiome community characteristics. The extent of the spatial scale ranges from Brazil, Panama, Pennsylvania, Sierra Nevadas, Vermont, New Mexico, Louisana, and Tennesse. The temporal scale ranges from 1995, for limited sites, with planned data collection until 2026. 
+The scripts found with in this repository are used to create the Resilience Institute Bridging Biological Training and Research database, an NSF funded institute. The data contained within the database has individual level characteristics for Amphibian and Batrachochytrium dendrobatidis (Bd) populations, as well as, antimicrobial peptide, antibody, and microbiome community characteristics. The extent of the spatial scale ranges from Brazil, Panama, Pennsylvania, Sierra Nevadas, Vermont, New Mexico, Louisana, and Tennesse. The temporal scale ranges from 1995, for limited sites, with planned data collection until 2026. 
 
 If you are an outside researcher who has interest in using this data, please contact me. 
 
