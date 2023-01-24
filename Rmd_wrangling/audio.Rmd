@@ -60,7 +60,7 @@ brazil_audio <- raw_brazil %>%
 
 ```
 
-# 2022 penn audio - Need date for audio recorder pick up
+# 2022 penn audio - clean
 ```{r}
 
 raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), sheet = 1) %>% 
@@ -69,7 +69,7 @@ raw_pen <- read_excel(here("data", "penn", "audio", "penn_audio_2022.xlsx"), she
          new_batteries_card, existing_card_id, new_card_id, deployment_notes_26,
          user_id, date_and_time, x, y)
 
-pen_audio <- raw_pen %>% 
+penn_audio <- raw_pen %>% 
   mutate_all(.funs = str_to_lower) %>% 
   mutate(existing_card_id = paste("msd-", existing_card_id, sep = ""),
          existing_card_id = str_replace(existing_card_id, "msd-msd-", "msd-"),
@@ -107,10 +107,18 @@ pen_audio <- raw_pen %>%
                           site == "voriseck back pond" ~ "vorisek_pond",
                           site == "voriseck - near house" ~ "vorisek_pond"),
          surveyor_pickup = paste(surveyor_deploy)) %>% 
-  unite(deployment_comments, c("deployment_comments", "deployment_notes_26"), sep = "", na.rm = T)
+  unite(deployment_comments, c("deployment_comments", "deployment_notes_26"), sep = "", na.rm = T) %>% 
+  mutate(date_of_deployment = as.character(as_date(date_of_deployment)))
 
 
-
+# add date of pick up
+penn_audio <- penn_audio %>% 
+  group_by(recorder_id) %>% 
+  arrange(date_of_deployment) %>% 
+  mutate(date_of_pickup = lead(date_of_deployment)) %>% 
+  ungroup() %>% 
+  arrange(recorder_id) %>% 
+  mutate(date_of_pickup = if_else(is.na(date_of_pickup), "2022-12-12", date_of_pickup))
 
 
 ```
