@@ -14,7 +14,7 @@ if (!require(librarian)){
 }
 
 # librarian downloads, if not already downloaded, and reads in needed packages
-librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate)
+librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate, uuid)
 ```
 
 # 2022 brazil audio - clean
@@ -118,7 +118,9 @@ penn_audio <- penn_audio %>%
   mutate(date_of_pickup = lead(date_of_deployment)) %>% 
   ungroup() %>% 
   arrange(recorder_id) %>% 
-  mutate(date_of_pickup = if_else(is.na(date_of_pickup), "2022-12-12", date_of_pickup))
+  mutate(date_of_pickup = if_else(is.na(date_of_pickup), "2022-12-12", date_of_pickup),
+         date_of_deployment = as_date(date_of_deployment),
+         date_of_pickup = as_date(date_of_pickup))
 
 
 ```
@@ -171,7 +173,9 @@ sn_card_ids <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), she
 
 
 sn_audio <- left_join(sn_dep, sn_pick, by = c("recorder_id")) %>% 
-  left_join(sn_card_ids, by = c("recorder_id"))
+  left_join(sn_card_ids, by = c("recorder_id")) %>% 
+  mutate(date_of_deployment = as_date(date_of_deployment),
+         date_of_pickup = as_date(date_of_pickup))
 
 
 ```
@@ -183,12 +187,105 @@ raw_pan <- read_excel(here("data", "panama", "audio", "panama_audio_2022.xlsx"),
   clean_names() %>% 
   select(date_1, region_2, site_4, bioacoustic_deploypickup, bioacoustics_existingnew_point,
          bioacoustic_device_deployed, bioacoustic_sd_deployed, bioacoustic_device_recovered, bioacoustic_sd_recovered, notes_bioacoustic_devicesd,
-         utmz, utmn, utmn, observers)
+         utmz, utmn, utmn, observers) %>% 
+  filter(!bioacoustic_device_deployed == "SMM00000") %>% 
+  rename(date_of_deployment = date_1,
+         region = region_2,
+         site = site_4,
+         recorder_id = bioacoustic_device_deployed,
+         card_id = bioacoustic_sd_deployed,
+         deployment_comments = notes_bioacoustic_devicesd,
+         surveyor_deploy = observers)
 
 pan_audio <- raw_pan %>% 
-  rename()
+  mutate_all(.funs = str_to_lower) %>% 
+  mutate(location = "panama",
+         audio_device = "songmeter micro",
+         pickup_comments = "",
+         surveyor_pickup = "",
+         card_comments = "",
+         date_of_pickup = "",
+         date_of_deployment = as_date(date_of_deployment),
+         region = str_replace_all(region, " ", "_"),
+         site = str_replace_all(site, " ", "_")) %>% 
+  select(!c(bioacoustic_deploypickup, bioacoustics_existingnew_point, bioacoustic_device_recovered, bioacoustic_sd_recovered))
 
 
+
+```
+
+# bind all audio
+```{r}
+
+audio <- plyr::rbind.fill(brazil_audio, penn_audio, sn_audio, pan_audio)
+
+```
+
+# audio location
+```{r}
+
+audio_location <- data.frame(c("panama", "brazil", "usa"))
+
+colnames(audio_location) <- c("location")
+
+audio_location <- audio_location %>% 
+  group_by(location) %>% 
+  mutate(location_id = UUIDgenerate())
+
+write_csv(audio_location, here("clean_tables", "audio_location.csv"))
+
+```
+
+# audio region
+```{r}
+
+audio_region <- audio %>% 
+  select(region,location) %>% 
+  group_by(region, location) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id) %>% 
+  mutate(region_id = UUIDgenerate())
+
+write_csv(audio_region, here("clean_tables", "audio_region.csv"))
+
+```
+
+# audio site
+```{r}
+
+audio_site <- audio %>% 
+  select(site, region, date_of_deployment) %>% 
+  group_by(site) %>% 
+  unique() %>% 
+  mutate(site_id = UUIDgenerate())
+
+write_csv(audio_site, here("clean_tables", "audio_site.csv"))
+```
+
+# audio visit
+```{r}
+
+audio_visit <- audio %>% 
+  select(site, date_of_deployment) %>% 
+  group_by(date_of_deployment) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id)%>% 
+  mutate(visit_id = UUIDgenerate())
+
+write_csv(audio_visit, here("clean_tables", "audio_visit.csv"))
+
+```
+
+# audio info
+```{r}
+
+audio_info <- audio %>% 
+  select(!c(location, region))%>% 
+  mutate(audio_id = UUIDgenerate())
+
+write_csv(audio_info, here("clean_tables", "audio_info.csv"))
 
 ```
 
