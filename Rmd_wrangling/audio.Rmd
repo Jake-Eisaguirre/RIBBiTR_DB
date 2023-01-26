@@ -187,7 +187,7 @@ raw_pan <- read_excel(here("data", "panama", "audio", "panama_audio_2022.xlsx"),
   clean_names() %>% 
   select(date_1, region_2, site_4, bioacoustic_deploypickup, bioacoustics_existingnew_point,
          bioacoustic_device_deployed, bioacoustic_sd_deployed, bioacoustic_device_recovered, bioacoustic_sd_recovered, notes_bioacoustic_devicesd,
-         utmz, utmn, utmn, observers) %>% 
+         utmz, utmn, utme, observers) %>% 
   filter(!bioacoustic_device_deployed == "SMM00000") %>% 
   rename(date_of_deployment = date_1,
          region = region_2,
@@ -245,7 +245,8 @@ audio_region <- audio %>%
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!temp_id) %>% 
-  mutate(region_id = UUIDgenerate())
+  mutate(region_id = UUIDgenerate(),
+         location_id = "")
 
 write_csv(audio_region, here("clean_tables", "audio_region.csv"))
 
@@ -255,10 +256,13 @@ write_csv(audio_region, here("clean_tables", "audio_region.csv"))
 ```{r}
 
 audio_site <- audio %>% 
-  select(site, region, date_of_deployment) %>% 
+  select(site, region) %>% 
   group_by(site) %>% 
-  unique() %>% 
-  mutate(site_id = UUIDgenerate())
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id)%>% 
+  mutate(site_id = UUIDgenerate(),
+         region_id = "")
 
 write_csv(audio_site, here("clean_tables", "audio_site.csv"))
 ```
@@ -272,7 +276,8 @@ audio_visit <- audio %>%
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!temp_id)%>% 
-  mutate(visit_id = UUIDgenerate())
+  mutate(visit_id = UUIDgenerate(),
+         site_id = "")
 
 write_csv(audio_visit, here("clean_tables", "audio_visit.csv"))
 
@@ -282,8 +287,11 @@ write_csv(audio_visit, here("clean_tables", "audio_visit.csv"))
 ```{r}
 
 audio_info <- audio %>% 
-  select(!c(location, region))%>% 
-  mutate(audio_id = UUIDgenerate())
+  select(!c(location, region, utmz))%>% 
+  group_by(recorder_id, date_of_deployment, site) %>% 
+  mutate(utm_zone = "17",
+         audio_id = UUIDgenerate(),
+         visit_id = "")
 
 write_csv(audio_info, here("clean_tables", "audio_info.csv"))
 

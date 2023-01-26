@@ -646,3 +646,63 @@ dbWriteTable(connection, 'edna_panama_survey', edna_panama_survey, overwrite=T,
 
 ```
 
+# upload data to `audio` schema
+```{r}
+# remove current schema
+dbExecute(connection, "DROP SCHEMA audio CASCADE")
+
+# create new empty schema
+dbExecute(connection, "create schema audio")
+
+# set search path
+dbExecute(connection, "set search_path to audio")
+
+#audio location
+dbWriteTable(connection, 'audio_location', audio_location, overwrite=T,
+             field.types = c(location = "varchar",
+                             location_id = "uuid"))
+
+#audio region
+dbWriteTable(connection, 'audio_region', audio_region, overwrite=T,
+             field.types = c(location = "varchar",
+                             region = "varchar",
+                             region_id = "uuid",
+                             location_id = "uuid"))
+
+#audio site
+dbWriteTable(connection, 'audio_site', audio_site, overwrite = T,
+             field.types = c(site = "varchar",
+                             region = "varchar",
+                             site_id = "uuid",
+                             region_id = "uuid"))
+
+#audio visit
+dbWriteTable(connection, 'audio_visit', audio_visit, overwrite = T,
+             field.types = c(site = "varchar",
+                             date_of_deployment = "date",
+                             visit_id = "uuid",
+                             site_id = "uuid"))
+
+#audio info
+dbWriteTable(connection, 'audio_info', audio_info, overwrite = T,
+             field.types = c(site = "varchar",
+                             recorder_id = "varchar",
+                             date_of_deployment = "date",
+                             latitude = "varchar",
+                             longitude = "varchar",
+                             surveyor_deploy = "varchar",
+                             deployment_comments = "varchar",
+                             audio_device = "varchar",
+                             pickup_comments = "varchar",
+                             surveyor_pickup = "varchar",
+                             card_comments = "varchar",
+                             date_of_pickup = "varchar",
+                             card_id = "varchar",
+                             utm_zone = "int",
+                             utmn = "int",
+                             utme = "int",
+                             audio_id = "uuid",
+                             visit_id = "uuid"))
+
+```
+
