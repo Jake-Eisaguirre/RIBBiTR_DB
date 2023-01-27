@@ -357,6 +357,18 @@ dbExecute(connection, "alter table audio_info
                        references audio_visit (visit_id);")
 
 
+# drop columns 
+dbExecute(connection, "alter table audio_region drop column region;")
+
+dbExecute(connection, "alter table audio_site drop column region;")
+
+dbExecute(connection, "alter table audio_visit drop column site;")
+
+dbExecute(connectino, "alter table audio_info drop column site;")
+
+dbExecute(connection, "alter table audio_info drop column date_of_deployment;")
+
+
 
 ```
 
