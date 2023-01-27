@@ -358,13 +358,13 @@ dbExecute(connection, "alter table audio_info
 
 
 # drop columns 
-dbExecute(connection, "alter table audio_region drop column region;")
+dbExecute(connection, "alter table audio_region drop column location;")
 
 dbExecute(connection, "alter table audio_site drop column region;")
 
 dbExecute(connection, "alter table audio_visit drop column site;")
 
-dbExecute(connectino, "alter table audio_info drop column site;")
+dbExecute(connection, "alter table audio_info drop column site;")
 
 dbExecute(connection, "alter table audio_info drop column date_of_deployment;")
 

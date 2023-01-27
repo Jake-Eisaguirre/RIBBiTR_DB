@@ -234,8 +234,9 @@ pan_audio <- raw_pan %>%
          date_of_pickup = "",
          date_of_deployment = as_date(date_of_deployment),
          region = str_replace_all(region, " ", "_"),
-         site = str_replace_all(site, " ", "_")) %>% 
-  select(!c(bioacoustic_deploypickup, bioacoustics_existingnew_point, bioacoustic_device_recovered, bioacoustic_sd_recovered))
+         site = str_replace_all(site, " ", "_"),
+         utm_zone = "17") %>% 
+  select(!c(bioacoustic_deploypickup, bioacoustics_existingnew_point, bioacoustic_device_recovered, bioacoustic_sd_recovered, utmz))
 
 
 
@@ -315,7 +316,7 @@ write_csv(audio_visit, here("clean_tables", "audio_visit.csv"))
 ```{r}
 
 audio_info <- audio %>% 
-  select(!c(location, region, utmz))%>% 
+  select(!c(location, region))%>% 
   group_by(recorder_id, date_of_deployment, card_id) %>% 
   mutate(
          audio_id = UUIDgenerate(),
@@ -323,12 +324,12 @@ audio_info <- audio %>%
 
 write_csv(audio_info, here("clean_tables", "audio_info.csv"))
 
-data <- audio_info %>% 
-  ungroup() %>% 
-  select(latitude, longitude, utm_zone) %>% 
-  filter(!is.na(longitude))
-
-dput(data)
+# data <- audio_info %>% 
+#   ungroup() %>% 
+#   select(latitude, longitude, utm_zone) %>% 
+#   filter(!is.na(longitude))
+# 
+# dput(data)
 
 ```
 
