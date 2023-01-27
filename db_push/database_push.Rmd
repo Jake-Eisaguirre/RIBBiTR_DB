@@ -699,8 +699,8 @@ dbWriteTable(connection, 'audio_info', audio_info, overwrite = T,
                              date_of_pickup = "varchar",
                              card_id = "varchar",
                              utm_zone = "int",
-                             utmn = "int",
-                             utme = "int",
+                             utmn = "float8",
+                             utme = "float8",
                              audio_id = "uuid",
                              visit_id = "uuid"))
 

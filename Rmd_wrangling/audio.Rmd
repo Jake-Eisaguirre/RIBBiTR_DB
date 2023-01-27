@@ -54,7 +54,8 @@ brazil_audio <- raw_brazil %>%
          surveyor_pickup = "",
          card_comments = "",
          date_of_pickup = "",
-         recorder_id = if_else(recorder_id == "smm#####", "smm03810", recorder_id)) %>% 
+         recorder_id = if_else(recorder_id == "smm#####", "smm03810", recorder_id),
+         utm_zone = "23") %>% 
   left_join(brazil_card_id, by = c("recorder_id"))
 
 
@@ -120,7 +121,20 @@ penn_audio <- penn_audio %>%
   arrange(recorder_id) %>% 
   mutate(date_of_pickup = if_else(is.na(date_of_pickup), "2022-12-12", date_of_pickup),
          date_of_deployment = as_date(date_of_deployment),
-         date_of_pickup = as_date(date_of_pickup))
+         date_of_pickup = as_date(date_of_pickup),
+         latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude),
+         utm_zone = "17")
+
+v <- terra::vect(penn_audio, c("longitude", "latitude"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=17")
+utm <- terra::crds(u)
+
+i <- which(!is.na(penn_audio$longitude))
+penn_audio[i, c("utme", "utmn")] <- utm
+
+penn_audio <- penn_audio %>% 
+  select(!c(longitude, latitude))
 
 
 ```
@@ -175,7 +189,20 @@ sn_card_ids <- read_excel(here("data", "sn", "audio", "sn_audio_2022.xlsx"), she
 sn_audio <- left_join(sn_dep, sn_pick, by = c("recorder_id")) %>% 
   left_join(sn_card_ids, by = c("recorder_id")) %>% 
   mutate(date_of_deployment = as_date(date_of_deployment),
-         date_of_pickup = as_date(date_of_pickup))
+         date_of_pickup = as_date(date_of_pickup),
+         latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude),
+         utm_zone = "11")
+
+v <- terra::vect(sn_audio, c("longitude", "latitude"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=11")
+utm <- terra::crds(u)
+
+i <- which(!is.na(sn_audio$longitude))
+sn_audio[i, c("utme", "utmn")] <- utm
+
+sn_audio <- sn_audio %>% 
+  select(!c(longitude, latitude))
 
 
 ```
@@ -219,10 +246,6 @@ pan_audio <- raw_pan %>%
 
 audio <- plyr::rbind.fill(brazil_audio, penn_audio, sn_audio, pan_audio)
 
-test <- audio %>% 
-  group_by(recorder_id, date_of_deployment, card_id) %>% 
-  mutate(temp_id = cur_group_id()) %>% 
-  filter(!duplicated(temp_id))
 
 ```
 
@@ -294,11 +317,19 @@ write_csv(audio_visit, here("clean_tables", "audio_visit.csv"))
 audio_info <- audio %>% 
   select(!c(location, region, utmz))%>% 
   group_by(recorder_id, date_of_deployment, card_id) %>% 
-  mutate(utm_zone = "17",
+  mutate(
          audio_id = UUIDgenerate(),
          visit_id = "")
 
 write_csv(audio_info, here("clean_tables", "audio_info.csv"))
 
+data <- audio_info %>% 
+  ungroup() %>% 
+  select(latitude, longitude, utm_zone) %>% 
+  filter(!is.na(longitude))
+
+dput(data)
+
 ```
+
 
