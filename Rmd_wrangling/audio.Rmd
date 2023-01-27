@@ -219,6 +219,11 @@ pan_audio <- raw_pan %>%
 
 audio <- plyr::rbind.fill(brazil_audio, penn_audio, sn_audio, pan_audio)
 
+test <- audio %>% 
+  group_by(recorder_id, date_of_deployment, card_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id))
+
 ```
 
 # audio location
@@ -272,7 +277,7 @@ write_csv(audio_site, here("clean_tables", "audio_site.csv"))
 
 audio_visit <- audio %>% 
   select(site, date_of_deployment) %>% 
-  group_by(date_of_deployment) %>% 
+  group_by(date_of_deployment, site) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!temp_id)%>% 
@@ -288,7 +293,7 @@ write_csv(audio_visit, here("clean_tables", "audio_visit.csv"))
 
 audio_info <- audio %>% 
   select(!c(location, region, utmz))%>% 
-  group_by(recorder_id, date_of_deployment, site) %>% 
+  group_by(recorder_id, date_of_deployment, card_id) %>% 
   mutate(utm_zone = "17",
          audio_id = UUIDgenerate(),
          visit_id = "")
