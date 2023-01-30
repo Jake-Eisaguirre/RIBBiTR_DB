@@ -320,7 +320,11 @@ audio_info <- audio %>%
   group_by(recorder_id, date_of_deployment, card_id) %>% 
   mutate(
          audio_id = UUIDgenerate(),
-         visit_id = "")
+         visit_id = "") %>% 
+  relocate(audio_device, .after = recorder_id) %>% 
+  relocate(c(utme, utmn, utm_zone), .after = longitude) %>% 
+  relocate(card_id, .after = audio_device) %>% 
+  rename(memory_card_id = card_id)
 
 write_csv(audio_info, here("clean_tables", "audio_info.csv"))
 
