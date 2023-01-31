@@ -44,11 +44,11 @@ tryCatch({
     drv <- dbDriver("Postgres")
     print("Connecting to Database…")
     connection <- dbConnect(drv, 
-                 dbname = Sys.getenv("dbname"),
-                 host = Sys.getenv("host"), 
-                 port = Sys.getenv("port"),
-                 user = Sys.getenv("user"), 
-                 password = Sys.getenv("password"),
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
                  timezone=NULL)
     print("Database Connected!")
     },
@@ -62,7 +62,7 @@ tryCatch({
 ## upload unique tables to `RIBBiTR` DB - `survey_data` schema
 ```{r}
 # remove current schema
-dbExecute(connection, "DROP SCHEMA survey_data CASCADE")
+dbExecute(conn = connection, "DROP SCHEMA survey_data CASCADE")
 
 # create new empty schema
 dbExecute(connection, "create schema survey_data")
