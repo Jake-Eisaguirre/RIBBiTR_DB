@@ -554,6 +554,9 @@ dbWriteTable(connection, 'hobo', hobo, overwrite=T,
 
 ## upload data to `antifungal_isolate` schmea
 ```{r}
+# create new empty schema
+dbExecute(connection, "create schema antifungal_isolate")
+
 dbExecute(connection, "set search_path to antifungal_isolate")
 
 dbWriteTable(connection, 'antifungal_isolate_ref', antifungal_isolate_ref, overwrite=T)
@@ -563,24 +566,35 @@ dbWriteTable(connection, 'antifungal_isolate_ref', antifungal_isolate_ref, overw
 
 ## upload data to `e_dna` schema
 ```{r}
+# remove current schema
+dbExecute(conn = connection, "DROP SCHEMA e_dna CASCADE")
+
+# create new empty schema
+dbExecute(connection, "create schema e_dna")
+
 # set search path
 dbExecute(connection, "set search_path to e_dna")
 
 #location table load
 dbWriteTable(connection, 'edna_location', location, overwrite=T,
-             field.types = c(location = "varchar(6)"))
+             field.types = c(location = "varchar(6)",
+                             location_id = "uuid"))
 
 #region table load
 dbWriteTable(connection, 'edna_region', regions, overwrite=T,
              field.types = c(region = "varchar(16)",
-                             location = "varchar(6)"))
+                             location = "varchar(6)",
+                             region_id = "uuid",
+                             location_id = "uuid"))
 
 #site table load
 dbWriteTable(connection, 'edna_site', edna_site, overwrite=T,
              field.types = c(region = "varchar(16)",
                              site = "varchar",
                              date_collected = "date",
-                             site_code = "varchar(4)"))
+                             site_code = "varchar(4)",
+                             site_id = "uuid",
+                             region_id = "uuid"))
 
 #edna visit load
 dbWriteTable(connection, 'edna_visit', edna_visit, overwrite=T,
@@ -589,7 +603,9 @@ dbWriteTable(connection, 'edna_visit', edna_visit, overwrite=T,
                              year = "int",
                              month = "int",
                              day = "int",
-                             site_code = "varchar(4)"))
+                             site_code = "varchar(4)",
+                             visit_id = "uuid",
+                             site_id = "uuid"))
 #edna serdp processed
 dbWriteTable(connection, 'edna_serdp_bd', edna_serdp_bd, overwrite=T,
              field.types = c(pool_id = "varchar",
@@ -625,7 +641,9 @@ dbWriteTable(connection, 'edna_serdp_bd', edna_serdp_bd, overwrite=T,
                              sample_rerun = "boolean",
                              q_pcr_results_file = "varchar",
                              edna_comments = "varchar",
-                             region = "varchar"))
+                             region = "varchar",
+                             serdp_bd_id = "uuid",
+                             visit_id = "uuid"))
 
 #edna pan metadata
 dbWriteTable(connection, 'edna_panama_survey', edna_panama_survey, overwrite=T,
@@ -638,7 +656,9 @@ dbWriteTable(connection, 'edna_panama_survey', edna_panama_survey, overwrite=T,
                              start_time = "time",
                              end_time = "time",
                              volume_of_filtered_sample_ml = "int",
-                             edna_comments = "varchar"))
+                             edna_comments = "varchar",
+                             panama_survey_id = "uuid",
+                             visit_id = "uuid"))
 
 
 

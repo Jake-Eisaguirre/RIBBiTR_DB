@@ -15,7 +15,7 @@ if (!require(librarian)){
 
 # librarian downloads, if not already downloaded, and reads in needed packages
 librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
-                 anytime, terra, sp, rgdal, RWmisc, proj4)
+                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
 ```
 
 # serdp edna data
@@ -119,7 +119,9 @@ collection_serdp_edna <- full_serdp_edna %>%
          bd_positive = bd_pos_neg,
          bsal_positive = bsal_pos_neg,
          qpcr_neg_control_pass = q_pcr_neg_control,
-         edna_comments = notes)
+         edna_comments = notes) %>% 
+  mutate(serdp_bd_id = UUIDgenerate(output = "uuid", n = n()),
+         visit_id = as.UUID(""))
 
 write_csv(collection_serdp_edna, here("clean_tables", "edna_serdp_bd.csv"))
 
@@ -195,7 +197,9 @@ pan_edna_metadata <- full_pan_edna %>%
   rename(date_collected = start_date) %>% 
   mutate(geometry = str_remove(geometry, "POINT "),
          geometry = str_remove_all(geometry, "[()]"),
-         geometry = str_replace(geometry, " ", ","))
+         geometry = str_replace(geometry, " ", ","))  %>% 
+  mutate(panama_survey_id = UUIDgenerate(output = "uuid", n = n()),
+         visit_id = as.UUID(""))
 
 
 write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
@@ -206,7 +210,11 @@ write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))
 # bind site tables 
 ```{r}
 
-edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable)
+edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable)%>% 
+  mutate(site = if_else(is.na(site), site_code, site)) %>% 
+  group_by(site) %>% 
+  mutate(site_id = UUIDgenerate(output = c("uuid")),
+         region_id = as.UUID(""))
 
 write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
 
@@ -214,7 +222,10 @@ write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
 # bind date/visit table
 ```{r}
 
-visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table)
+visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table) %>% 
+  group_by(site, date_collected) %>% 
+  mutate(visit_id = UUIDgenerate(output = c("uuid")),
+         site_id = as.UUID(""))
 
 write_csv(visit_table, here("clean_tables", "edna_visit.csv"))
 
