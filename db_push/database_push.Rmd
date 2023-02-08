@@ -61,7 +61,7 @@ tryCatch({
 
 ## upload unique tables to `RIBBiTR` DB - `survey_data` schema
 ```{r}
-# remove current schema
+# remove current schema 
 dbExecute(conn = connection, "DROP SCHEMA survey_data CASCADE")
 
 # create new empty schema
