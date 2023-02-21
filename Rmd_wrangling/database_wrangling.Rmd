@@ -1125,7 +1125,6 @@ penn_capture <- penn1_capture %>%
          photo_id = bag_photo,
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
-         notes_capture = capture_comments,
          body_temp_c = body_temperature_c,
          bd_swab_id = dry_swab_tube_id,
          crispr_id = crispr_swab_tube_id,
@@ -1179,7 +1178,8 @@ sn_capture_table <- sn_capture %>%
                                      species_capture == "tato" ~ "taricha_torosa")) %>% 
   rename(bd_swab_id = swab_id,
          capture_utme = utme,
-         capture_utmn = utmn)
+         capture_utmn = utmn,
+         capture_comments = notes_capture)
 
   
 #write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))
@@ -1260,7 +1260,6 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          amp_id = am_ps,
          microbiome_swab_id = microbiome, #micriobiome column both types, culture and sequence
          substrate_temp_c = substrate_temp,
-         notes_capture = capture_comments,
          antibody_id = antibodies) %>% 
   left_join(t, by = c("sample_id")) %>% 
   select(!c(sample_id))
@@ -1347,7 +1346,8 @@ panama_capture <- panama_raw %>%
          bd_swab_id = bdswab,
          microbiome_swab_id = bacteria_swab, #dry swab frozen
          species_capture = species,
-         capture_animal_state = dead) %>% 
+         capture_animal_state = dead,
+         capture_comments = notes_capture) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive")) %>% 
   select(!c(swab_id)) %>% 
@@ -1362,7 +1362,7 @@ write_csv(panama_capture, here("data", "panama_legacy", "clean_tables", "clean_p
 
 capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_capture,
                             sn_capture_table) %>% 
-  mutate(notes_capture = str_replace_all(notes_capture, "[[:punct:]]", ""),
+  mutate(capture_comments = str_replace_all(capture_comments, "[[:punct:]]", ""),
          site = str_replace_all(site, "-", "_"),
          site = str_replace_all(site, " ", "_"),
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
@@ -1372,7 +1372,7 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
   relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
   relocate(c(mucosome_id:ampshcl), .after = e_dna) %>% 
   relocate(c(crispr_id:antibody_id_4), .after = ampshcl) %>% 
-  relocate(notes_capture, .after = antibody_id_4) %>% 
+  relocate(capture_comments, .after = antibody_id_4) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
          survey_id = as.UUID(""))
 
