@@ -1097,7 +1097,7 @@ all_newt_ids <- newt %>%
 
 penn_capture <- penn1_capture %>% 
   select(!c(region, location, visit_comment, survey_comment, start_time, end_time,
-            observer)) %>% 
+            observer, duration_min)) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "-", "_"),
          species_capture = str_replace_all(species_capture, " ", "_")) %>% 
