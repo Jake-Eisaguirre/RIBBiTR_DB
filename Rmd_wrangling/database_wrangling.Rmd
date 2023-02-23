@@ -1245,7 +1245,8 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
          body_and_bag_mass_g = mass_of_animal_in_bag,
          body_mass_g = mass_of_animal_g,
          body_temp_c = body_temp,
-         microhabitat_type = microhabitat_category) %>% 
+         microhabitat_type = microhabitat_category,
+         location_serdp = location) %>% 
   select(!c(species_code, frog_number, frog_id)) %>% 
   mutate(site = str_to_lower(site),
          site = str_replace_all(site, " ", "_"),
