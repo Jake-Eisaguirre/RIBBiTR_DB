@@ -206,6 +206,75 @@ write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))
 
 ```
 
+# SN edna data
+## db connection
+```{r}
+
+tryCatch({
+print("Connecting to Database…")
+connection <- dbConnect(drv = dbDriver("Postgres"),
+                        dbname = Sys.getenv("sn_dbname"),
+                        host = Sys.getenv("sn_host"),
+                        port = Sys.getenv("sn_port"),
+                        user = Sys.getenv("sn_user"),
+                        password = Sys.getenv("sn_password"),
+                        timezone=NULL)
+print("Database Connected!")
+},
+error=function(cond) {
+print("Unable to connect to Database.")})
+# set search path for 'survey_data' schema
+dbSendQuery(connection, "set search_path = 'public'")
+
+```
+```{sql, connection = connection, output.var = sn_edna_sites}
+
+select s.*, v.*, s2.*
+from site s
+join visit v on s.id = v.site_id 
+join survey s2 on v.id = s2.visit_id
+where v.visit_date = '2022-09-14';
+
+```
+
+```{sql, connection = connection, output.var = sing_sn_site}
+
+select s. *
+from site s
+where s.id = '72336';
+
+```
+
+## bind sn sites
+```{r}
+
+sn_sites <- plyr::rbind.fill(sn_edna_sites, sing_sn_site) %>% 
+  select(!c(site_id)) %>% 
+  mutate(visit_date = if_else(is.na(visit_date), as.character("2022-09-14"), as.character(visit_date)),
+         visit_status = if_else(is.na(visit_status), as.character("suitable"), as.character(visit_status)))
+  
+
+```
+
+## load edna metadata from fulcrum
+```{r}
+
+sn_edna_meta <- read_csv(here("data", "sn", "edna", "edna_sn_2022.csv")) %>% 
+  select(!c(fulcrum_id, fulcrum_record_id, version, created_at, updated_at, created_by,
+            updated_by, latitude, longitude, geometry))
+
+
+
+```
+## join all sn edna together - NEED to MOVE Data manually for site 72336
+
+```{r}
+
+sn_edna <- sn_sites %>% 
+  left_join(sn_edna_meta, by = c("id..18" ="fulcrum_parent_id"))
+
+```
+
 
 # bind site tables 
 ```{r}
