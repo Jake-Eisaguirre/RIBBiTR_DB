@@ -196,10 +196,14 @@ pan_edna_metadata <- full_pan_edna %>%
    relocate(control, .after=id_edna_sample)%>% 
   rename(date_collected = start_date,
          edna_location_m = transect_meters_sampled_m,
-         edna_volume_ml = volume_of_filtered_sample_ml) %>% 
+         edna_volume_ml = volume_of_filtered_sample_ml,
+         edna_sample_id = id_edna_sample) %>% 
   mutate(geometry = str_remove(geometry, "POINT "),
          geometry = str_remove_all(geometry, "[()]"),
-         geometry = str_replace(geometry, " ", ","))  %>% 
+         geometry = str_replace(geometry, " ", ","),
+         active_passive = "active",
+         filter_size_um = "see edna comments",
+         edna_volume_ml = if_else(is.na(edna_volume_ml), 1000, edna_volume_ml))  %>% 
   # mutate(panama_survey_id = UUIDgenerate(output = "uuid", n = n()),
   #        visit_id = as.UUID("")) %>% 
   select(!c(geometry))
@@ -293,7 +297,8 @@ sn_site <- sn_edna %>%
   select(region, c(1:11)) %>% 
   group_by(site) %>% 
   unique() %>% 
-  mutate(utm_zone = 11)
+  mutate(utm_zone = 11) %>% 
+  select(!c(drainage, county, topo, jurisdiction))
 
 ```
 
@@ -303,7 +308,8 @@ sn_site <- sn_edna %>%
 sn_visit <- sn_edna %>% 
   select(site, c(12:14), year, month, day) %>% 
   group_by(site, visit_date) %>% 
-  unique()
+  unique() %>% 
+  rename(date_collected = visit_date)
 
 ```
 
@@ -313,7 +319,7 @@ sn_visit <- sn_edna %>%
 sn_survey <- sn_edna %>% 
   select(site, visit_date, wind, sky, description, collect_time, c(edna_filter_id:edna_sample_comment), region) %>% 
   select(!c(frozen_hrs, sample_processing)) %>% 
-  rename(id_edna_sample = edna_filter_id,
+  rename(edna_sample_id = edna_filter_id,
          edna_comments = edna_sample_comment, 
          filter_start_time = start_time_edna,
          filter_end_time = end_time_edna,
@@ -322,7 +328,7 @@ sn_survey <- sn_edna %>%
          date_collected = visit_date,
          filter_size_um = filter_size) %>% 
   mutate(edna_comments = str_to_lower(edna_comments),
-         control = if_else(str_detect(id_edna_sample, "Negative"), 1, 0) | 
+         control = if_else(str_detect(edna_sample_id, "Negative"), 1, 0) | 
          if_else(str_detect(edna_comments, "negative"), 1, 0),
          control = if_else(is.na(control), "FALSE", as.character(control)),
          control = if_else(control == "TRUE", 1, 0),
@@ -336,7 +342,7 @@ sn_survey <- sn_edna %>%
 # bind site tables 
 ```{r}
 
-edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable)%>% 
+edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable, sn_site)%>% 
   mutate(site = if_else(is.na(site), site_code, site)) %>% 
   group_by(site) %>% 
   mutate(site_id = UUIDgenerate(output = c("uuid")),
@@ -349,7 +355,7 @@ write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
 # bind date/visit table
 ```{r}
 
-visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table) %>% 
+visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table, sn_visit) %>% 
   group_by(site, date_collected) %>% 
   mutate(visit_id = UUIDgenerate(output = c("uuid")),
          site_id = as.UUID(""))
@@ -360,6 +366,8 @@ write_csv(visit_table, here("clean_tables", "edna_visit.csv"))
 
 # bind sn and pan edna data
 ```{r}
+
+edna_survey_table <- plyr::rbind.fill(pan_edna_metadata, sn_survey)
 
 ```
 
