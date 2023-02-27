@@ -56,7 +56,6 @@ tryCatch({
             print("Unable to connect to Database.")
     })
 
-
 ```
 
 ## upload unique tables to `RIBBiTR` DB - `survey_data` schema

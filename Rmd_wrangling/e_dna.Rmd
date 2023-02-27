@@ -199,7 +199,8 @@ pan_edna_metadata <- full_pan_edna %>%
          geometry = str_remove_all(geometry, "[()]"),
          geometry = str_replace(geometry, " ", ","))  %>% 
   mutate(panama_survey_id = UUIDgenerate(output = "uuid", n = n()),
-         visit_id = as.UUID(""))
+         visit_id = as.UUID("")) %>% 
+  select(!c(geometry))
 
 
 write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
@@ -251,7 +252,8 @@ where s.id = '72336';
 sn_sites <- plyr::rbind.fill(sn_edna_sites, sing_sn_site) %>% 
   select(!c(site_id)) %>% 
   mutate(visit_date = if_else(is.na(visit_date), as.character("2022-09-14"), as.character(visit_date)),
-         visit_status = if_else(is.na(visit_status), as.character("suitable"), as.character(visit_status)))
+         visit_status = if_else(is.na(visit_status), as.character("suitable"), as.character(visit_status)),
+         id..18 = if_else(is.na(id..18), "c364972d-a339-4aab-ab28-b49f88a5d5dc", id..18))
   
 
 ```
@@ -266,14 +268,57 @@ sn_edna_meta <- read_csv(here("data", "sn", "edna", "edna_sn_2022.csv")) %>%
 
 
 ```
-## join all sn edna together - NEED to MOVE Data manually for site 72336
+## join all sn edna together - NEED to MOVE Data manually for site 72336 ID = c364972d-a339-4aab-ab28-b49f88a5d5dc
 
 ```{r}
 
 sn_edna <- sn_sites %>% 
-  left_join(sn_edna_meta, by = c("id..18" ="fulcrum_parent_id"))
+  left_join(sn_edna_meta, by = c("id..18" ="fulcrum_parent_id")) %>% 
+  mutate(location = "usa",
+         region = "california",
+         year = year(visit_date),
+         month = month(visit_date),
+         day = day(visit_date)) %>% 
+  select(!c(name, id..13, id..18, survey_type, visit_id)) %>% 
+  rename(site = id)
 
 ```
+
+## pull SN site data
+```{r}
+
+sn_site <- sn_edna %>% 
+  select(region, c(1:11)) %>% 
+  group_by(site) %>% 
+  unique()
+
+```
+
+## pull out sn visit data
+```{r}
+
+sn_visit <- sn_edna %>% 
+  select(site, c(12:14), year, month, day) %>% 
+  group_by(site, visit_date) %>% 
+  unique()
+
+```
+
+## pull out sn survey data
+```{r}
+
+sn_survey <- sn_edna %>% 
+  select(site, visit_date, wind, sky, description, c(edna_filter_id:edna_sample_comment)) %>% 
+  select(!c(frozen_hrs)) %>% 
+  rename(id_edna_sample = edna_filter_id,
+         edna_comments = edna_sample_comment, 
+         start_time = start_time_edna,
+         end_time = end_time_edna) %>% 
+  mutate(control = if_else(str_detect(id_edna_sample, "Negative"), 1, 0))
+  
+
+```
+
 
 
 # bind site tables 
@@ -288,6 +333,7 @@ edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable)%>%
 write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
 
 ```
+
 # bind date/visit table
 ```{r}
 
