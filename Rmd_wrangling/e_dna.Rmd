@@ -128,7 +128,7 @@ write_csv(collection_serdp_edna, here("clean_tables", "edna_serdp_bd.csv"))
 ```
 
 
-# panama edna
+# panama edna - ONLY HALF OF 2022 DATA
 
 ## full panama edna data
 ```{r}
@@ -146,7 +146,6 @@ full_pan_edna <- left_join(pan_site_edna2022, pan_edna_22, by = (c( "fulcrum_id"
 ## panama edna site table
 ```{r}
   
-
 pan_sites_edna <- full_pan_edna %>% 
   select(region, site, start_date) %>% 
   mutate(region = str_replace_all(str_to_lower(region), " ", "_"),
@@ -317,7 +316,7 @@ sn_visit <- sn_edna %>%
 ```{r}
 
 sn_survey <- sn_edna %>% 
-  select(site, visit_date, wind, sky, description, collect_time, c(edna_filter_id:edna_sample_comment), region) %>% 
+  select(site, visit_date, wind, sky, collect_time, c(edna_filter_id:edna_sample_comment), region) %>% 
   select(!c(frozen_hrs, sample_processing)) %>% 
   rename(edna_sample_id = edna_filter_id,
          edna_comments = edna_sample_comment, 
@@ -367,7 +366,11 @@ write_csv(visit_table, here("clean_tables", "edna_visit.csv"))
 # bind sn and pan edna data
 ```{r}
 
-edna_survey_table <- plyr::rbind.fill(pan_edna_metadata, sn_survey)
+edna_survey_table <- plyr::rbind.fill(pan_edna_metadata, sn_survey) %>% 
+  mutate(survey_id = UUIDgenerate(output = "uuid", n = n()),
+         visit_id = as.UUID(""))
+
+write_csv(edna_survey_table, here("clean_tables", "edna_survey.csv"))
 
 ```
 
