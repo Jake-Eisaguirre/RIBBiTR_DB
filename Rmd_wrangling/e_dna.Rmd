@@ -202,10 +202,7 @@ pan_edna_metadata <- full_pan_edna %>%
          geometry = str_replace(geometry, " ", ","),
          active_passive = "active",
          filter_size_um = "see edna comments",
-         edna_volume_ml = if_else(is.na(edna_volume_ml), 1000, edna_volume_ml))  %>% 
-  # mutate(panama_survey_id = UUIDgenerate(output = "uuid", n = n()),
-  #        visit_id = as.UUID("")) %>% 
-  select(!c(geometry))
+         edna_volume_ml = if_else(is.na(edna_volume_ml), 1000, edna_volume_ml))
 
 
 write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
@@ -355,9 +352,11 @@ write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
 ```{r}
 
 visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table, sn_visit) %>% 
+  rename(visit_comment = comment) %>% 
   group_by(site, date_collected) %>% 
   mutate(visit_id = UUIDgenerate(output = c("uuid")),
-         site_id = as.UUID(""))
+         site_id = as.UUID(""),
+         site = if_else(is.na(site), site_code, site))
 
 write_csv(visit_table, here("clean_tables", "edna_visit.csv"))
 
@@ -368,7 +367,8 @@ write_csv(visit_table, here("clean_tables", "edna_visit.csv"))
 
 edna_survey_table <- plyr::rbind.fill(pan_edna_metadata, sn_survey) %>% 
   mutate(survey_id = UUIDgenerate(output = "uuid", n = n()),
-         visit_id = as.UUID(""))
+         visit_id = as.UUID("")) %>% 
+  rename(survey_comments = edna_comments)
 
 write_csv(edna_survey_table, here("clean_tables", "edna_survey.csv"))
 

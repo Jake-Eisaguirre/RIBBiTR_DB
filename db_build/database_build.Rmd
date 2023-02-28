@@ -419,17 +419,17 @@ dbExecute(connection, "alter table edna_visit
                        add constraint fk_visit foreign key (site_id) 
                        references edna_site (site_id);")
 
-# e_dna panama
-dbExecute(connection, "alter table edna_panama_survey add primary key(panama_survey_id);")
+# e_dna survey
+dbExecute(connection, "alter table edna_survey add primary key(survey_id);")
 
-dbExecute(connection, "update edna_panama_survey p
+dbExecute(connection, "update edna_survey p
                        set visit_id =
                        	(select visit_id
                        	from edna_visit v
                        	where (p.site, p.date_collected) = (v.site, v.date_collected));")
 
-dbExecute(connection, "alter table edna_panama_survey 
-                       add constraint fk_panama_survey foreign key (visit_id) 
+dbExecute(connection, "alter table edna_survey 
+                       add constraint fk_survey foreign key (visit_id) 
                        references edna_visit (visit_id);")
 
 # edna serdp
@@ -456,11 +456,11 @@ dbExecute(connection, "alter table edna_visit drop column site;")
 
 dbExecute(connection, "alter table edna_visit drop column site_code;")
 
-dbExecute(connection, "alter table edna_panama_survey drop column region;")
+dbExecute(connection, "alter table edna_survey drop column region;")
 
-dbExecute(connection, "alter table edna_panama_survey drop column site;")
+dbExecute(connection, "alter table edna_survey drop column site;")
 
-dbExecute(connection, "alter table edna_panama_survey drop column date_collected;")
+dbExecute(connection, "alter table edna_survey drop column date_collected;")
 
 dbExecute(connection, "alter table edna_serdp_bd drop column site_code;")
 
