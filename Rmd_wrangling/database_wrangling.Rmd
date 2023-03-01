@@ -305,7 +305,9 @@ sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_si
   relocate(site_comments, .after = wilderness) %>% 
   group_by(site) %>% 
   mutate(site_id = UUIDgenerate(output = c("uuid")),
-         region_id = as.UUID(""))
+         region_id = as.UUID(""),
+         utme = if_else(site == "rabbit_stream", 618036, utme),
+         utmn = if_else(site == "rabbit_stream", 960391, utmn))
 
 
 write_csv(sites, here("clean_tables", "sites.csv"))
