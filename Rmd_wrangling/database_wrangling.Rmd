@@ -1323,8 +1323,8 @@ panama_capture <- panama_raw %>%
   filter(detection_type == "capture") %>% 
   select(c(site, date, survey_time, swab_id, species, detection_type, capture_time,
            capture_loc, microhab, body_temp, subs_temp, svl, frog_mass, life_stage, sex, dead, #infected, pcr,
-           bdswab, gen_samp, bacteria_swab, am_ps, e_dna, photo, photo_id, notes_amphib1,
-           notes_amphib2, microhab0, pcr)) %>% 
+           bdswab, gen_samp, bacteria_swab, am_ps, photo, photo_id, notes_amphib1,
+           notes_amphib2, microhab0, pcr, e_dna)) %>% 
   unite(notes_capture, notes_amphib1:notes_amphib2, sep = ", ", na.rm = T) %>% 
   rename(microhab_moredetail = microhab0,
          time_of_capture = capture_time,
@@ -1353,7 +1353,7 @@ panama_capture <- panama_raw %>%
          capture_comments = notes_capture) %>% 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive")) %>% 
-  select(!c(swab_id)) %>% 
+  select(!c(swab_id, e_dna)) %>% 
   plyr::rbind.fill(panama_capture_2022) 
   
 
@@ -1372,8 +1372,8 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
          detection_type = "capture") %>% 
   mutate_all(na_if, "") %>% 
-  relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
-  relocate(c(mucosome_id:ampshcl), .after = e_dna) %>% 
+  #relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
+  relocate(c(mucosome_id:ampshcl), .after = amp_id) %>% 
   relocate(c(crispr_id:antibody_id_4), .after = ampshcl) %>% 
   relocate(capture_comments, .after = antibody_id_4) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
