@@ -201,8 +201,36 @@ pan_edna_metadata <- full_pan_edna %>%
          geometry = str_remove_all(geometry, "[()]"),
          geometry = str_replace(geometry, " ", ","),
          active_passive = "active",
-         filter_size_um = "see edna comments",
+         filter_size_um = "",
          edna_volume_ml = if_else(is.na(edna_volume_ml), 1000, edna_volume_ml))
+
+
+filt_dups <- pan_edna_metadata %>% 
+  filter(edna_sample_id %in% c("220721_edna_001", "220721_edna_002", "220721_edna_003",
+                               "220721_edna_004", "220721_edna_007", "220721_005", "220721_006",
+                               "220721_007", "220723_001",
+                               "220723_002", "220723_003", "220724_001", "220724_002", "220724_003",
+                               "220726_eDNA_001", "220726_eDNA_002", "220726_eDNA_003",
+                               "220729_eDNA_001", "220729_eDNA_002", "220729_eDNA_003",
+                               "220729_eDNA_004", "220729_eDNA_005"))
+samps_0.45 <- filt_dups %>% 
+  mutate(filter_size_um = "0.45")
+
+samps_5 <- filt_dups %>% 
+  mutate(filter_size_um = "5")
+
+double_samps <- rbind(samps_0.45, samps_5) 
+
+single_samps <- pan_edna_metadata %>% 
+  filter(!edna_sample_id %in% c(double_samps$edna_sample_id)) %>% 
+  mutate(filter_size_um = case_when(edna_sample_id == "220728_eDNA_001" ~ "5",
+                                    edna_sample_id == "220728_eDNA_002" ~ "0.45",
+                                    edna_sample_id == "220728_eDNA_003" ~ "5",
+                                    edna_sample_id == "220728_eDNA_004" ~ "0.45",
+                                    edna_sample_id == "220728_eDNA_005" ~ "5",
+                                    edna_sample_id == "220728_eDNA_006" ~ "0.45"))
+
+pan_edna_metadata <- rbind(double_samps, single_samps)
 
 
 write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
