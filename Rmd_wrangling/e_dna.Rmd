@@ -130,7 +130,7 @@ write_csv(collection_serdp_edna, here("clean_tables", "edna_serdp_bd.csv"))
 
 # panama edna - ONLY HALF OF 2022 DATA
 
-## full panama edna data
+## full panama edna data - Legacy and 2022
 ```{r}
 pan_site_edna2022 <- read_csv(here("data", "panama_legacy", "pan_site_edna22.csv")) %>% 
   clean_names() %>% 
@@ -141,7 +141,27 @@ pan_edna_22 <- read_csv(here("data", "panama_legacy", "pan_edna_22.csv")) %>%
   select(fulcrum_parent_id, geometry, id_edna_sample:notes_of_edna_sample)
 
 full_pan_edna <- left_join(pan_site_edna2022, pan_edna_22, by = (c( "fulcrum_id" = "fulcrum_parent_id")))
+
+leg_pan <- panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>% 
+  clean_names()
 ```
+
+## full_leg_pan_site
+```{r}
+
+full_leg_pan_site <- leg_pan %>% 
+  select(region, site, date, utme, utmn) %>% 
+  mutate(region = str_replace_all(str_to_lower(region), " ", "_"),
+         site = str_replace_all(str_to_lower(site), " ", "_"),
+         date = format_iso_8601(parse_date(date))) %>% 
+  rename(date_collected = date) %>% 
+  group_by(site) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
+
+```
+
 
 ## panama edna site table
 ```{r}
@@ -152,12 +172,35 @@ pan_sites_edna <- full_pan_edna %>%
          site = str_replace_all(str_to_lower(site), " ", "_"),
          start_date = format_iso_8601(parse_date(start_date))) %>% 
   rename(date_collected = start_date) %>% 
+  plyr::rbind.fill(full_leg_pan_site) %>% 
   group_by(site) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id))
 
 ```
+
+## leg_pan_date table
+```{r}
+
+leg_pan_date <- leg_pan %>% 
+  select(site, date, e_dna) %>%
+  filter(e_dna == 1) %>% 
+  rename(start_date = date) %>% 
+  mutate(site = str_replace_all(str_to_lower(site), " ", "_"),
+         start_date = format_iso_8601(parse_date(start_date)),
+         year = year(start_date),
+         month = month(start_date),
+         day = day(start_date))%>% 
+  rename(date_collected = start_date) %>% 
+  group_by(site, date_collected) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id))
+
+
+```
+
 
 ## panama date table
 ```{r}
@@ -170,11 +213,33 @@ pan_date_table <- full_pan_edna %>%
          month = month(start_date),
          day = day(start_date))%>% 
   rename(date_collected = start_date) %>% 
+  plyr::rbind.fill(leg_pan_date) %>% 
   group_by(site, date_collected) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id))
 
+
+```
+
+## leg_pan_meta
+```{r}
+
+leg_pan_meta <- leg_pan %>% 
+  select(c(region, site, date, e_dna, swab_id, var_m)) %>% 
+  mutate(region = str_replace_all(str_to_lower(region), " ", "_"),
+         site = str_replace_all(str_to_lower(site), " ", "_"),
+         date = format_iso_8601(parse_date(date)),
+         edna_sample_id = if_else(e_dna == 1, swab_id, "NA"),
+         edna_volume_ml = 1000,
+         filter_size_um = 0.45,
+         active_passive = "active",
+         control = 0) %>% 
+  rename(date_collected = date,
+         edna_location_m = var_m) %>% 
+  select(!c(e_dna, swab_id)) %>% 
+  mutate(edna_sample_id = na_if(edna_sample_id, "NA")) %>% 
+  drop_na(edna_sample_id)
 
 ```
 
@@ -230,7 +295,9 @@ single_samps <- pan_edna_metadata %>%
                                     edna_sample_id == "220728_eDNA_005" ~ "5",
                                     edna_sample_id == "220728_eDNA_006" ~ "0.45"))
 
-pan_edna_metadata <- rbind(double_samps, single_samps)
+pan_edna_metadata <- rbind(double_samps, single_samps) 
+  
+pan_edna_metadata <- plyr::rbind.fill(pan_edna_metadata, leg_pan_meta)
 
 
 write_csv(pan_edna_metadata, here("clean_tables", "edna_panama_survey.csv"))  
@@ -362,26 +429,12 @@ sn_survey <- sn_edna %>%
 ```
 
 
-
-# bind site tables 
-```{r}
-
-edna_sites <- plyr::rbind.fill(pan_sites_edna, serdp_edna_sitetable, sn_site)%>% 
-  mutate(site = if_else(is.na(site), site_code, site)) %>% 
-  group_by(site) %>% 
-  mutate(site_id = UUIDgenerate(output = c("uuid")),
-         region_id = as.UUID(""))
-
-write_csv(edna_sites, here("clean_tables", "edna_site.csv"))
-
-```
-
 # bind date/visit table
 ```{r}
 
 visit_table <- plyr::rbind.fill(pan_date_table, serdp_edna_visit_table, sn_visit) %>% 
   rename(visit_comment = comment) %>% 
-  group_by(site, date_collected) %>% 
+  group_by(date_collected, site) %>% 
   mutate(visit_id = UUIDgenerate(output = c("uuid")),
          site_id = as.UUID(""),
          site = if_else(is.na(site), site_code, site))

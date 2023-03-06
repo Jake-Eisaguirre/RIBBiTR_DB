@@ -451,7 +451,7 @@ dbExecute(connection, "alter table edna_region drop column location;")
 
 dbExecute(connection, "alter table edna_site drop column region;")
 
-dbExecute(connection, "alter table edna_site drop column date_collected;")
+#dbExecute(connection, "alter table edna_site drop column date_collected;")
 
 dbExecute(connection, "alter table edna_visit drop column site;")
 

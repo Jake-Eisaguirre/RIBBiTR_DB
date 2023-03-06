@@ -646,19 +646,8 @@ dbWriteTable(connection, 'edna_region', regions, overwrite=T,
                              location_id = "uuid"))
 
 #site table load
-dbWriteTable(connection, 'edna_site', edna_site, overwrite=T,
-             field.types = c(region = "varchar(16)",
-                             site = "varchar",
-                             date_collected = "date",
-                             site_code = "varchar(4)",
-                             area = "int",
-                             depth = "float8",
-                             elevation = "int",
-                             wilderness = "varchar",
-                             utme = "int",
-                             utmn = "int",
-                             utm_zone = "int",
-                             site_id = "uuid",
+dbWriteTable(connection, 'edna_site', sites, overwrite=T,
+             field.types = c(site_id = "uuid",
                              region_id = "uuid"))
 
 #edna visit load
