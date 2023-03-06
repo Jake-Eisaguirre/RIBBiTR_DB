@@ -868,7 +868,8 @@ gc()
 survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, panama_survey_table, serdp_survey_table) %>% 
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(survey_id = UUIDgenerate(output = c("uuid")),
-         visit_id = as.UUID(""))
+         visit_id = as.UUID("")) %>% 
+  select(!c(conductivity_uS_cm))
 
 write_csv(survey, here("clean_tables", "survey.csv"))
 
@@ -1294,7 +1295,8 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
          bacterial_swab_id = glycerolswab, #culture bd
          genetic_id = oralswab,
          amp_id = amps,
-         microbiome_swab_id = bacteriaswab) %>% # dry swab for sequencing 
+         microbiome_swab_id = bacteriaswab,
+         antibody_id = ampshcl) %>% # dry swab for sequencing 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive"),
          bd_swab_id = if_else(bd_swab_id == "1", swab_id, NULL),
@@ -1302,7 +1304,7 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
          bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL), #culture/glycerol 
          genetic_id = if_else(genetic_id == "1", swab_id, NULL),
          amp_id = if_else(amp_id == "1", swab_id, NULL),
-         ampshcl = if_else(ampshcl == "1", ampshcl, NULL),
+         antibody_id = if_else(antibody_id == "1", swab_id, NULL),
          microbiome_swab_id = if_else(microbiome_swab_id == "1", swab_id, NULL)) %>% 
   select(!c(swab_id, count))
 
@@ -1373,8 +1375,8 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          detection_type = "capture") %>% 
   mutate_all(na_if, "") %>% 
   #relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
-  relocate(c(mucosome_id:ampshcl), .after = amp_id) %>% 
-  relocate(c(crispr_id:antibody_id_4), .after = ampshcl) %>% 
+  relocate(c(mucosome_id:antibody_id), .after = amp_id) %>% 
+  relocate(c(crispr_id:antibody_id_4), .after = antibody_id) %>% 
   relocate(capture_comments, .after = antibody_id_4) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
          survey_id = as.UUID(""))

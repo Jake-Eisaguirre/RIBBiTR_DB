@@ -45,7 +45,7 @@ tryCatch({
 ## build `survey_schema`
 ```{r}
 # set schema path
-dbExecute(connection, "set search_path to survey_data")
+dbExecute(connection, "set search_path to 'survey_data'")
 
 # location
 dbExecute(connection, "alter table location add primary key(location_id);")
@@ -197,6 +197,7 @@ dbExecute(connection, "alter table survey drop column detection_type;")
 dbExecute(connection, "alter table survey drop column campaign;")
 
 dbExecute(connection, "alter table survey drop column site_code;")
+
 
 ## aural
 dbExecute(connection, "alter table aural drop column date;")
