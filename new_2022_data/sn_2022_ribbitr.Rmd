@@ -1,0 +1,29 @@
+---
+title: "SN RIBBiTR Data"
+author: "Jake Eisaguirre"
+date: "2023-03-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
+                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
+```
+
+```{r}
+
+rib_sn <- read_csv(here("data", "sn", "rib_sn_2022.csv")) %>% 
+  clean_names()
+
+
+
+```
+
