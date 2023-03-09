@@ -81,9 +81,27 @@ surv_key <- rib_surv_id %>%
 ## Join site p.key onto SN visit table to populate f.key
 ```{r}
 
-sn_2022_rib_visit_table <- rib_sn %>% 
+sn_2022_rib_p.key_pop <- rib_sn %>% 
   left_join(surv_key, by = c("site_id" = "site", "visit_date" = "date"))
   
+```
+
+## align with current naming struction of capture table
+```{r}
+
+sn_2022_cap <- sn_2022_rib_p.key_pop %>% 
+  select(!c(visit_status, pit_tag_ref, tag_new)) %>% 
+  rename(species_capture = species,
+         svl_mm = length,
+         body_mass_g = weight,
+         life_stage = capture_life_stage,
+         genetic_id = toe_tip_id,
+         microbiome_swab_id = microbiome_id_genetic,
+         bacterial_swab_id = microbiome_id_culturing,
+         life_stage = capture_life_stage,
+         microhabitat_type = location,
+         processor = swabber_id)
+
 
 ```
 
