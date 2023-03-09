@@ -192,7 +192,7 @@ dbExecute(connection, "alter table survey drop column date;")
 
 dbExecute(connection, "alter table survey drop column survey_time;")
 
-dbExecute(connection, "alter table survey drop column detection_type;")
+#dbExecute(connection, "alter table survey drop column detection_type;")
 
 dbExecute(connection, "alter table survey drop column campaign;")
 

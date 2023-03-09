@@ -14,16 +14,76 @@ if (!require(librarian)){
 }
 
 # librarian downloads, if not already downloaded, and reads in needed packages
-librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
-                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, DBI, parsedate, stringr, uuid)
 ```
+
+## read SN RIBBiTR specific data
 
 ```{r}
 
 rib_sn <- read_csv(here("data", "sn", "rib_sn_2022.csv")) %>% 
-  clean_names()
+  clean_names() %>% 
+  mutate(visit_status = "suitable",
+         site_id = as.character(site_id),
+         visit_date = parse_date(visit_date)) %>% 
+  select(!c(juris, basin, lake, utme, utmn, capture_id, survey_id, visit_id))
 
 
+
+```
+
+
+## connect to ribbitr db
+```{r}
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"),
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"),
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to 'survey_data';")
+```
+
+
+
+## Pull in ribbitr IDs
+```{r}
+
+site_key_sql <- "SELECT s.site_id, s.site, v.date, v.survey_time, v.visit_id, v.site_id, s2.survey_id, s2.visit_id, s2.detection_type
+                 FROM site s
+                 JOIN visit v on s.site_id = v.site_id
+                 JOIN survey s2 on v.visit_id = s2.visit_id;"
+
+rib_ID_key <- dbGetQuery(connection, site_key_sql)
+
+rib_surv_id <- rib_ID_key %>% 
+  mutate(date = parse_date(date)) %>% 
+  filter(site %in% rib_sn$site_id & survey_time == "day") %>% 
+  select(site, date, survey_id, detection_type, survey_time) %>% 
+  filter(detection_type == "capture") %>% 
+  filter(date %in% rib_sn$visit_date)
+  
+surv_key <- rib_surv_id %>% 
+  select(site, date, survey_id)
+
+```
+
+## Join site p.key onto SN visit table to populate f.key
+```{r}
+
+sn_2022_rib_visit_table <- rib_sn %>% 
+  left_join(surv_key, by = c("site_id" = "site", "visit_date" = "date"))
+  
 
 ```
 
