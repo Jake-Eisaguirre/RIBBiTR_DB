@@ -59,7 +59,8 @@ dbExecute(connection, "set search_path to 'survey_data';")
 ## Pull in ribbitr IDs
 ```{r}
 
-site_key_sql <- "SELECT s.site_id, s.site, v.date, v.survey_time, v.visit_id, v.site_id, s2.survey_id, s2.visit_id, s2.detection_type
+site_key_sql <- "SELECT s.site_id, s.site, v.date, v.survey_time, v.visit_id, v.site_id, s2.survey_id, 
+                 s2.visit_id, s2.detection_type
                  FROM site s
                  JOIN visit v on s.site_id = v.site_id
                  JOIN survey s2 on v.visit_id = s2.visit_id;"
@@ -78,7 +79,7 @@ surv_key <- rib_surv_id %>%
 
 ```
 
-## Join site p.key onto SN visit table to populate f.key
+## Join sites onto SN visit table to populate survey f.key onto new capture data - Transform
 ```{r}
 
 sn_2022_rib_p.key_pop <- rib_sn %>% 
@@ -90,7 +91,8 @@ sn_2022_rib_p.key_pop <- rib_sn %>%
 ```{r}
 
 sn_2022_cap <- sn_2022_rib_p.key_pop %>% 
-  select(!c(visit_status, pit_tag_ref, tag_new)) %>% 
+  select(!c(visit_status, pit_tag_ref, tag_new, general_survey_comment,
+            tadpole_mouthparts, site_id, visit_date)) %>% 
   rename(species_capture = species,
          svl_mm = length,
          body_mass_g = weight,
@@ -100,7 +102,20 @@ sn_2022_cap <- sn_2022_rib_p.key_pop %>%
          bacterial_swab_id = microbiome_id_culturing,
          life_stage = capture_life_stage,
          microhabitat_type = location,
-         processor = swabber_id)
+         processor = swabber_id) %>% 
+  unite(capture_comments, c("capture_comment":"ribbitr_sample_comments"), sep = ",",
+        na.rm = T) %>% 
+  mutate(capture_id = UUIDgenerate(n = n()),
+         species_capture = case_when(species_capture == "ramu" ~ "rana_muscosa"))
+
+
+```
+
+
+## Append to `capture` table
+```{r}
+
+dbAppendTable(connection, "capture", sn_2022_cap)
 
 
 ```
