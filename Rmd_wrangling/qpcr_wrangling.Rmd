@@ -128,3 +128,33 @@ l <- panama_qpcr %>%
   filter(duplicated(bd_swab_id))
 ```
 
+
+# temp qpcr data
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"),
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"),
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to 'survey_data'")
+
+temp_shiny_bd <- plyr::rbind.fill(panama_qpcr, serdp_bd, sierra_nevada_bd) %>% 
+  select(bd_swab_id, bd_load)
+
+
+dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
+
+```
+
