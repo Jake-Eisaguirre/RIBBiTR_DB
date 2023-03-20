@@ -72,7 +72,37 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          pressure_hg = pressure_in_hg,
          number_observers = num_obs,
          salinity_large = salinity0) %>% 
-  mutate_all(str_to_lower) 
+  mutate_all(str_to_lower) %>% 
+  # Data Cleaning
+  mutate(swab_id = if_else(sort_id == "5133", "NA", swab_id), # remove swab_id for escaped flotator
+         notes_amphib1 = if_else(swab_id == "121022_03", "date and swab_id mismatch ok", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "121022_04", "date and swab_id mismatch ok", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "131212_kc", "date and swab_id mismatch ok", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "131212_kc2", "date and swab_id mismatch ok", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "130706_r01", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "130707_r09", "off transect", notes_amphib1),
+         swab_id = if_else(survey_id == "446", str_replace(swab_id, "j", "g"), swab_id),
+         end_time = case_when(swab_id == "121112_03" ~ "22:15:00",
+                              swab_id == "121112_04" ~ "22:15:00",
+                              swab_id == "121112_05" ~ "22:15:00",
+                              swab_id == "121112_06" ~ "22:15:00",
+                              swab_id == "121112_07" ~ "22:15:00",
+                              swab_id == "121112_08" ~ "22:15:00",
+                              swab_id == "121112_09" ~ "22:15:00",
+                              TRUE ~ as.character(end_time)),
+         notes_amphib1 = if_else(swab_id == "130709_r01", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "130709_r02", "off transect", notes_amphib1),
+         species = if_else(swab_id == "130709_r01", "pristimantis spp", species),
+         species = if_else(swab_id == "130709_r02", "pristimantis spp", species),
+         notes_amphib1 = if_else(swab_id == "160709_a05", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "160709_a06", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "160709_a07", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "160709_a08", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "160709_a15", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "160709_a16", "off transect", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "181214_j27", "off transect", notes_amphib1),
+         species = if_else(swab_id == "160710_a07", "craugastor gollmeri?", species),
+         notes_amphib1 = if_else(sort_id == 137, "at meter 159, counted 75 black tadpoles", notes_amphib1))
 
 
 
