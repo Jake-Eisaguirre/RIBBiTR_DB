@@ -99,11 +99,11 @@ dups <- serdp_bd %>%
   filter(duplicated(temp_id))
 
 # missing ~141 IDs in capture table to align with qpcr table
-test <- serdp_capture %>% 
-  filter(!is.na(sample_id),
-         sample_id %in% serdp_bd$bd_swab_id)
-
-t <- anti_join(serdp_bd, test,  by = c("bd_swab_id" = "sample_id"))
+# test <- serdp_capture %>% 
+#   filter(!is.na(sample_id),
+#          sample_id %in% serdp_bd$bd_swab_id)
+# 
+# t <- anti_join(serdp_bd, test,  by = c("bd_swab_id" = "sample_id"))
 
 
 
@@ -132,29 +132,31 @@ l <- panama_qpcr %>%
 # temp qpcr data
 ```{r}
 
-tryCatch({
-    drv <- dbDriver("Postgres")
-    print("Connecting to Database…")
-    connection <- dbConnect(drv,
-                 dbname = Sys.getenv("aws_dbname"),
-                 host = Sys.getenv("aws_host"),
-                 port = Sys.getenv("aws_port"),
-                 user = Sys.getenv("aws_user"),
-                 password = Sys.getenv("aws_password"),
-                 timezone=NULL)
-    print("Database Connected!")
-    },
-    error=function(cond) {
-            print("Unable to connect to Database.")
-    })
-
-dbExecute(connection, "set search_path to 'survey_data'")
+# tryCatch({
+#     drv <- dbDriver("Postgres")
+#     print("Connecting to Database…")
+#     connection <- dbConnect(drv,
+#                  dbname = Sys.getenv("aws_dbname"),
+#                  host = Sys.getenv("aws_host"),
+#                  port = Sys.getenv("aws_port"),
+#                  user = Sys.getenv("aws_user"),
+#                  password = Sys.getenv("aws_password"),
+#                  timezone=NULL)
+#     print("Database Connected!")
+#     },
+#     error=function(cond) {
+#             print("Unable to connect to Database.")
+#     })
+# 
+# dbExecute(connection, "set search_path to 'survey_data'")
 
 temp_shiny_bd <- plyr::rbind.fill(panama_qpcr, serdp_bd, sierra_nevada_bd) %>% 
   select(bd_swab_id, bd_load)
 
+write_csv(temp_shiny_bd, here("clean_tables", "temp_shiny_bd.csv"))
 
-dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
+
+#dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
 
 ```
 

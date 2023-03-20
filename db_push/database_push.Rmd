@@ -517,7 +517,7 @@ dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
                              bd_load = "float8"))
 
 
-
+dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
 
 ```
 
