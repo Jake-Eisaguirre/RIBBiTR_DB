@@ -1,0 +1,44 @@
+---
+title: "brazil_spatial_fix"
+author: "Jake Eisaguirre"
+date: "2023-03-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate, uuid)
+```
+
+## load transect location from audio file
+```{r}
+
+raw_sv <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.xlsx"), sheet = "Santa_Virginia") %>% 
+  clean_names()
+
+raw_b <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.xlsx"), sheet = "Boraceia") %>% 
+  clean_names()
+
+brazil_spat <- plyr::rbind.fill(raw_sv, raw_b) %>% 
+  select(transect_id, latitute, longitude) %>% 
+  rename(site = transect_id,
+         lat = latitute,
+         lon = longitude) %>% 
+  mutate(site = str_to_lower(site))
+
+```
+
+
+```{r}
+
+
+
+```
+
