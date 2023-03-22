@@ -14,7 +14,7 @@ if (!require(librarian)){
 }
 
 # librarian downloads, if not already downloaded, and reads in needed packages
-librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate, uuid)
+librarian::shelf(tidyverse, here, janitor, readxl, stringr, lubridate, parsedate, uuid, measurements, leaflet, htmlwidgets)
 ```
 
 ## load transect location from audio file
@@ -35,10 +35,74 @@ brazil_spat <- plyr::rbind.fill(raw_sv, raw_b) %>%
 
 ```
 
-
+## pull out sites that need to be fixed
 ```{r}
 
+brazil_dd_rm<- brazil_spat %>% 
+  filter(site %in% c("a1t", "a2t", "a1w", "a2w")) %>% 
+  mutate(lat = str_remove(lat, "°"),
+         lon = str_remove(lon, "°"))
 
+brazil_dm_fix <- brazil_spat %>%
+  filter(!site %in% c("a1t", "a2t", "a1w", "a2w"))
+
+
+
+```
+
+## pull apart degrees and minuts
+```{r}
+brazil_dm_split <- brazil_dm_fix %>% 
+  mutate(lat = str_remove(lat, "S "),
+         lon = str_remove(lon, "S "),
+         lon = str_remove(lon, "W "),
+         lat = str_replace(lat, "º", ""),
+         lon = str_replace(lon, "º", ""),
+         lat = str_remove(lat, "'"),
+         lon = str_remove(lon, "'"),
+         lon = str_remove(lon, "0"))
+
+brazil_dm_split$d_lat <- substr(brazil_dm_split$lat, 1, 2)
+
+brazil_dm_split$d_lon <- substr(brazil_dm_split$lon, 1, 2)
+
+brazil_split <- brazil_dm_split %>% 
+  mutate(lat_min = substr(lat, 3, 8),
+         lon_min = substr(lon, 3, 8)) %>% 
+  select(!c(lat, lon))
+  
+```
+
+## divide minutes by 60
+```{r}
+
+brazil_fixed <- brazil_split %>% 
+  mutate(d_lat = as.numeric(d_lat),
+         lat_min = as.numeric(lat_min),
+         lat = d_lat + (lat_min/60),
+         d_lon = as.numeric(d_lon),
+         lon_min = as.numeric(lon_min),
+         lon = d_lon + (lon_min/60),
+         lon = paste("-", lon, sep = ""),
+         lat = paste("-", lat, sep = "")) %>% 
+  select(!c(d_lat, d_lon, lat_min, lon_min)) %>% 
+  rbind(brazil_dd_rm) %>% 
+  mutate(lon = as.numeric(lon),
+         lat = as.numeric(lat))
+
+write_csv(brazil_fixed, here("data", "brazil", "site_locs.csv"))
+
+```
+
+## view sites
+```{r}
+
+site_check <- leaflet() %>% 
+  addProviderTiles("Esri.WorldImagery") %>% 
+  addCircleMarkers(data = brazil_fixed, lng = ~lon, lat = ~lat,
+                   label = ~site)
+
+#saveWidget(site_check, file = "site_check.html")
 
 ```
 
