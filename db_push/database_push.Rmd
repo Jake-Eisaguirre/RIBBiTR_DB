@@ -20,7 +20,7 @@ librarian::shelf(tidyverse, DBI, RPostgres, here)
 # Clean tables
 
 ## read in all `clean_tables` .csv files
-```{r, echo=F}
+```{r, echo=F, message=F}
 
 # clear environment
 rm(list=ls())
@@ -771,8 +771,6 @@ dbWriteTable(connection, 'audio_info', audio_info, overwrite = T,
              field.types = c(site = "varchar",
                              recorder_id = "varchar",
                              date_of_deployment = "date",
-                             latitude = "varchar",
-                             longitude = "varchar",
                              surveyor_deploy = "varchar",
                              deployment_comments = "varchar",
                              audio_device = "varchar",

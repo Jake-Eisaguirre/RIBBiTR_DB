@@ -32,6 +32,10 @@ brazil_card_id <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.
   rename(recorder_id = recoder_code,
          card_id = card_code)
 
+brazil_locations <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
+  rename(latitude = lat,
+         longitude = lon)
+
 raw_brazil <- plyr::rbind.fill(raw_sv, raw_b)
 
 
@@ -56,7 +60,19 @@ brazil_audio <- raw_brazil %>%
          date_of_pickup = "",
          recorder_id = if_else(recorder_id == "smm#####", "smm03810", recorder_id),
          utm_zone = "23") %>% 
-  left_join(brazil_card_id, by = c("recorder_id"))
+  left_join(brazil_card_id, by = c("recorder_id")) %>% 
+  select(!c(latitude, longitude)) %>% 
+  left_join(brazil_locations, by = c("site"))
+
+v <- terra::vect(brazil_audio, c("longitude", "latitude"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=23")
+utm <- terra::crds(u)
+
+i <- which(!is.na(brazil_audio$longitude))
+brazil_audio[i, c("utme", "utmn")] <- utm
+
+brazil_audio <- brazil_audio %>% 
+  select(!c(longitude, latitude))
 
 
 ```
@@ -322,7 +338,7 @@ audio_info <- audio %>%
          audio_id = UUIDgenerate(),
          visit_id = "") %>% 
   relocate(audio_device, .after = recorder_id) %>% 
-  relocate(c(utme, utmn, utm_zone), .after = longitude) %>% 
+  relocate(c(utme, utmn, utm_zone), .after = date_of_deployment) %>% 
   relocate(card_id, .after = audio_device) %>% 
   rename(memory_card_id = card_id)
 
