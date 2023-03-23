@@ -312,6 +312,12 @@ brazil_sites <- read_csv(here("data", "brazil", "brazil.csv")) %>%
   group_by(site) %>% 
   unique()
 
+brazil_locs <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
+  rename(latitude = lat,
+         longitude = lon) %>% 
+  mutate(latitude = as.numeric(paste("-", latitude, sep = "")),
+         longitude = as.numeric(paste("-", longitude, sep = "")))
+
 final_brazil_sites <- plyr::rbind.fill(brazil_sites, brazil_legacy_sites)
 
 ```
@@ -338,6 +344,10 @@ sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_si
          region_id = as.UUID(""),
          utme = if_else(site == "rabbit_stream", 618036, utme),
          utmn = if_else(site == "rabbit_stream", 960391, utmn))
+
+brazil_locs <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
+  rename(latitude = lat,
+         longitude = lon)
 
 
 write_csv(sites, here("clean_tables", "sites.csv"))

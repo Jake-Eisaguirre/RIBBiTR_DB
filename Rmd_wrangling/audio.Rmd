@@ -34,7 +34,9 @@ brazil_card_id <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.
 
 brazil_locations <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
   rename(latitude = lat,
-         longitude = lon)
+         longitude = lon) %>% 
+  mutate(latitude = as.numeric(paste("-", latitude, sep = "")),
+         longitude = as.numeric(paste("-", longitude, sep = "")))
 
 raw_brazil <- plyr::rbind.fill(raw_sv, raw_b)
 
@@ -73,8 +75,6 @@ brazil_audio[i, c("utme", "utmn")] <- utm
 
 brazil_audio <- brazil_audio %>% 
   select(!c(longitude, latitude))
-
-
 ```
 
 # 2022 penn audio - clean
