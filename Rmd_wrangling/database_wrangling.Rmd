@@ -312,13 +312,25 @@ brazil_sites <- read_csv(here("data", "brazil", "brazil.csv")) %>%
   group_by(site) %>% 
   unique()
 
-brazil_locs <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
+brazil_locs <- read_csv(here("data", "brazil", "survey_site_locs.csv")) %>% 
   rename(latitude = lat,
          longitude = lon) %>% 
-  mutate(latitude = as.numeric(paste("-", latitude, sep = "")),
-         longitude = as.numeric(paste("-", longitude, sep = "")))
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude),
+         site = str_to_lower(site))
 
-final_brazil_sites <- plyr::rbind.fill(brazil_sites, brazil_legacy_sites)
+v <- terra::vect(brazil_locs, c("longitude", "latitude"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=23")
+utm <- terra::crds(u)
+
+i <- which(!is.na(brazil_locs$longitude))
+brazil_locs[i, c("utme", "utmn")] <- utm
+
+brazil_sites <- brazil_sites %>% 
+  left_join(brazil_locs, by = c("site")) %>% 
+  select(!c(longitude, latitude))
+
+final_brazil_sites <- plyr::rbind.fill(brazil_sites, brazil_legacy_sites) 
 
 ```
 

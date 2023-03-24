@@ -32,11 +32,11 @@ brazil_card_id <- read_excel(here("data", "brazil", "audio", "brazil_audio_2022.
   rename(recorder_id = recoder_code,
          card_id = card_code)
 
-brazil_locations <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
+brazil_locations <- read_csv(here("data", "brazil", "audio_site_locs.csv")) %>% 
   rename(latitude = lat,
          longitude = lon) %>% 
-  mutate(latitude = as.numeric(paste("-", latitude, sep = "")),
-         longitude = as.numeric(paste("-", longitude, sep = "")))
+  mutate(latitude = as.numeric(latitude),
+         longitude = as.numeric(longitude))
 
 raw_brazil <- plyr::rbind.fill(raw_sv, raw_b)
 

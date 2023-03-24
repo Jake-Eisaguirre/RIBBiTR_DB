@@ -76,7 +76,7 @@ brazil_split <- brazil_dm_split %>%
 ## divide minutes by 60
 ```{r}
 
-brazil_fixed <- brazil_split %>% 
+brazil_all_fixed <- brazil_split %>% 
   mutate(d_lat = as.numeric(d_lat),
          lat_min = as.numeric(lat_min),
          lat = d_lat + (lat_min/60),
@@ -90,7 +90,14 @@ brazil_fixed <- brazil_split %>%
   mutate(lon = as.numeric(lon),
          lat = as.numeric(lat))
 
-write_csv(brazil_fixed, here("data", "brazil", "site_locs.csv"))
+brazil_fixed <- brazil_all_fixed %>%
+  filter(site %in% c("a5w", "a9w", "a5t", "a6t", "a6w", "a10t", "a8t", "a10w", "a8w", "a9t", 
+                     "a7w", "a7t", "a4t", "a4w", "a3w", "a3t", "bp4", "bp1", "bp2", "bp3", "bp5",
+                     "a2w", "a1t", "a1w", "a2t"))
+
+write_csv(brazil_all_fixed, here("data", "brazil", "audio_site_locs.csv"))
+
+write_csv(brazil_fixed, here("data", "brazil", "survey_site_locs.csv"))
 
 ```
 
