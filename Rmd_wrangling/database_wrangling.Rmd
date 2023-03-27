@@ -182,7 +182,7 @@ sn_site_table <- sn_site %>%
          elevation_m = elevation) %>%
   mutate(region = "california",
         location = "usa",
-        utm_zone = 11) %>%
+        utm_zone = if_else(wilderness == "desolation", 10, 11)) %>%
   select(!c(name, drainage, county, jurisdiction)) %>%
   group_by(site) %>%
   unique()
