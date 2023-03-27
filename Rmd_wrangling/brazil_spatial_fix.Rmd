@@ -91,9 +91,10 @@ brazil_all_fixed <- brazil_split %>%
          lat = as.numeric(lat))
 
 brazil_fixed <- brazil_all_fixed %>%
-  filter(site %in% c("a5w", "a9w", "a5t", "a6t", "a6w", "a10t", "a8t", "a10w", "a8w", "a9t", 
-                     "a7w", "a7t", "a4t", "a4w", "a3w", "a3t", "bp4", "bp1", "bp2", "bp3", "bp5",
-                     "a2w", "a1t", "a1w", "a2t"))
+  filter(!site %in% c("b9t75", "b5t75", "b6t75", "b7w75", "b1w75", "b8t75", "b8w75", "b5w75", "b6w75",
+                      "b7t75", "b10t75", "b4t75", "b10w75", "b2w75", "b9w75", "b3w75", "b2t75", "b4w75",
+                      "b1t75", "b3t75")) %>% 
+  mutate(site = str_remove(site, "25"))
 
 write_csv(brazil_all_fixed, here("data", "brazil", "audio_site_locs.csv"))
 
