@@ -26,7 +26,19 @@ site <- read_csv(here("data", "penn", "2022_missing_data", "late_june_early_july
 
 cap <- read_csv(here("data", "penn", "2022_missing_data", "late_june_early_july", "missing_cap_data.csv"))
 
+cap_info <- read_csv(here("data","penn", "2022_missing_data", "late_june_early_july", "cap_info.csv")) %>% 
+  select(c(bag_id:amphibian_comments))
+
 ```
+
+## join cap and cap_info together by bag_id
+```{r}
+
+cap_cap_info <- cap %>% 
+  left_join(cap_info, by = c("bag_id"))
+
+```
+
 
 ## trim the fat
 ```{r}
@@ -35,6 +47,7 @@ clean_site <- site %>%
   select(fulcrum_id, c(location:survey_comments)) %>% 
   select(!c(edna_water_collected, edna_volume_collected_l, humidity, pressure, elevation, dissolved_oxygen, survey_type, survey_type_other,
             other_observers)) %>% 
+  #filter(!change_type == "delete") %>% 
   group_by(fulcrum_id) %>% 
   mutate(temp_id = cur_group_id()) %>%  
   filter(!duplicated(temp_id)) %>% 
@@ -42,10 +55,11 @@ clean_site <- site %>%
          ph = if_else(fulcrum_id == "4283096b-b956-4501-974c-3bd729831d91", 6.28, ph)) %>% 
   select(!c(temp_id, sampling_event_comments))
 
-clean_cap <- cap %>% 
-  select(fulcrum_parent_id, c(bag_id:toe_clip_tube_id), capture_comments) %>% 
+clean_cap <- cap_cap_info %>% 
+  select(fulcrum_parent_id, c(bag_id:toe_clip_tube_id), c(capture_comments:amphibian_comments)) %>% 
   select(!c(collected_bd_swab, collected_bacterial_swab, collected_mucus_sample, collected_amp_sample, collected_toe_clip, collected_antibody_sample,
-            c(antibody_id_bm_50g:collected_toe_clip), c(amp_id_bm_50g:amp_id_bm_100g_2)))
+            c(antibody_id_bm_50g:collected_toe_clip), c(amp_id_bm_50g:amp_id_bm_100g_2), capture_type_other))
+  
   
 
 ```
@@ -64,7 +78,55 @@ full_data <- clean_site %>%
 
 missing_jun_jul_data <- full_data %>% 
   filter(date > "2022-05-20") %>% 
-  clean_names()
+  ungroup() %>% 
+  select(!fulcrum_id) %>% 
+  clean_names() %>% 
+  select(!c(bag_photo_caption, bag_photo_url, amphibian_comments)) %>% 
+  mutate(capture_comments = if_else(bag_photo == "5000b793-29fd-4312-a71b-4de60f840f21", "dead and decaying", capture_comments)) %>% 
+  rename(photo_id = bag_photo)
+
+```
+
+## align columns with rmd_wrangling file
+```{r}
+
+clean_missing_data <- missing_jun_jul_data %>% 
+  rename(observer = observers,
+         site = location) %>% 
+  mutate(start_hour = hour(start_time),
+         end_hour = hour(end_time),
+         survey_time = case_when(start_hour >= 6 & end_hour >= 6 & end_hour < 19 ~ "day", 
+                          start_hour >= 19 &  (end_hour < 6 | end_hour <= 23) |
+                         (start_hour < 6 & end_hour < 6)~ "night",
+                         start_hour >=19 ~"night"),
+         duration_minutes = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_minutes = duration_minutes/60,
+         start_time = as.character(start_time),
+         end_time = as.character(end_time)) %>% 
+  select(!c(start_hour, end_hour, species_capture_other)) %>% 
+    mutate(date = format_iso_8601(date),
+         observer = str_to_lower(observer),
+         site = str_to_lower(site),
+         bag_id = str_to_lower(bag_id),
+         #processor = str_to_lower(processor),
+         capture_type = str_to_lower(capture_type),
+         life_stage = str_to_lower(life_stage),
+         species_capture = str_to_lower(species_capture),
+         sex = str_to_lower(sex),
+         capture_comments = str_replace_all(capture_comments, "[[:punct:]]", ""),
+         site = str_replace_all(site, "-", "_"),
+         site = str_replace_all(site, " ", "_"),
+         species_capture = str_replace_all(species_capture, " ", "_"),
+         region = "pennslyvania",
+         location = "usa",
+         microhabitat_type = str_to_lower(microhabitat_type))
+
+serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
+  as.numeric()
+
+
 
 ```
 
