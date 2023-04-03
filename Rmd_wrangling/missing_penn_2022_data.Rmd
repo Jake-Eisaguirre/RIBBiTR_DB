@@ -121,10 +121,36 @@ clean_missing_data <- missing_jun_jul_data %>%
          species_capture = str_replace_all(species_capture, " ", "_"),
          region = "pennslyvania",
          location = "usa",
-         microhabitat_type = str_to_lower(microhabitat_type))
+         microhabitat_type = str_to_lower(microhabitat_type)) %>% 
+  rename(duration_min = duration_minutes)
 
 serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
   as.numeric()
+
+
+
+```
+
+
+
+
+
+## explore new approach
+```{r}
+
+surv <- read_csv(here("data", "penn", "2022_missing_data", "jake_amphib_surv.csv"))
+
+cap <- read_csv(here("data", "penn", "2022_missing_data", "jake_amphib_cap.csv"))
+
+cap_rep <- read_csv(here("data", "penn", "2022_missing_data", "jake_amphib_cap_rep.csv"))
+
+cap_spec <- read_csv(here("data", "penn", "2022_missing_data", "jake_amphib_spec.csv"))
+
+all_cap_data <- cap %>% 
+  left_join(cap_rep, by = c("fulcrum_id" = "fulcrum_parent_id"))
+
+full_data <- surv %>% 
+  left_join(all_cap_data, by = c("location", "date"))
 
 
 
