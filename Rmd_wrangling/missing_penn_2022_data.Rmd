@@ -1,0 +1,70 @@
+---
+title: "Missing Penn Data"
+author: "Jake Eisaguirre"
+date: "2023-04-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
+                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
+```
+
+# June July missing data
+
+## load data
+```{r}
+site <- read_csv(here("data", "penn", "2022_missing_data", "late_june_early_july", "missing_sites.csv"))
+
+cap <- read_csv(here("data", "penn", "2022_missing_data", "late_june_early_july", "missing_cap_data.csv"))
+
+```
+
+## trim the fat
+```{r}
+
+clean_site <- site %>% 
+  select(fulcrum_id, c(location:survey_comments)) %>% 
+  select(!c(edna_water_collected, edna_volume_collected_l, humidity, pressure, elevation, dissolved_oxygen, survey_type, survey_type_other,
+            other_observers)) %>% 
+  group_by(fulcrum_id) %>% 
+  mutate(temp_id = cur_group_id()) %>%  
+  filter(!duplicated(temp_id)) %>% 
+  mutate(ph = if_else(fulcrum_id == "3334ebd7-54c0-4e18-a80c-abb313f185f1", 7.65, ph),
+         ph = if_else(fulcrum_id == "4283096b-b956-4501-974c-3bd729831d91", 6.28, ph)) %>% 
+  select(!c(temp_id, sampling_event_comments))
+
+clean_cap <- cap %>% 
+  select(fulcrum_parent_id, c(bag_id:toe_clip_tube_id), capture_comments) %>% 
+  select(!c(collected_bd_swab, collected_bacterial_swab, collected_mucus_sample, collected_amp_sample, collected_toe_clip, collected_antibody_sample,
+            c(antibody_id_bm_50g:collected_toe_clip), c(amp_id_bm_50g:amp_id_bm_100g_2)))
+  
+
+```
+
+## join cap data on site
+```{r}
+
+full_data <- clean_site %>% 
+  left_join(clean_cap, by = c("fulcrum_id" = "fulcrum_parent_id")) %>% 
+  mutate(date = parse_date(date))
+
+```
+
+## missing june and july data
+```{r}
+
+missing_jun_jul_data <- full_data %>% 
+  filter(date > "2022-05-20") %>% 
+  clean_names()
+
+```
+
