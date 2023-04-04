@@ -46,16 +46,16 @@ cap_cap_info <- cap %>%
 clean_site <- site %>% 
   select(fulcrum_id, c(location:survey_comments)) %>% 
   select(!c(edna_water_collected, edna_volume_collected_l, humidity, pressure, elevation, dissolved_oxygen, survey_type, survey_type_other,
-            other_observers)) %>% 
-  #filter(!change_type == "delete") %>% 
-  group_by(fulcrum_id) %>% 
-  mutate(temp_id = cur_group_id()) %>%  
-  filter(!duplicated(temp_id)) %>% 
+            other_observers))%>% 
+  group_by(location, date) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>%  
   mutate(ph = if_else(fulcrum_id == "3334ebd7-54c0-4e18-a80c-abb313f185f1", 7.65, ph),
          ph = if_else(fulcrum_id == "4283096b-b956-4501-974c-3bd729831d91", 6.28, ph)) %>% 
   select(!c(temp_id, sampling_event_comments))
 
 clean_cap <- cap_cap_info %>% 
+  filter(!duplicated(fulcrum_id)) %>% 
   select(fulcrum_parent_id, c(bag_id:toe_clip_tube_id), c(capture_comments:amphibian_comments)) %>% 
   select(!c(collected_bd_swab, collected_bacterial_swab, collected_mucus_sample, collected_amp_sample, collected_toe_clip, collected_antibody_sample,
             c(antibody_id_bm_50g:collected_toe_clip), c(amp_id_bm_50g:amp_id_bm_100g_2), capture_type_other))
@@ -122,13 +122,15 @@ clean_missing_data <- missing_jun_jul_data %>%
          region = "pennslyvania",
          location = "usa",
          microhabitat_type = str_to_lower(microhabitat_type)) %>% 
-  rename(duration_min = duration_minutes)
+  rename(duration_min = duration_minutes,
+         amp_id_1 = amp_id,
+         antibody_id_1 = antibody_id)
 
-serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minutes, -4) %>% 
+clean_missing_data$duration_min <- str_sub(clean_missing_data$duration_min, -4) %>% 
   as.numeric()
 
 
-
+write_csv(clean_missing_data, here("data", "penn", "2022_missing_data", "clean_missing_june_july_data.csv"))
 ```
 
 

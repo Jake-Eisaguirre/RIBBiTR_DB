@@ -379,6 +379,15 @@ gc()
 
 ### load all year 1 penn data
 ```{r, message=F}
+
+munged_Amphibian_Survey <- read_csv(here("data", "penn", "munged_Amphibian_Survey.csv")) %>% 
+  select(location, date, wind_speed_ms, air_temperature_c, water_temperature_c, conductivity_us, ph) %>% 
+  rename(site = location) %>% 
+  mutate(date = format_iso_8601(date),
+         site = str_to_lower(site),
+         site = str_replace_all(site, " ", "_"),
+         site = str_replace(site, "-", "_"))
+
 munged_Amphibian_Processing_App <- read_csv(here("data", "penn", "munged_Amphibian_Processing_App.csv"))
 
 munged_Amphibian_Captured_Information <-  read_csv(here("data", "penn","munged_Amphibian_Captured_Information.csv"))
@@ -430,7 +439,10 @@ penn1_capture <- right_join(right_join(munged_Amphibian_Captured_Information,
          capture_type = str_to_lower(capture_type),
          life_stage = str_to_lower(life_stage),
          species_capture = str_to_lower(species_capture),
-         sex = str_to_lower(sex)) %>% 
+         sex = str_to_lower(sex),
+         site = str_to_lower(site),
+         site = str_replace_all(site, " ", "_"),
+         site = str_replace(site, "-", "_")) %>% 
   unique() %>% 
     mutate(start_hour = hour(start_time),
          end_hour = hour(end_time),
@@ -450,10 +462,18 @@ penn1_capture <- right_join(right_join(munged_Amphibian_Captured_Information,
                             as_hms(86400) - start_time + end_time,
                             end_time - start_time),
          duration_min = duration_min/60) %>%
-  relocate(duration_min, .after = end_time)
-
+  relocate(duration_min, .after = end_time) 
 penn1_capture$duration_min <- str_sub(penn1_capture$duration_min, -4) %>% 
   as.numeric()
+
+penn1_capture <- penn1_capture %>% 
+  left_join(munged_Amphibian_Survey, by = c("site", "date")) %>% 
+  rename(photo_id = bag_photo)
+
+june_july_missing_data <- read_csv(here("data", "penn", "2022_missing_data", "clean_missing_june_july_data.csv")) %>% 
+  mutate(detection_type = "capture")
+
+penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data)
 
 ```
 
@@ -492,6 +512,7 @@ penn1_VES <- left_join(munged_VisualEncounter_Survey, munged_VisualEncounter_Sur
 
 penn1_VES$duration_min <- str_sub(penn1_VES$duration_min, -4) %>% 
   as.numeric()
+
 ```
 
 #### aural
@@ -671,6 +692,9 @@ visit_table <- plyr::rbind.fill(brazil_visit, panama_visit_table,
   relocate(date, .before = campaign) %>% 
   relocate(survey_time, .after = date) %>% 
   group_by(site, date, survey_time) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id)) %>% 
   mutate(visit_id = UUIDgenerate(output = c("uuid")),
          site_id = as.UUID(""))
 
@@ -735,7 +759,8 @@ write_csv(brazil_survey, here("clean_tables", "brazil_legacy_survey.csv"))
 
 penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>% 
   select(c(site, date, observer, detection_type, start_time, end_time, 
-           duration_min, detection_type, survey_time)) %>% 
+           duration_min, detection_type, survey_time, wind_speed_ms, air_temperature_c, 
+           water_temperature_c, ph, total_dissolved_solids, survey_comments)) %>% 
   group_by(date, site, detection_type, survey_time) %>% 
   mutate(temp_reg_id = cur_group_id()) %>% 
   filter(!duplicated(temp_reg_id)) %>% 
@@ -746,7 +771,12 @@ penn_survey_table <- plyr::rbind.fill(penn1_aural, penn1_VES, penn1_capture) %>%
          date = format_iso_8601(date),
          start_time = as.character(start_time),
          end_time = as.character(end_time)) %>% 
-  rename(duration_minutes = duration_min) %>% 
+  rename(duration_minutes = duration_min,
+         air_temp_c = air_temperature_c,
+         water_temp_c = water_temperature_c,
+         p_h = ph,
+         tds_ppm = total_dissolved_solids,
+         wind_speed_m_s = wind_speed_ms) %>% 
   relocate(observer, .after = duration_minutes)
 
 write_csv(penn_survey_table, here("clean_tables", "penn_survey.csv"))
@@ -1157,7 +1187,8 @@ all_newt_ids <- newt %>%
 
 penn_capture <- penn1_capture %>% 
   select(!c(region, location, visit_comment, survey_comment, start_time, end_time,
-            observer, duration_min)) %>% 
+            observer, duration_min, wind_speed_ms, air_temperature_c, 
+           water_temperature_c, ph, total_dissolved_solids, survey_comments, conductivity_us)) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "-", "_"),
          species_capture = str_replace_all(species_capture, " ", "_")) %>% 
@@ -1182,7 +1213,6 @@ penn_capture <- penn1_capture %>%
          substrate_temp_c = microhabitat_temperature_c,
          bacterial_swab_id =  bacterial_swab_tube_id, #glycerol/culture
          microbiome_swab_id = bd_swab_tube_id, #sequence/dry swab
-         photo_id = bag_photo,
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
          body_temp_c = body_temperature_c,
