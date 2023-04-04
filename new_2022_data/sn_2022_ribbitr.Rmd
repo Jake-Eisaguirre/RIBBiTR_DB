@@ -51,7 +51,7 @@ tryCatch({
             print("Unable to connect to Database.")
     })
 
-dbExecute(connection, "set search_path to 'survey_data';")
+dbExecute(connection, "set search_path to 'survey_data';") 
 ```
 
 
