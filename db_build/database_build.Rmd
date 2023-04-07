@@ -232,6 +232,9 @@ dbExecute(connection, "alter table capture drop column pcr;")
 
 dbExecute(connection, "alter table capture drop column campaign;")
 
+## SERDP Newt
+dbExecute(connection, "alter table serdp_newt_microbiome_mucosome_antifungal drop column swab_id;")
+
 
 ```
 

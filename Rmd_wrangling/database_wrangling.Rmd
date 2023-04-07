@@ -964,7 +964,7 @@ survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, pa
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(survey_id = UUIDgenerate(output = c("uuid")),
          visit_id = as.UUID("")) %>% 
-  select(!c(conductivity_uS_cm, qaqc_survey))
+  select(!c(conductivity_uS_cm, qaqc_survey, frog_presence))
 
 write_csv(survey, here("clean_tables", "survey.csv"))
 
