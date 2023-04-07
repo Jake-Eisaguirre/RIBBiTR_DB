@@ -1,0 +1,105 @@
+---
+title: "hobo_build"
+author: "Jake Eisaguirre"
+date: "2022-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+
+```
+
+## build `hobo` schema
+```{r}
+
+# set schema path
+dbExecute(connection, "set search_path to hobo")
+
+#location
+dbExecute(connection, "alter table hobo_location add primary key(hobo_location_id);")
+
+# region
+dbExecute(connection, "alter table hobo_region add primary key(hobo_region_id);")
+
+dbExecute(connection, "update hobo_region hr
+                       set hobo_location_id = 
+                       	(select hs.hobo_location_id
+                       	from hobo_location hs
+                       	where hs.location = hr.location);")
+
+dbExecute(connection, 
+          "alter table hobo_region 
+          add constraint fk_region_hobo foreign key (hobo_location_id) 
+          references hobo_location (hobo_location_id);")
+
+#site
+dbExecute(connection, "alter table hobo_site add primary key(hobo_site_id);")
+
+dbExecute(connection, "update hobo_site hs 
+                       set hobo_region_id =
+                        	(select hr.hobo_region_id
+                        	from hobo_region hr
+                        	where hr.region = hs.region);")
+
+dbExecute(connection, 
+          "alter table hobo_site 
+          add constraint fk_site_hobo foreign key (hobo_region_id) 
+          references hobo_region (hobo_region_id);")
+
+#hobo
+dbExecute(connection, "alter table hobo add primary key(hobo_id);")
+
+dbExecute(connection, "update hobo h 
+                       set hobo_site_id =
+                        	(select hs.hobo_site_id
+                        	from hobo_site hs
+                        	where hs.site_code = h.site_code);")
+
+dbExecute(connection, 
+          "alter table hobo 
+          add constraint fk_hobo foreign key (hobo_site_id) 
+          references hobo_site (hobo_site_id);")
+
+# drop columns
+dbExecute(connection, "alter table hobo_region drop column location;")
+
+dbExecute(connection, "alter table hobo_site drop column region;")
+
+dbExecute(connection, "alter table hobo_site drop column location;")
+
+dbExecute(connection, "alter table hobo drop column site_code;")
+
+```

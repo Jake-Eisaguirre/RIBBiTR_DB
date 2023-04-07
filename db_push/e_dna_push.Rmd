@@ -1,0 +1,165 @@
+---
+title: "e_dna_push"
+author: "Jake Eisaguirre"
+date: "2022-11-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Clean tables
+
+## read in all `clean_tables` .csv files
+```{r, echo=F, message=F}
+
+# clear environment
+rm(list=ls())
+
+# slow method for reading csv files
+
+filenames <- gsub("\\.csv$","", list.files(here("clean_tables")))
+
+for(i in filenames){
+  assign(i, read_csv(here("clean_tables", paste(i, ".csv", sep=""))))
+}
+```
+
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+```
+
+## upload data to `e_dna` schema
+```{r}
+# remove current schema
+dbExecute(conn = connection, "DROP SCHEMA e_dna CASCADE")
+
+# create new empty schema
+dbExecute(connection, "create schema e_dna")
+
+# set search path
+dbExecute(connection, "set search_path to e_dna")
+
+#location table load
+dbWriteTable(connection, 'edna_location', location, overwrite=T,
+             field.types = c(location = "varchar(6)",
+                             location_id = "uuid"))
+
+#region table load
+dbWriteTable(connection, 'edna_region', regions, overwrite=T,
+             field.types = c(region = "varchar(16)",
+                             location = "varchar(6)",
+                             region_id = "uuid",
+                             location_id = "uuid"))
+
+#site table load
+dbWriteTable(connection, 'edna_site', sites, overwrite=T,
+             field.types = c(site_id = "uuid",
+                             region_id = "uuid"))
+
+#edna visit load
+dbWriteTable(connection, 'edna_visit', edna_visit, overwrite=T,
+             field.types = c(site = "varchar",
+                             date_collected = "date",
+                             year = "int",
+                             month = "int",
+                             day = "int",
+                             site_code = "varchar(4)",
+                             visit_status = "varchar",
+                             visit_comment = "varchar",
+                             visit_id = "uuid",
+                             site_id = "uuid"))
+#edna serdp processed
+dbWriteTable(connection, 'edna_serdp_bd', edna_serdp_bd, overwrite=T,
+             field.types = c(pool_id = "varchar",
+                             pool_id_regardless_of_half = "varchar",
+                             h1_or_h2 = "varchar",
+                             sample_pass = "boolean",
+                             site_code = "varchar",
+                             date_collected = "date",
+                             number_filters = "int",
+                             control = "boolean",
+                             num_replicates = "int",
+                             resus_vol = "int",
+                             ext_date = "date",
+                             ext_method = "varchar",
+                             ext_tech = "varchar",
+                             ext_location = "varchar",
+                             date_ran = "date",
+                             q_pcr_lab = "varchar",
+                             q_pcr_tech = "varchar",
+                             bd_positive = "boolean",
+                             qpcr_well_pos = "varchar",
+                             bd_pos_neg_per_replicate = "varchar",
+                             ct_mean = "varchar",
+                             quantity_mean_rep1 = "float8",
+                             quantity_mean_rep2 = "float8",
+                             quantity_mean_rep3 = "float8",
+                             quantity_mean_ave = "float8",
+                             bd_per_liter = "float8",
+                             bsal_positive = "boolean",
+                             ipc = "varchar",
+                             dilution_multiplier = "varchar",
+                             qpcr_neg_control_pass = "boolean",
+                             sample_rerun = "boolean",
+                             q_pcr_results_file = "varchar",
+                             edna_comments = "varchar",
+                             region = "varchar",
+                             serdp_bd_id = "uuid",
+                             visit_id = "uuid"))
+
+#edna pan metadata
+dbWriteTable(connection, 'edna_survey', edna_survey, overwrite=T,
+             field.types = c(region = "varchar",
+                             site = "varchar",
+                             date_collected = "date",
+                             control = "boolean",
+                             edna_location_m = "varchar",
+                             date_filtered = "date",
+                             filter_start_time = "time",
+                             filter_end_time = "time",
+                             edna_volume_ml = "int",
+                             survey_comments = "varchar",
+                             active_passive = "varchar",
+                             filter_size_um = "varchar", 
+                             wind = "varchar",
+                             sky = "varchar",
+                             collect_time = "time",
+                             utm_easting_edna = "float8",
+                             utm_northing_edna = "float8",
+                             survey_id = "uuid",
+                             visit_id = "uuid"))
+
+
+
+
+
+```

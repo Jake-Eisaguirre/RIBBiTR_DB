@@ -2,7 +2,6 @@
 title: "Database_Wrangle"
 author: "Jake Eisaguirre"
 date: "2022-09-23"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}

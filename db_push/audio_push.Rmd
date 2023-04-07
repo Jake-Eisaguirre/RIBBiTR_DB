@@ -1,0 +1,116 @@
+---
+title: "audio_push"
+author: "Jake Eisaguirre"
+date: "2022-11-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Clean tables
+
+## read in all `clean_tables` .csv files
+```{r, echo=F, message=F}
+
+# clear environment
+rm(list=ls())
+
+# slow method for reading csv files
+
+filenames <- gsub("\\.csv$","", list.files(here("clean_tables")))
+
+for(i in filenames){
+  assign(i, read_csv(here("clean_tables", paste(i, ".csv", sep=""))))
+}
+```
+
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+```
+
+# upload data to `audio` schema
+```{r}
+# remove current schema
+dbExecute(connection, "DROP SCHEMA audio CASCADE")
+
+# create new empty schema
+dbExecute(connection, "create schema audio")
+
+# set search path
+dbExecute(connection, "set search_path to audio")
+
+#audio location
+dbWriteTable(connection, 'audio_location', audio_location, overwrite=T,
+             field.types = c(location = "varchar",
+                             location_id = "uuid"))
+
+#audio region
+dbWriteTable(connection, 'audio_region', audio_region, overwrite=T,
+             field.types = c(location = "varchar",
+                             region = "varchar",
+                             region_id = "uuid",
+                             location_id = "uuid"))
+
+#audio site
+dbWriteTable(connection, 'audio_site', audio_site, overwrite = T,
+             field.types = c(site = "varchar",
+                             region = "varchar",
+                             site_id = "uuid",
+                             region_id = "uuid"))
+
+#audio visit
+dbWriteTable(connection, 'audio_visit', audio_visit, overwrite = T,
+             field.types = c(site = "varchar",
+                             date_of_deployment = "date",
+                             visit_id = "uuid",
+                             site_id = "uuid"))
+
+#audio info
+dbWriteTable(connection, 'audio_info', audio_info, overwrite = T,
+             field.types = c(site = "varchar",
+                             recorder_id = "varchar",
+                             date_of_deployment = "date",
+                             surveyor_deploy = "varchar",
+                             deployment_comments = "varchar",
+                             audio_device = "varchar",
+                             pickup_comments = "varchar",
+                             surveyor_pickup = "varchar",
+                             card_comments = "varchar",
+                             date_of_pickup = "varchar",
+                             memory_card_id = "varchar",
+                             utm_zone = "int",
+                             utmn = "float8",
+                             utme = "float8",
+                             audio_id = "uuid",
+                             visit_id = "uuid"))
+
+```

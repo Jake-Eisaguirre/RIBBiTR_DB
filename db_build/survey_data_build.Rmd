@@ -1,0 +1,246 @@
+---
+title: "survey_data_build"
+author: "Jake Eisaguirre"
+date: "2022-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+
+```
+
+## build `survey_schema`
+```{r}
+# set schema path
+dbExecute(connection, "set search_path to 'survey_data'")
+
+# location
+dbExecute(connection, "alter table location add primary key(location_id);")
+
+# region
+dbExecute(connection, "alter table region add primary key(region_id);")
+
+dbExecute(connection, 
+          "update region r
+           set location_id = 
+            	(select rs.location_id 
+            	from location rs
+            	where rs.location = r.location);")
+
+dbExecute(connection,
+          "alter table region  
+           add constraint fk_region foreign key (location_id) 
+          references location (location_id);")
+
+
+# site
+dbExecute(connection, "alter table site add primary key(site_id);")
+
+dbExecute(connection, 
+          "update site s 
+           set region_id =
+           	(select r.region_id
+           	 from region r 
+           	 where r.region = s.region);")
+
+dbExecute(connection, 
+          "alter table site 
+           add constraint fk_site foreign key (region_id) 
+          references region (region_id);")
+
+# visit
+dbExecute(connection, "alter table visit add primary key(visit_id);")
+
+dbExecute(connection, "update visit v 
+                       set site_id =
+                       	(select s.site_id
+                       	 from site s
+                       	 where s.site = v.site);")
+
+dbExecute(connection, 
+          "alter table visit 
+           add constraint fk_visit foreign key (site_id) 
+           references site (site_id);")
+
+# survey
+dbExecute(connection, "alter table survey add primary key(survey_id);")
+
+dbExecute(connection, "alter table survey alter column date type date using (date::text::date);")
+
+dbExecute(connection, "update survey ps 
+                       set visit_id =
+                       	(select v.visit_id
+                       	from visit v
+                       	where (v.site, v.date, v.survey_time) = (ps.site, ps.date, ps.survey_time));")
+
+dbExecute(connection, 
+          "alter table survey 
+           add constraint fk_survey foreign key (visit_id) references visit (visit_id);")
+
+# VES
+dbExecute(connection, "alter table ves add primary key(ves_id);")
+
+dbExecute(connection, "update ves v 
+                       set survey_id = 
+                           (select ps.survey_id
+                           from survey ps
+                           where 
+                          (ps.site, ps.date, ps.survey_time, ps.detection_type) 
+                          = (v.site, v.date, v.survey_time, v.detection_type));")
+
+dbExecute(connection, 
+          "alter table ves 
+           add constraint fk_ves foreign key (survey_id) 
+          references survey (survey_id);")
+
+# Aural
+dbExecute(connection, "alter table aural add primary key(aural_id);")
+
+dbExecute(connection, 
+          "update aural v 
+            set survey_id = 
+                (select pa.survey_id
+                from survey pa
+                where (pa.site, pa.date, pa.survey_time, pa.detection_type) = (v.site, v.date, v.survey_time, v.detection_type));")
+
+dbExecute(connection,
+          "alter table aural 
+          add constraint fk_aural foreign key (survey_id) 
+          references survey (survey_id);")
+
+# capture
+dbExecute(connection, "alter table capture add primary key(capture_id);")
+
+dbExecute(connection, 
+          "update capture c 
+           set survey_id =
+           	(select psi.survey_id
+           	from survey psi
+           	where (psi.site, psi.date, psi.survey_time, psi.detection_type) = (c.site, c.date, c.survey_time, c.detection_type));")
+
+dbExecute(connection, 
+         "alter table capture add constraint fk_capture foreign key (survey_id) references survey (survey_id);")
+
+# serdp_bd_genomic
+dbExecute(connection, "alter table serdp_bd_genomic add primary key(genetic_id);")
+
+# serdp_newt
+dbExecute(connection, "alter table serdp_newt_microbiome_mucosome_antifungal 
+          add primary key(microbiome_swab_id, mucosome_id);")
+
+# serdp_amp
+dbExecute(connection, "alter table serdp_amp add primary key(amp_id);")
+
+#serdp_bd
+dbExecute(connection, "alter table serdp_bd add primary key(bd_swab_id);")
+
+#temp_panama_bd
+dbExecute(connection, "alter table panama_bd_temp add primary key(bd_swab_id);")
+
+# drop columns
+
+## region
+dbExecute(connection, "alter table region drop column location;")
+
+## site
+dbExecute(connection, "alter table site drop column region;")
+
+dbExecute(connection, "alter table site drop column location;")
+
+## visit
+dbExecute(connection, "alter table visit drop column site;")
+
+dbExecute(connection, "alter table visit drop column site_code;")
+
+## survey
+dbExecute(connection, "alter table survey drop column site;")
+
+dbExecute(connection, "alter table survey drop column date;")
+
+dbExecute(connection, "alter table survey drop column survey_time;")
+
+#dbExecute(connection, "alter table survey drop column detection_type;")
+
+dbExecute(connection, "alter table survey drop column campaign;")
+
+dbExecute(connection, "alter table survey drop column site_code;")
+
+
+## aural
+dbExecute(connection, "alter table aural drop column date;")
+
+dbExecute(connection, "alter table aural drop column site;")
+
+dbExecute(connection, "alter table aural drop column detection_type;")
+
+dbExecute(connection, "alter table aural drop column survey_time;")
+
+## ves
+dbExecute(connection, "alter table ves drop column date;")
+
+dbExecute(connection, "alter table ves drop column site;")
+
+dbExecute(connection, "alter table ves drop column detection_type;")
+
+dbExecute(connection, "alter table ves drop column survey_time;")
+
+## capture
+dbExecute(connection, "alter table capture drop column date;")
+
+dbExecute(connection, "alter table capture drop column site;")
+
+dbExecute(connection, "alter table capture drop column detection_type;")
+
+dbExecute(connection, "alter table capture drop column survey_time;")
+
+dbExecute(connection, "alter table capture drop column site_code;")
+
+dbExecute(connection, "alter table capture drop column pcr;")
+
+dbExecute(connection, "alter table capture drop column campaign;")
+
+## SERDP Newt
+dbExecute(connection, "alter table serdp_newt_microbiome_mucosome_antifungal drop column swab_id;")
+
+
+```
+
+
+
+
+
+
+

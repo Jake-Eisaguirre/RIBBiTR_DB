@@ -1,0 +1,142 @@
+---
+title: "e_dna_build"
+author: "Jake Eisaguirre"
+date: "2022-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+
+```
+# build `e_dna` schema
+```{r}
+# set schema path
+dbExecute(connection, "set search_path to e_dna")
+
+# location table
+dbExecute(connection, "alter table edna_location add primary key(location_id);")
+
+# region table
+dbExecute(connection, "alter table edna_region add primary key(region_id);")
+
+dbExecute(connection, "update edna_region r
+                       set location_id =
+                       	(select l.location_id
+                       	from edna_location l
+                       	where l.location = r.location);")
+
+dbExecute(connection, "alter table edna_region  
+                       add constraint fk_region foreign key (location_id) 
+                       references edna_location (location_id);")
+
+# site table
+dbExecute(connection, "alter table edna_site add primary key(site_id);")
+
+dbExecute(connection, "update edna_site s 
+                       set region_id = 
+                       	(select region_id 
+                       	from edna_region r
+                       	where s.region = r.region);")
+
+dbExecute(connection, "alter table edna_site 
+                       add constraint fk_site foreign key (region_id) 
+                       references edna_region (region_id);")
+
+# visit table
+dbExecute(connection, "alter table edna_visit add primary key(visit_id);")
+
+dbExecute(connection, "update edna_visit v 
+                       set site_id=
+                       	(select site_id
+                       	from edna_site s
+                       	where (v.site) = (s.site));")
+
+dbExecute(connection, "alter table edna_visit 
+                       add constraint fk_visit foreign key (site_id) 
+                       references edna_site (site_id);")
+
+# e_dna survey
+dbExecute(connection, "alter table edna_survey add primary key(survey_id);")
+
+dbExecute(connection, "update edna_survey p
+                       set visit_id =
+                       	(select visit_id
+                       	from edna_visit v
+                       	where (p.site, p.date_collected) = (v.site, v.date_collected));")
+
+dbExecute(connection, "alter table edna_survey 
+                       add constraint fk_survey foreign key (visit_id) 
+                       references edna_visit (visit_id);")
+
+# edna serdp
+dbExecute(connection, "alter table edna_serdp_bd add primary key(serdp_bd_id);")
+
+dbExecute(connection, "update edna_serdp_bd s 
+                       set visit_id =
+                       	(select visit_id
+                       	from edna_visit v
+                       	where (s.site_code, s.date_collected) = (v.site_code, v.date_collected));")
+
+dbExecute(connection, "alter table edna_serdp_bd 
+                       add constraint fk_serdp_bd foreign key (visit_id) 
+                       references edna_visit (visit_id);")
+
+# drop columns
+dbExecute(connection, "alter table edna_region drop column location;")
+
+dbExecute(connection, "alter table edna_site drop column region;")
+
+#dbExecute(connection, "alter table edna_site drop column date_collected;")
+
+dbExecute(connection, "alter table edna_visit drop column site;")
+
+dbExecute(connection, "alter table edna_visit drop column site_code;")
+
+dbExecute(connection, "alter table edna_survey drop column region;")
+
+dbExecute(connection, "alter table edna_survey drop column site;")
+
+dbExecute(connection, "alter table edna_survey drop column date_collected;")
+
+dbExecute(connection, "alter table edna_serdp_bd drop column site_code;")
+
+dbExecute(connection, "alter table edna_serdp_bd drop column date_collected;")
+
+dbExecute(connection, "alter table edna_serdp_bd drop column region;")
+
+
+
+```

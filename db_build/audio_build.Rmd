@@ -1,0 +1,119 @@
+---
+title: "aduio_build"
+author: "Jake Eisaguirre"
+date: "2022-12-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+
+```
+
+# build `audio` schema
+```{r}
+# set schema path
+dbExecute(connection, "set search_path to audio")
+
+# location table
+dbExecute(connection, "alter table audio_location add primary key(location_id);")
+
+# region table
+dbExecute(connection, "alter table audio_region add primary key(region_id);")
+
+dbExecute(connection, "update audio_region r 
+                       set location_id = 
+                       	(select l.location_id
+                       	from audio_location l
+                       	where l.location = r.location);")
+
+dbExecute(connection, "alter table audio_region 
+                       add constraint fk_audio_region foreign key (location_id)
+                       references audio_location (location_id);")
+
+# site table
+dbExecute(connection, "alter table audio_site add primary key(site_id);")
+
+dbExecute(connection, "update audio_site s 
+                       set region_id =
+                       	(select r.region_id
+                       	from audio_region r
+                       	where r.region = s.region);")
+
+dbExecute(connection, "alter table audio_site 
+                       add constraint fk_audio_site foreign key (region_id)
+                       references audio_region (region_id);")
+
+# visit table
+dbExecute(connection, "alter table audio_visit add primary key(visit_id);")
+
+dbExecute(connection, "update audio_visit v 
+                       set site_id =
+                       	(select s.site_id
+                       	from audio_site s
+                       	where s.site = v.site);")
+
+dbExecute(connection, "alter table audio_visit
+                       add constraint fk_audio_visit foreign key (site_id)
+                       references audio_site (site_id);")
+
+# info table
+dbExecute(connection, "alter table audio_info add primary key(audio_id);")
+
+dbExecute(connection, "update audio_info a 
+                       set visit_id = 
+                       	(select v.visit_id 
+                       	from audio_visit v 
+                       	where (v.date_of_deployment, v.site) = (a.date_of_deployment, a.site));")
+
+dbExecute(connection, "alter table audio_info 
+                       add constraint fk_audio_info foreign key (visit_id)
+                       references audio_visit (visit_id);")
+
+
+# drop columns 
+dbExecute(connection, "alter table audio_region drop column location;")
+
+dbExecute(connection, "alter table audio_site drop column region;")
+
+dbExecute(connection, "alter table audio_visit drop column site;")
+
+dbExecute(connection, "alter table audio_info drop column site;")
+
+dbExecute(connection, "alter table audio_info drop column date_of_deployment;")
+
+
+
+```

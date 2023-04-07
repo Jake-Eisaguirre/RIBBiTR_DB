@@ -1,0 +1,70 @@
+---
+title: "survey_data_push"
+author: "Jake Eisaguirre"
+date: "2022-11-01"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, DBI, RPostgres, here)
+```
+
+# Clean tables
+
+## read in all `clean_tables` .csv files
+```{r, echo=F, message=F}
+
+# clear environment
+rm(list=ls())
+
+# slow method for reading csv files
+
+filenames <- gsub("\\.csv$","", list.files(here("clean_tables")))
+
+for(i in filenames){
+  assign(i, read_csv(here("clean_tables", paste(i, ".csv", sep=""))))
+}
+```
+
+
+# Database
+
+## connect to `RIBBiTR` database
+```{r}
+
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv, 
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"), 
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"), 
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+```
+
+## upload data to `antifungal_isolate` schmea
+```{r}
+# create new empty schema
+dbExecute(connection, "create schema antifungal_isolate")
+
+dbExecute(connection, "set search_path to antifungal_isolate")
+
+dbWriteTable(connection, 'antifungal_isolate_ref', antifungal_isolate_ref, overwrite=T)
+
+
+```

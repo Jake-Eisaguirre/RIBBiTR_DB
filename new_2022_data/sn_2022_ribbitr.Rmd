@@ -2,7 +2,6 @@
 title: "SN RIBBiTR Data"
 author: "Jake Eisaguirre"
 date: "2023-03-06"
-output: html_document
 ---
 
 ```{r setup, include=FALSE}
