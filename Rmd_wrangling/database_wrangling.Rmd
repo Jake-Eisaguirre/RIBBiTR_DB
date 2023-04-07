@@ -471,7 +471,8 @@ penn1_capture <- penn1_capture %>%
   rename(photo_id = bag_photo)
 
 june_july_missing_data <- read_csv(here("data", "penn", "2022_missing_data", "clean_missing_june_july_data.csv")) %>% 
-  mutate(detection_type = "capture")
+  mutate(detection_type = "capture") %>% 
+  rename(body_temp_c = body_temperature)
 
 penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>% 
   mutate(amp_id_1 = if_else(amp_id_1 == "AMPBath00004", "AMPBath00004_5", amp_id_1),
@@ -963,7 +964,7 @@ survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, pa
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(survey_id = UUIDgenerate(output = c("uuid")),
          visit_id = as.UUID("")) %>% 
-  select(!c(conductivity_uS_cm))
+  select(!c(conductivity_uS_cm, qaqc_survey))
 
 write_csv(survey, here("clean_tables", "survey.csv"))
 
@@ -1213,6 +1214,7 @@ penn_capture <- penn1_capture %>%
          # antibody_id_3=if_else(antibody_id_3 == "AntiBod00000", "NA", antibody_id_3),
          # antibody_id_4=if_else(antibody_id_4 == "AntiBod00000", "NA", antibody_id_4),
          # toe_clip_tube_id=if_else(toe_clip_tube_id == "ToeClip00000", "NA", toe_clip_tube_id)) %>% 
+  unite(body_temp_c, c(body_temperature_c, body_temp_c), sep = "", na.rm = T) %>% 
   rename(bag_mass_g = bag_mass,
          svl_mm = snout_vent_length,
          body_and_bag_mass_g = body_and_bag_mass,
@@ -1222,7 +1224,7 @@ penn_capture <- penn1_capture %>%
          microbiome_swab_id = bd_swab_tube_id, #sequence/dry swab
          genetic_id = toe_clip_tube_id,
          amp_id = amp_id_1,
-         body_temp_c = body_temperature_c,
+         #body_temp_c = body_temperature_c,
          bd_swab_id = dry_swab_tube_id,
          crispr_id = crispr_swab_tube_id,
          antibody_id = antibody_id_1,
@@ -1474,7 +1476,7 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
   relocate(capture_comments, .after = antibody_id_4) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
          survey_id = as.UUID("")) %>% 
-  select(!c(amp_id_2:antibody_id_4))
+  select(!c(amp_id_2:antibody_id_4, sex_other))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
