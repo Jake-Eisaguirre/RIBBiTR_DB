@@ -107,7 +107,8 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          notes_amphib1 = if_else(swab_id == "190801_01", "after transect was completed", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "190801_02", "after transect was completed", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "190801_03", "after transect was completed", notes_amphib1),
-         notes_amphib1 = if_else(swab_id == "190801_04", "after transect was completed", notes_amphib1))
+         notes_amphib1 = if_else(swab_id == "190801_04", "after transect was completed", notes_amphib1),
+         end_time = if_else(sort_id == "5064", "13:34:00", end_time))
 
 
 
