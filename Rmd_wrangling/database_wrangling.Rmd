@@ -101,7 +101,13 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          notes_amphib1 = if_else(swab_id == "160709_a16", "off transect", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "181214_j27", "off transect", notes_amphib1),
          species = if_else(swab_id == "160710_a07", "craugastor gollmeri?", species),
-         notes_amphib1 = if_else(sort_id == 137, "at meter 159, counted 75 black tadpoles", notes_amphib1))
+         notes_amphib1 = if_else(sort_id == 137, "at meter 159, counted 75 black tadpoles", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "181215_j04", "caught after end time", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "181215_j05", "caught after end time", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "190801_01", "after transect was completed", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "190801_02", "after transect was completed", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "190801_03", "after transect was completed", notes_amphib1),
+         notes_amphib1 = if_else(swab_id == "190801_04", "after transect was completed", notes_amphib1))
 
 
 
