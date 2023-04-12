@@ -363,7 +363,9 @@ sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_si
          utme = if_else(site == "rabbit_stream", 618036, utme),
          utmn = if_else(site == "rabbit_stream", 960391, utmn),
          utme = if_else(site == 'admin_pond', 547460.95, utme),
-         utmn = if_else(site == 'admin_pond', 4610302.89, utmn))
+         utmn = if_else(site == 'admin_pond', 4610302.89, utmn),
+         utme = if_else(site == "silenciosa", 0545146, utme),
+         utmn = if_else(site == "silenciosa", 0958387, utmn))
 
 # brazil_locs <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
 #   rename(latitude = lat,
