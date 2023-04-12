@@ -1059,11 +1059,26 @@ sn_ves_table <- sn_ves %>%
 gc()
 ```
 
+## brazil ves data
+```{r}
+brazil_ves <- read_csv(here("data", "brazil", "brazil.csv")) %>% 
+  clean_names() %>% 
+  filter(region_id == "Boraceia") %>% 
+  select(site_id, date, survey_time, detection_type, species_capture, life_stage, sex, capture_comments) %>% 
+  rename(site = site_id,
+         ves_notes = capture_comments,
+         species_ves = species_capture) %>% 
+  mutate(detection_type = "visual",
+         site = str_to_lower(site),
+         count = 1)
+```
+
+
 
 ## bind ves tables
 ```{r}
 
-ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table) %>% 
+ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table, brazil_ves) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          sex = if_else(sex == "unkonwn", "unknown", sex),
          species_ves = str_replace_all(species_ves, " ", "_")) %>% 
@@ -1340,7 +1355,7 @@ new_brazil_capture <- read_csv(here("data", "brazil", "brazil.csv")) %>%
          antibody_id = antibody_id_1)
 
 brazil_capture <- plyr::rbind.fill(brazil_legacy_capture, new_brazil_capture)
-
+ 
 ```
 
 ## serdp capture table
