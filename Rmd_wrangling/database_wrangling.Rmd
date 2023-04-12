@@ -762,7 +762,18 @@ new_brazil_survey <- read_csv(here("data", "brazil", "brazil.csv")) %>%
          site = str_to_lower(site),
          detection_type = "capture")
 
-brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey) %>% 
+brazil_survey_ves <- read_csv(here("data", "brazil", "brazil.csv")) %>% 
+  clean_names() %>% 
+  filter(region_id == "Boraceia") %>% 
+  rename(site = site_id) %>% 
+  select(site, date, survey_time, observer) %>% 
+  group_by(site, date, survey_time) %>% 
+  unique() %>% 
+  mutate(date = format_iso_8601(date),
+         site = str_to_lower(site),
+         detection_type = "visual")
+
+brazil_survey <- plyr::rbind.fill(brazil_legacy_survey_table, new_brazil_survey, brazil_survey_ves) %>% 
   mutate(start_time = as.character(start_time),
          end_time = as.character(end_time))
   
@@ -1070,6 +1081,7 @@ brazil_ves <- read_csv(here("data", "brazil", "brazil.csv")) %>%
          species_ves = species_capture) %>% 
   mutate(detection_type = "visual",
          site = str_to_lower(site),
+         species_ves = str_to_lower(species_ves),
          count = 1)
 ```
 
