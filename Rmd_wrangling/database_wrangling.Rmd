@@ -1057,7 +1057,18 @@ join visual_survey vs on s.id = vs.survey_id;
 
 sn_ves_table <- sn_ves %>% 
   select(!c(id, survey_id)) %>% 
-  mutate(survey_time = "day") %>% 
+  mutate(survey_time = "day",
+         species = case_when(species == "hyre" ~ "hyliola_regilla",
+                             species == "thel" ~ "thamnophis_elegans",
+                             species == "ramu" ~ "rana_muscosa",
+                             species == "buca" ~ "anaxyrus_canorus",
+                             species == "bubo" ~ "anaxyrus_boreas",
+                             species == "thco" ~ "thamnophis_couchii",
+                             species == "tato" ~ "taricha_torosa",
+                             species == "raca" ~ "rana_catesbiana",
+                             species == "clma" ~ "actinemys_marmorata",
+                             species == "amma" ~ "ambystoma_macrodactylum",
+                             species == "thsi" ~ "thamnophis_sirtalis")) %>% 
   rename(species_ves = species,
          ves_notes = comment,
          microhab = location,
