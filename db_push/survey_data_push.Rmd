@@ -32,6 +32,7 @@ for(i in filenames){
   assign(i, read_csv(here("clean_tables", paste(i, ".csv", sep=""))))
 }
 
+# no idea why the if_else statements are holding true in the 'database_wrangling script. Manually make these penn fixes once csv read in. I am at a loss
 capture <- capture %>% 
   mutate(amp_id_2 = as.character(amp_id_2),
          antibody_id_2 = as.character(antibody_id_2),
