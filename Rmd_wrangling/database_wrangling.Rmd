@@ -482,14 +482,28 @@ june_july_missing_data <- read_csv(here("data", "penn", "2022_missing_data", "cl
   mutate(detection_type = "capture") %>% 
   rename(body_temp_c = body_temperature)
 
-penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>% 
-  mutate(amp_id_1 = if_else(amp_id_1 == "AMPBath00004", "AMPBath00004_5", amp_id_1),
-         amp_id_1 = if_else(amp_id_1 == "AMPBath00016", "AMPBath00016_17", amp_id_1),
-         amp_id_1 = if_else(amp_id_1 == "AMPBath00018", "AMPBath00018_19", amp_id_1),
-         amp_id_1 = if_else(amp_id_1 == "AMPBath00020", "AMPBath00020_21", amp_id_1),
-         antibody_id_1 = if_else(antibody_id_1 == "AntiBod00016", "AntiBod00016_17", antibody_id_1),
-         antibody_id_1 = if_else(antibody_id_1 == "AntiBod00018", "AntiBod00018_19", antibody_id_1),
-         antibody_id_1 = if_else(antibody_id_1 == "AntiBod00020", "AntiBod00020_21", antibody_id_1))
+penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
+  mutate(amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca4", "2022-05-18-admin-raca4", amp_id_1), #manual data fixes
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca6", "2022-05-18-admin-raca6", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca7", "2022-05-18-admin-raca7", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca9", "2022-05-18-admin-raca9", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca10", "2022-05-18-admin-raca10", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca12", "2022-05-18-admin-raca12", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca14", "2022-05-18-admin-raca14", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca15", "2022-05-18-admin-raca15", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi15", "2022-05-18-admin-rapi15", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi16", "2022-05-18-admin-rapi16", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi17", "2022-05-18-admin-rapi17", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca18", "2022-05-18-admin-raca18", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-pscr19", "2022-05-18-admin-pscr19", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-pscr20", "2022-05-18-admin-pscr20", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi1", "2022-05-19-admin-rapi1", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi2", "2022-05-19-admin-rapi2", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", amp_id_1),
+        amp_id_1 = if_else(bacterial_swab_tube_id == "2022-05‐18-admin-raca1", "2022-05-18-admin-raca1", amp_id_1),
+        antibody_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi1", "2022-05-19-admin-rapi1", antibody_id_1),
+        antibody_id_1 = if_else(bd_swab_tube_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", antibody_id_1),
+        antibody_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", antibody_id_1))
 
 ```
 
@@ -1522,19 +1536,12 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
   relocate(capture_comments, .after = antibody_id_4) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
          survey_id = as.UUID("")) %>% 
-  select(!c(amp_id_2:antibody_id_4, sex_other))
+  select(!c(sex_other, amp_id_3, amp_id_4, antibody_id_3, antibody_id_4))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
 
-# dups <- capture %>% 
-#   group_by(bd_swab_id) %>% 
-#   mutate(temp_id = cur_group_id()) %>% 
-#   filter(duplicated(temp_id)) %>% 
-#   drop_na(bd_swab_id)
-# 
-# z <- capture %>% 
-#   filter(bd_swab_id == "32") # one is control
+
 
 #rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()

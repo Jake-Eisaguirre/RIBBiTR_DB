@@ -31,6 +31,17 @@ filenames <- gsub("\\.csv$","", list.files(here("clean_tables")))
 for(i in filenames){
   assign(i, read_csv(here("clean_tables", paste(i, ".csv", sep=""))))
 }
+
+capture <- capture %>% 
+  mutate(amp_id_2 = as.character(amp_id_2),
+         antibody_id_2 = as.character(antibody_id_2),
+         amp_id_2 = if_else(amp_id == "AMPBath00004", "AMPBath00005", amp_id_2), # manual data fixes
+         amp_id_2 = if_else(amp_id == "AMPBath00016", "AMPBath00017", amp_id_2),
+         amp_id_2 = if_else(amp_id == "AMPBath00018", "AMPBath00019", amp_id_2),
+         amp_id_2 = if_else(amp_id == "AMPBath00020", "AMPBath00021", amp_id_2),
+         antibody_id_2 = if_else(antibody_id == "AntiBod00016", "AntiBod00017", antibody_id_2),
+         antibody_id_2 = if_else(antibody_id == "AntiBod00018", "AntiBod00019", antibody_id_2),
+         antibody_id_2 = if_else(antibody_id == "AntiBod00020", "AntiBod00021", antibody_id_2))
 ```
 
 
@@ -370,11 +381,11 @@ dbWriteTable(connection, 'capture', capture, overwrite=T,
                              capture_type = "varchar(9)",
                              capture_mark_recapture = "varchar",
                              crispr_id = "varchar",
-                             # amp_id_2 = "varchar",
+                             amp_id_2 = "varchar",
                              # amp_id_3 = "varchar",
                              # amp_id_4 = "varchar",
                              antibody_id = "varchar",
-                             # antibody_id_2 = "varchar",
+                             antibody_id_2 = "varchar",
                              # antibody_id_3 = "varchar",
                              # antibody_id_4 = "varchar",
                              site_code = "varchar(4)",
