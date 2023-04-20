@@ -471,6 +471,7 @@ penn1_capture <- right_join(right_join(munged_Amphibian_Captured_Information,
                             end_time - start_time),
          duration_min = duration_min/60) %>%
   relocate(duration_min, .after = end_time) 
+
 penn1_capture$duration_min <- str_sub(penn1_capture$duration_min, -4) %>% 
   as.numeric()
 
@@ -490,20 +491,26 @@ penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca10", "2022-05-18-admin-raca10", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca12", "2022-05-18-admin-raca12", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca14", "2022-05-18-admin-raca14", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca15", "2022-05-18-admin-raca15", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca15", "2022-05-18-admin-rapi15", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi15", "2022-05-18-admin-rapi15", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi16", "2022-05-18-admin-rapi16", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi17", "2022-05-18-admin-rapi17", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca18", "2022-05-18-admin-raca18", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi18", "2022-05-18-admin-rapi18", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-pscr19", "2022-05-18-admin-pscr19", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-pscr20", "2022-05-18-admin-pscr20", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi1", "2022-05-19-admin-rapi1", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi2", "2022-05-19-admin-rapi2", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", amp_id_1),
-        amp_id_1 = if_else(bacterial_swab_tube_id == "2022-05‐18-admin-raca1", "2022-05-18-admin-raca1", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-08-19-admin-rapi3", "2022-05-19-admin-rapi3", amp_id_1),
+        amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca1", "2022-05-18-admin-raca1", amp_id_1),
         antibody_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi1", "2022-05-19-admin-rapi1", antibody_id_1),
         antibody_id_1 = if_else(bd_swab_tube_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", antibody_id_1),
-        antibody_id_1 = if_else(bd_swab_tube_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", antibody_id_1))
+        antibody_id_1 = if_else(bd_swab_tube_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", antibody_id_1),
+        bd_swab_tube_id = if_else(bd_swab_tube_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", bd_swab_tube_id),
+        bacterial_swab_tube_id = if_else(bacterial_swab_tube_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", bacterial_swab_tube_id),
+        mucusome_id = if_else(mucusome_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", mucusome_id),
+        bd_swab_tube_id = if_else(bd_swab_tube_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", bd_swab_tube_id),
+        bacterial_swab_tube_id = if_else(bacterial_swab_tube_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", bacterial_swab_tube_id),
+        mucusome_id = if_else(mucusome_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", mucusome_id))
 
 ```
 
@@ -918,7 +925,7 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          wind_speed_mpers = wind_speed_mpers * 0.447,
          wind_speed_mpers_max = as.numeric(wind_speed_mpers_max) * 0.447,
          wind_speed_mpers_min = as.numeric(wind_speed_mpers_min) * 0.447) %>% 
-  mutate_all(na_if, "") %>% 
+  #mutate_all(na_if, "") %>% 
   relocate(start_time, .before = site_code) %>% 
   relocate(end_time, .after = start_time) %>% 
   relocate(duration_minutes, .after = end_time) %>% 
@@ -1327,9 +1334,9 @@ sn_capture_table <- sn_capture %>%
          species_capture = species,
          microhabitat_type = location,
          processor = surveyor_id) %>% 
-  mutate(microbiome_swab_id = if_else(str_detect(swab_id, "AJS"), swab_id, NULL), #metagenomic sequencing so micro
-         bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL), #culture/glycerol
-         mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NULL),
+  mutate(microbiome_swab_id = if_else(str_detect(swab_id, "AJS"), swab_id, NA), #metagenomic sequencing so micro
+         bacterial_swab_id = if_else(str_detect(swab_id, "BII"), swab_id, NA), #culture/glycerol
+         mucosome_id = if_else(str_detect(swab_id, "BII"), swab_id, NA),
          species_capture = case_when(species_capture == "ramu" ~ "rana_muscosa",
                                      species_capture == "hyre" ~ "hyliola_regilla",
                                      species_capture == "bubo" ~ "anaxyrus_boreas",
@@ -1360,8 +1367,8 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
          site = str_replace(site, " ", "_"),
          site = str_remove(site, " "),
          species_capture = str_replace_all(species_capture, " ", "_"),
-         bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NULL),
-         genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NULL),
+         bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NA),
+         genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NA),
          time_of_capture = if_else(time_of_capture == "NA:00", "", time_of_capture))
 
 v <- vect(brazil_legacy_capture, c("capture_longitude", "capture_latitude"), crs="+proj=longlat")
@@ -1409,12 +1416,12 @@ serdp_capture <- read_csv(here("data", "serdp", "serdp_capture_table.csv")) %>%
   select(!c(species_code, frog_number, frog_id)) %>% 
   mutate(site = str_to_lower(site),
          site = str_replace_all(site, " ", "_"),
-         bd_swab = if_else(bd_swab == 1, sample_id, NULL),
-         mucosome = if_else(mucosome == 1, sample_id, NULL),
-         bacterial_swab_id = if_else(microbiome == 1, sample_id, NULL), #culture/glycerol bd
-         microbiome = if_else(microbiome == 1, sample_id, NULL), #sequce/dry swab
-         am_ps = if_else(am_ps == 1, sample_id, NULL),
-         antibodies = if_else(antibodies == 1, sample_id, NULL)) %>% 
+         bd_swab = if_else(bd_swab == 1, sample_id, NA),
+         mucosome = if_else(mucosome == 1, sample_id, NA),
+         bacterial_swab_id = if_else(microbiome == 1, sample_id, NA), #culture/glycerol bd
+         microbiome = if_else(microbiome == 1, sample_id, NA), #sequce/dry swab
+         am_ps = if_else(am_ps == 1, sample_id, NA),
+         antibodies = if_else(antibodies == 1, sample_id, NA)) %>% 
   rename(bd_swab_id = bd_swab,
          mucosome_id = mucosome,
          amp_id = am_ps,
@@ -1455,13 +1462,13 @@ panama_capture_2022 <- read_csv(here("data", "panama_legacy", "clean_tables", "c
          antibody_id = ampshcl) %>% # dry swab for sequencing 
   mutate(capture_animal_state = case_when(capture_animal_state == "1" ~ "dead",
                                           capture_animal_state == "0" ~ "alive"),
-         bd_swab_id = if_else(bd_swab_id == "1", swab_id, NULL),
-         mucosome_id = if_else(mucosome_id == "1", swab_id, NULL),
-         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NULL), #culture/glycerol 
-         genetic_id = if_else(genetic_id == "1", swab_id, NULL),
-         amp_id = if_else(amp_id == "1", swab_id, NULL),
-         antibody_id = if_else(antibody_id == "1", swab_id, NULL),
-         microbiome_swab_id = if_else(microbiome_swab_id == "1", swab_id, NULL)) %>% 
+         bd_swab_id = if_else(bd_swab_id == "1", swab_id, NA),
+         mucosome_id = if_else(mucosome_id == "1", swab_id, NA),
+         bacterial_swab_id = if_else(bacterial_swab_id == "1", swab_id, NA), #culture/glycerol 
+         genetic_id = if_else(genetic_id == "1", swab_id, NA),
+         amp_id = if_else(amp_id == "1", swab_id, NA),
+         antibody_id = if_else(antibody_id == "1", swab_id, NA),
+         microbiome_swab_id = if_else(microbiome_swab_id == "1", swab_id, NA)) %>% 
   select(!c(swab_id, count))
 
 
@@ -1492,10 +1499,10 @@ panama_capture <- panama_raw %>%
          substrate_temp_c = subs_temp,
          svl_mm = svl,
          body_mass_g = frog_mass) %>% 
-  mutate(bdswab = if_else(bdswab=="1", swab_id, NULL),
-         am_ps = if_else(am_ps=="1", swab_id, NULL),
-         bacteria_swab = if_else(bacteria_swab=="1", swab_id, NULL),
-         e_dna = if_else(e_dna=="1", swab_id, NULL),
+  mutate(bdswab = if_else(bdswab=="1", swab_id, NA),
+         am_ps = if_else(am_ps=="1", swab_id, NA),
+         bacteria_swab = if_else(bacteria_swab=="1", swab_id, NA),
+         e_dna = if_else(e_dna=="1", swab_id, NA),
          gen_samp = case_when(gen_samp == "toeclip" ~ swab_id,
                               gen_samp == "buccal" ~ swab_id,
                               gen_samp == "1" ~ swab_id),
@@ -1529,7 +1536,7 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
          detection_type = "capture") %>% 
-  mutate_all(na_if, "") %>% 
+  #mutate_all(na_if, "") %>% 
   #relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
   relocate(c(mucosome_id:antibody_id), .after = amp_id) %>% 
   relocate(c(crispr_id:antibody_id_4), .after = antibody_id) %>% 
