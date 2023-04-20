@@ -491,9 +491,9 @@ penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca10", "2022-05-18-admin-raca10", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca12", "2022-05-18-admin-raca12", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca14", "2022-05-18-admin-raca14", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca15", "2022-05-18-admin-rapi15", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi15", "2022-05-18-admin-rapi15", amp_id_1),
-         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi16", "2022-05-18-admin-rapi16", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca15", "2022-05-18-admin-raca15", amp_id_1),
+         # amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi15", "2022-05-18-admin-rapi15", amp_id_1),
+         amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18‐admin-rapi16", "2022-05-18‐admin-rapi16", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi17", "2022-05-18-admin-rapi17", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-rapi18", "2022-05-18-admin-rapi18", amp_id_1),
          amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-pscr19", "2022-05-18-admin-pscr19", amp_id_1),
@@ -510,7 +510,8 @@ penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
         mucusome_id = if_else(mucusome_id == "2022-08-19-admin-rapi2", "2022-05-19-admin-rapi2", mucusome_id),
         bd_swab_tube_id = if_else(bd_swab_tube_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", bd_swab_tube_id),
         bacterial_swab_tube_id = if_else(bacterial_swab_tube_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", bacterial_swab_tube_id),
-        mucusome_id = if_else(mucusome_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", mucusome_id))
+        mucusome_id = if_else(mucusome_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", mucusome_id),
+        amp_id_1 = if_else(mucusome_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", amp_id_1))
 
 ```
 
