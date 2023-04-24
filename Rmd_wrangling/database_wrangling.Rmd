@@ -414,10 +414,15 @@ munged_Acoustic_Survey <- read_csv(here("data", "penn","munged_Acoustic_Survey.c
 # IDS in the commetns fixes
 cap_comments <- munged_Amphibian_Processing_App_Repeatable %>% 
   slice_head(n = 21) %>% 
+  mutate(capture_comments = str_remove(capture_comments, "; red groin"),
+         capture_comments = str_remove(capture_comments, "; skin tag on throat"),
+         capture_comments = str_remove(capture_comments, "; probably greater than 100 grams, no scale available")) %>% 
   mutate(across(ends_with("_id"), 
-        ~replace(.x, is.na(.x), capture_comments))) %>% 
+        ~replace(.x, is.na(.x), capture_comments)),
+        bag_id = "") %>% 
     mutate(across(ends_with("_id_1"), 
-        ~replace(.x, is.na(.x), capture_comments)))
+        ~replace(.x, is.na(.x), capture_comments)),
+        capture_comments = "")
 
 
 munged_Amphibian_Processing_App_Repeatable <- munged_Amphibian_Processing_App_Repeatable %>% 
@@ -1669,8 +1674,7 @@ shade_hobo <- raw_shade_hobo %>%
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))),
-         shade_dew_point_c = if_else(shade_dew_point_c == "Logged", "", shade_dew_point_c)) %>% 
-  mutate_all(na_if, "")
+         shade_dew_point_c = if_else(shade_dew_point_c == "Logged", "", shade_dew_point_c)) 
 
 #write_csv(shade_hobo, here("clean_tables", "shade_hobo.csv"))
 
@@ -1734,8 +1738,7 @@ water_hobo <- raw_water_hobo %>%
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))),
-         water_light_lux = if_else(water_light_lux == "Logged", "", water_light_lux))%>% 
-  mutate_all(na_if, "")
+         water_light_lux = if_else(water_light_lux == "Logged", "", water_light_lux))
 
 #write_csv(water_hobo, here("clean_tables", "water_hobo.csv"))
 
