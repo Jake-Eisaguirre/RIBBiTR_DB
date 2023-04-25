@@ -1259,9 +1259,12 @@ t <- serdp_bd_genom %>%
 # 2019 Panama Bd data
 ```{r}
 pan_2019_bd <- read_csv(here("qpcr_data", "2019_panama_bd.csv")) %>% 
-  select(!c(site, Region_code, Site_code, SPECIES)) %>% 
+  #select(!c(site, Region_code, Site_code, SPECIES)) %>% 
   clean_names() %>% 
-  rename(bd_swab_id = sample_name)
+  rename(bd_swab_id = sample_name) %>% 
+  mutate(bd_swab_id = str_to_lower(bd_swab_id),
+         bd_ct_mean = if_else(bd_pos_neg == "Negative", 0, bd_ct_mean),
+         bd_quantity_mean = if_else(bd_pos_neg == "Negative", 0, bd_quantity_mean))
 
 write_csv(pan_2019_bd, here("clean_tables", "pan_2019_bd.csv"))
 
@@ -1582,8 +1585,6 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
-
-
 
 #rm(panama_capture, brazil_legacy_capture, penn_capture, serdp_capture)
 gc()
