@@ -170,6 +170,9 @@ dbExecute(connection, "alter table serdp_bd add primary key(bd_swab_id);")
 #temp_panama_bd
 dbExecute(connection, "alter table panama_bd_temp add primary key(bd_swab_id);")
 
+#panama 2019 bd
+#dbExecute(connection, "alter table panama_2019_bd add primary key(bd_swab_id;")
+
 # drop columns
 
 ## region

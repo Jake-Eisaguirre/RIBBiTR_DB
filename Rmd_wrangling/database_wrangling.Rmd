@@ -410,6 +410,8 @@ munged_VisualEncounter_Survey_Repeatable <- read_csv(here("data", "penn","munged
 
 munged_Acoustic_Survey <- read_csv(here("data", "penn","munged_Acoustic_Survey.csv"))
 
+munged_Acoustic_Survey_Repeatable <- read_csv(here("data/penn/munged_Acoustic_Survey_Repeatable.csv"))
+
 
 # IDS in the commetns fixes
 cap_comments <- munged_Amphibian_Processing_App_Repeatable %>% 
@@ -1252,6 +1254,19 @@ t <- serdp_bd_genom %>%
 
 
 ```
+
+
+# 2019 Panama Bd data
+```{r}
+pan_2019_bd <- read_csv(here("qpcr_data", "2019_panama_bd.csv")) %>% 
+  select(!c(site, Region_code, Site_code, SPECIES)) %>% 
+  clean_names() %>% 
+  rename(bd_swab_id = sample_name)
+
+write_csv(pan_2019_bd, here("clean_tables", "pan_2019_bd.csv"))
+
+```
+
 
 # Microbiome data
 
