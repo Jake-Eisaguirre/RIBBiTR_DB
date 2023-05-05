@@ -108,7 +108,16 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          notes_amphib1 = if_else(swab_id == "190801_02", "after transect was completed", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "190801_03", "after transect was completed", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "190801_04", "after transect was completed", notes_amphib1),
-         end_time = if_else(sort_id == "5064", "13:34:00", end_time))
+         end_time = if_else(sort_id == "5064", "13:34:00", end_time),
+         survey_time = if_else(sort_id == "177", "night", survey_time),
+         survey_time = if_else(sort_id == "205", "day", survey_time),
+         survey_time = if_else(sort_id == "917", "day", survey_time),
+         survey_time = if_else(sort_id == "1179", "day", survey_time),
+         survey_time = if_else(sort_id == "173", "day", survey_time),
+         survey_time = if_else(sort_id == "918", "day", survey_time),
+         survey_time = if_else(sort_id == "174", "night", survey_time),
+         survey_time = if_else(sort_id == "175", "night", survey_time),
+         survey_time = if_else(sort_id == "176", "night", survey_time))
 
 
 
@@ -750,7 +759,7 @@ visit_table <- plyr::rbind.fill(brazil_visit, panama_visit_table,
   relocate(visit_comments, .after = visit_status) %>% 
   relocate(date, .before = campaign) %>% 
   relocate(survey_time, .after = date) %>% 
-  group_by(date, survey_time) %>% 
+  group_by(site, date, survey_time) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id)) %>% 
