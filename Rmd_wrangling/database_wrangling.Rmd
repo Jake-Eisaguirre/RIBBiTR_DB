@@ -750,7 +750,7 @@ visit_table <- plyr::rbind.fill(brazil_visit, panama_visit_table,
   relocate(visit_comments, .after = visit_status) %>% 
   relocate(date, .before = campaign) %>% 
   relocate(survey_time, .after = date) %>% 
-  group_by(site, date, survey_time) %>% 
+  group_by(date, survey_time) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id)) %>% 
@@ -897,7 +897,8 @@ panama_survey_table <- panama_raw %>%
         transect = str_to_lower(str_replace_all(transect, " ", "_")),
         transect = str_replace_all(transect, ",", "_"),
         transect = str_replace_all(transect, "-", "_"),
-        pressure_hg = (as.numeric(pressure_hg) * 0.4911)) %>% 
+        pressure_hg = (as.numeric(pressure_hg) * 0.4911),
+        survey_time = if_else(survey_time == "-9999", "day", survey_time)) %>% 
   relocate(start_time, .before = transect) %>% 
   relocate(end_time, .after = start_time) %>% 
   relocate(survey_comments, .after = soil_humidity_m3m3) %>% 
@@ -1149,6 +1150,7 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table, brazil_ves) %>%
          sex = if_else(sex == "unkonwn", "unknown", sex),
          species_ves = str_replace_all(species_ves, " ", "_")) %>% 
   rename(ves_comments = ves_notes) %>% 
+  filter(!species_ves == "control") %>% 
   select(!c(start_time, end_time, duration_minutes)) %>% 
   mutate(count = if_else(count == "many", "100", count)) %>% # need to find better fix to "many"
   #group_by() %>% 
