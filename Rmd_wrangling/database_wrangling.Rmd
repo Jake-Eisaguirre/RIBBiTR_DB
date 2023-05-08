@@ -374,7 +374,9 @@ sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_si
          utme = if_else(site == 'admin_pond', 547460.95, utme),
          utmn = if_else(site == 'admin_pond', 4610302.89, utmn),
          utme = if_else(site == "silenciosa", 0545146, utme),
-         utmn = if_else(site == "silenciosa", 0958387, utmn))
+         utmn = if_else(site == "silenciosa", 0958387, utmn),
+         site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site))
 
 # brazil_locs <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
 #   rename(latitude = lat,
@@ -754,7 +756,9 @@ brazil_visit <- rbind(brazil_visit_table, brazil_legacy_visit_table)
 
 visit_table <- plyr::rbind.fill(brazil_visit, panama_visit_table,
                                 penn_visit_table, serdp_visit_table, sn_visit_table) %>% 
-  mutate(date = format_iso_8601(date)) %>% 
+  mutate(date = format_iso_8601(date),
+         site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site)) %>% 
   rename(visit_comments = visit_notes) %>% 
   relocate(visit_comments, .after = visit_status) %>% 
   relocate(date, .before = campaign) %>% 
@@ -1035,7 +1039,9 @@ gc()
 survey <- plyr::rbind.fill(brazil_survey, penn_survey_table, sn_survey_table, panama_survey_table, serdp_survey_table) %>% 
   group_by(site, date, survey_time, detection_type) %>% 
   mutate(survey_id = UUIDgenerate(output = c("uuid")),
-         visit_id = as.UUID("")) %>% 
+         visit_id = as.UUID(""),
+         site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site)) %>% 
   select(!c(conductivity_uS_cm, qaqc_survey, frog_presence))
 
 write_csv(survey, here("clean_tables", "survey.csv"))
@@ -1164,7 +1170,9 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table, brazil_ves) %>%
   mutate(count = if_else(count == "many", "100", count)) %>% # need to find better fix to "many"
   #group_by() %>% 
   mutate(ves_id = UUIDgenerate(output = "uuid", n = n()),
-         survey_id = as.UUID(""))
+         survey_id = as.UUID(""),
+         site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site))
 
 write_csv(ves, here("clean_tables", "ves.csv"))
 
@@ -1225,7 +1233,9 @@ aural <- plyr::rbind.fill(penn_aural, panama_aural) %>%
          sex = if_else(sex == "unkonwn", "unknown", sex)) %>% # need to find better fix for "many"
   rename(aural_comments = notes_aural) %>% 
   mutate(aural_id = UUIDgenerate(output = c("uuid"), n = n()),
-         survey_id = as.UUID(""))
+         survey_id = as.UUID(""),
+         site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site))
   
 
 write_csv(aural, here("clean_tables", "aural.csv"))
@@ -1591,7 +1601,9 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
   relocate(c(crispr_id:antibody_id_4), .after = antibody_id) %>% 
   relocate(capture_comments, .after = antibody_id_4) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
-         survey_id = as.UUID("")) %>% 
+         survey_id = as.UUID(""),
+         site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site)) %>% 
   select(!c(sex_other, amp_id_3, amp_id_4, antibody_id_3, antibody_id_4))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
