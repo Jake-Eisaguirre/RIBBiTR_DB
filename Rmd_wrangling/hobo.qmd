@@ -258,9 +258,8 @@ water_panama <- panama_2022_hobo %>%
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
 
-full_clean_panama_hobo_2022 <- full_join(water_panama, sun_panama, by = c("site", "date_time")) %>% 
-  full_join(soil_panama, by = c("site", "date_time")) %>% 
-  full_join(shade_panama, by = c("site", "date_time")) %>% 
+full_clean_panama_hobo_2022 <- full_join(water_panama, shade_panama, by = c("site", "date_time")) %>% 
+  full_join(soil_panama, by = c("site", "date_time"))  %>% 
   remove_empty(which = "cols") %>% 
   mutate(location = "panama",
          site = case_when(site == "RioBlanco" ~ "rio_blanco",
@@ -431,13 +430,16 @@ all_serdp_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_ti
   left_join(water_hobo, by = c("site_code", "date_time")) %>% 
   select(!c(time_zone.y, time_zone.x.x, time_zone.y.y)) %>% 
   rename(time_zone = time_zone.x) %>% 
-  left_join(serdp_locs_swap, by = c("site_code"))
+  left_join(serdp_locs_swap, by = c("site_code")) %>% 
+  rename(serdp_sun_light_lux = sun_light_lux,
+         serdp_shade_dew_point_c = shade_dew_point_c,
+         serdp_water_light_lux = water_light_lux)
 
 # %>% 
 #   mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
 #          hobo_site_id = as.UUID(""))
 
-write_csv(all_hobos, here("clean_tables", "hobo.csv"))  
+#write_csv(all_hobos, here("clean_tables", "hobo.csv"))  
 
 ```
 
@@ -446,11 +448,20 @@ write_csv(all_hobos, here("clean_tables", "hobo.csv"))
 ## all locations, regions, sites
 ```{r}
 
-hobo_location <- locations_2022
+hobo_location <- locations_2022 %>%
+  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()))
 
-hobo_regions <- plyr::rbind.fill(regions_2022, serdp_hobo_region)
+hobo_regions <- plyr::rbind.fill(regions_2022, serdp_hobo_region) %>% 
+  group_by(region)%>%
+  mutate(hobo_region_id = UUIDgenerate(output = c("uuid")),
+         hobo_location_id = as.UUID(""))
 
-hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site)
+hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site) %>% 
+  group_by(site) %>% 
+    mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
+         hobo_region_id = as.UUID("")) %>% 
+  select(!c(utm_zone, utme, utmn, location))
+
 
 ```
 
@@ -458,7 +469,9 @@ hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site)
 ```{r}
 
 
-all_hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos)
+all_hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos) %>%
+  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
+         hobo_site_id = as.UUID(""))
 
 ```
 
