@@ -1667,137 +1667,37 @@ write_csv(serdp_amp, here("clean_tables", "serdp_amp.csv"))
 hobo_site <- serdp_sites  %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "-", "_")) %>% 
-  group_by(site) %>% 
-  mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
-         hobo_region_id = as.UUID("")) %>% 
+  # group_by(site) %>% 
+  # mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
+  #        hobo_region_id = as.UUID("")) %>% 
   ungroup()
 
-write_csv(hobo_site, here("clean_tables", "hobo_site.csv"))
+write_csv(hobo_site, here("clean_tables", "serdp_hobo_site.csv"))
 
 hobo_region <- hobo_site %>% 
   select(region) %>% 
   mutate(location = "usa") %>% 
   group_by(region) %>% 
-  unique() %>% 
-  mutate(hobo_region_id = UUIDgenerate(output = c("uuid")),
-         hobo_location_id = as.UUID(""))
+  unique() 
 
-write_csv(hobo_region, here("clean_tables", "hobo_region.csv"))
+# %>% 
+#   mutate(hobo_region_id = UUIDgenerate(output = c("uuid")),
+#          hobo_location_id = as.UUID(""))
+
+write_csv(hobo_region, here("clean_tables", "serdp_hobo_region.csv"))
 
 hobo_location <- hobo_site %>% 
   select(location) %>% 
   group_by(location) %>% 
-  unique() %>% 
-  mutate(hobo_location_id = UUIDgenerate(output = c("uuid")))
+  unique() 
+# %>% 
+#   mutate(hobo_location_id = UUIDgenerate(output = c("uuid")))
 
-write_csv(hobo_location, here("clean_tables", "hobo_location.csv"))
-
-```
-
-
-## read in serdp hobo data
-
-### shade hobo
-```{r}
-
-raw_shade_hobo <- read.csv(here("data", "serdp", "hobo", "Shade_HOBO_2021_01_28.csv")) %>% 
-  clean_names() 
-
-shade_hobo <- raw_shade_hobo %>% 
-  select(!c(x_1, x, location)) %>% 
-  rename(shade_temperature_c = temperature,
-         shade_relative_humidity = rh,
-         site_code = site,
-         #enviro_location = location,
-         shade_dew_point_c = dew_point) %>% 
-  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
-         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))),
-         shade_dew_point_c = if_else(shade_dew_point_c == "Logged", "", shade_dew_point_c)) 
-
-#write_csv(shade_hobo, here("clean_tables", "shade_hobo.csv"))
-
-rm(raw_shade_hobo)
-gc()
-```
-
-### soil hobo
-```{r}
-
-raw_soil_hobo <- read_csv(here("data", "serdp", "hobo", "Soil_HOBO_2021_01_28.csv")) %>% 
-  clean_names()
-
-soil_hobo <- raw_soil_hobo %>% 
-  select(!c(x1, x, location)) %>% 
-  rename(soil_temperature_c = temperature,
-         site_code = site) %>% 
-  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
-         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
-#write_csv(soil_hobo, here("clean_tables", "soil_hobo.csv"))
-
-rm(raw_soil_hobo)
-gc()
-```
-
-### sun hobo
-```{r}
-
-raw_sun_hobo <- read_csv(here("data", "serdp", "hobo", "Sun_HOBO_2021_01_28.csv")) %>% 
-  clean_names()
-
-sun_hobo <- raw_sun_hobo %>% 
-  select(!c(x1, x, location)) %>% 
-  rename(sun_temperature_c = temperature,
-         site_code = site,
-         #enviro_location = location,
-         sun_light_lux = light) %>% 
-  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
-         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
-
-#write_csv(sun_hobo, here("clean_tables", "sun_hobo.csv"))
-
-rm(raw_sun_hobo)
-gc()
-```
-
-### water hobo
-
-```{r}
-raw_water_hobo <- read_csv(here("data", "serdp", "hobo", "Water_HOBO_2021_01_28.csv")) %>% 
-  clean_names()
-
-water_hobo <- raw_water_hobo %>% 
-  select(!c(x1, x, location)) %>% 
-  rename(water_temperature_c = temperature,
-         site_code = site,
-         #enviro_location = location,
-         water_light_lux = light) %>% 
-  mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
-         date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))),
-         water_light_lux = if_else(water_light_lux == "Logged", "", water_light_lux))
-
-#write_csv(water_hobo, here("clean_tables", "water_hobo.csv"))
-
-rm(raw_water_hobo)
-gc()
-```
-
-## bind hobos 
-```{r}
-
-all_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_time")) %>% 
-  left_join(sun_hobo, by = c("site_code", "date_time")) %>% 
-  left_join(water_hobo, by = c("site_code", "date_time")) %>% 
-  select(!c(time_zone.y, time_zone.x.x, time_zone.y.y)) %>% 
-  rename(time_zone = time_zone.x) %>% 
-  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
-         hobo_site_id = as.UUID(""))
-
-write_csv(all_hobos, here("clean_tables", "hobo.csv"))  
+write_csv(hobo_location, here("clean_tables", "serdp_hobo_location.csv"))
 
 ```
+
+
+
 
 
