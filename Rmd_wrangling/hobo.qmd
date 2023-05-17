@@ -50,7 +50,10 @@ water_sn <- sn_2022_hobo %>%
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
 
-full_clean_sn_hobo_2002 <- full_join(sun_sn, water_sn, by = c("site", "date_time"))
+full_clean_sn_hobo_2022 <- full_join(sun_sn, water_sn, by = c("site", "date_time")) %>% 
+  remove_empty(which = "cols") %>% 
+  mutate(region = "california",
+         location = "usa")
   
 
 ```
@@ -61,6 +64,248 @@ full_clean_sn_hobo_2002 <- full_join(sun_sn, water_sn, by = c("site", "date_time
 brazil_2022_hobo <- read_csv(here("data", "hobo_2022", "Brazil_combined.csv")) %>% 
   clean_names()
 
+shade_brazil <- brazil_2022_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "shade") %>% 
+  select(!location) %>% 
+  rename(shade_temperature_c = temperature,
+         shade_light_lux = intensity_lux,
+         shade_dew_point_c = dew_point,
+         shade_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+soil_brazil <- brazil_2022_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "soil") %>% 
+  select(!location) %>% 
+  rename(soil_temperature_c = temperature,
+         soil_light_lux = intensity_lux,
+         soil_dew_point_c = dew_point,
+         soil_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_relative_humidity, soil_dew_point_c, soil_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+sun_brazil <- brazil_2022_hobo %>% 
+    select(!c(study_area, hobo_name)) %>% 
+  filter(location == "sun") %>% 
+  select(!location) %>% 
+  rename(sun_temperature_c = temperature,
+         sun_light_lux = intensity_lux,
+         sun_dew_point_c = dew_point,
+         sun_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy")))) %>% 
+  select(!c(time_zone))
+  
+water_brazil <- brazil_2022_hobo %>%
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "water") %>% 
+  select(!location) %>% 
+  rename(water_temperature_c = temperature,
+         water_light_lux = intensity_lux,
+         water_dew_point_c = dew_point,
+         water_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+
+full_clean_brazil_hobo_2022 <- full_join(water_brazil, sun_brazil, by = c("site", "date_time")) %>% 
+  full_join(soil_brazil, by = c("site", "date_time")) %>% 
+  full_join(shade_brazil, by = c("site", "date_time")) %>% 
+  remove_empty(which = "cols") %>% 
+  mutate(location = "brazil",
+         region = case_when(site %in% c("BO01", "BO02", "BO03") ~ "boraceia",
+                            site %in% c("SV04", "SV05") ~ "santa_virginia"))
+  
+
+
+```
+
+## 2022 Penn Hobo Data
+```{r}
+
+penn_2022_hobo <- read_csv(here("data", "hobo_2022", "PA_combined.csv")) %>% 
+  clean_names()
+
+shade_penn <- penn_2022_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "shade") %>% 
+  select(!location) %>% 
+  rename(shade_temperature_c = temperature,
+         shade_light_lux = intensity_lux,
+         shade_dew_point_c = dew_point,
+         shade_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+soil_penn <- penn_2022_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "soil") %>% 
+  select(!location) %>% 
+  rename(soil_temperature_c = temperature,
+         soil_light_lux = intensity_lux,
+         soil_dew_point_c = dew_point,
+         soil_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_relative_humidity, soil_dew_point_c, soil_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+sun_penn <- penn_2022_hobo %>% 
+    select(!c(study_area, hobo_name)) %>% 
+  filter(location == "sun") %>% 
+  select(!location) %>% 
+  rename(sun_temperature_c = temperature,
+         sun_light_lux = intensity_lux,
+         sun_dew_point_c = dew_point,
+         sun_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy")))) %>% 
+  select(!c(time_zone))
+  
+water_penn <- penn_2022_hobo %>%
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "water") %>% 
+  select(!location) %>% 
+  rename(water_temperature_c = temperature,
+         water_light_lux = intensity_lux,
+         water_dew_point_c = dew_point,
+         water_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+
+full_clean_penn_hobo_2022 <- full_join(water_penn, sun_penn, by = c("site", "date_time")) %>% 
+  full_join(soil_penn, by = c("site", "date_time")) %>% 
+  full_join(shade_penn, by = c("site", "date_time")) %>% 
+  remove_empty(which = "cols") %>% 
+  mutate(region = "pennsylvania",
+         site = case_when(site == "Admin" ~ "admin_pond",
+                          site == "Phelps" ~ "phelps_pond",
+                          site == "RV" ~ "rv",
+                          site == "Tuttle" ~ "tuttle_pond",
+                          site == "TW" ~ "tyron_weber",
+                          site == "Wood" ~ "wood_lab_pond",
+                          site == "Vorisek" ~ "vorisek_pond"),
+         location = "usa")
+
+
+```
+
+## 2022 Panama Hobo
+```{r}
+
+panama_2022_hobo <- read_csv(here("data", "hobo_2022", "Panama_combined.csv")) %>% 
+  clean_names()
+
+shade_panama <- panama_2022_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "shade") %>% 
+  select(!location) %>% 
+  rename(shade_temperature_c = temperature,
+         shade_light_lux = intensity_lux,
+         shade_dew_point_c = dew_point,
+         shade_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+soil_panama <- panama_2022_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "soil") %>% 
+  select(!location) %>% 
+  rename(soil_temperature_c = temperature,
+         soil_light_lux = intensity_lux,
+         soil_dew_point_c = dew_point,
+         soil_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_relative_humidity, soil_dew_point_c, soil_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+# sun_panama <- panama_2022_hobo %>% 
+#     select(!c(study_area, hobo_name)) %>% 
+#   filter(location == "sun") %>% 
+#   select(!location) %>% 
+#   rename(sun_temperature_c = temperature,
+#          sun_light_lux = intensity_lux,
+#          sun_dew_point_c = dew_point,
+#          sun_relative_humidity = rh) %>% 
+#   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux)) %>% 
+#   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+#                                                                   "mdy HMS", "mdy")))) %>% 
+#   select(!c(time_zone))
+  
+water_panama <- panama_2022_hobo %>%
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "water") %>% 
+  select(!location) %>% 
+  rename(water_temperature_c = temperature,
+         water_light_lux = intensity_lux,
+         water_dew_point_c = dew_point,
+         water_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))
+
+full_clean_panama_hobo_2022 <- full_join(water_panama, sun_panama, by = c("site", "date_time")) %>% 
+  full_join(soil_panama, by = c("site", "date_time")) %>% 
+  full_join(shade_panama, by = c("site", "date_time")) %>% 
+  remove_empty(which = "cols") %>% 
+  mutate(location = "panama",
+         site = case_when(site == "RioBlanco" ~ "rio_blanco",
+                          site == "Tigrero" ~ "rio_tigrero",
+                          site == "AltosdePiedra" ~ "altos_de_piedra",
+                          site == "Campestre" ~ "hotel_campestre"),
+         region = case_when(site == "rio_blanco" ~ "el_cope",
+                            site == "rio_tigrero" ~ "el_cope",
+                            site == "altos_de_piedra" ~ "santa_fe",
+                            site == "hotel_campestre" ~ "el_valle"))
+  
+
+
+```
+
+## 2022 HOBO BFT
+```{r}
+
+hobo_bft_2022 <- plyr::rbind.fill(full_clean_brazil_hobo_2022, full_clean_panama_hobo_2022, full_clean_penn_hobo_2022, full_clean_sn_hobo_2022) %>% 
+  replace(.=="NULL", NA) %>% 
+  remove_empty(which = "cols")
+
+all_hobo_2022 <- hobo_bft_2022 %>% 
+  select(!c(region, location))
+
+```
+
+## 2022 sites, regions, and locations
+```{r}
+
+sites_2022 <- hobo_bft_2022 %>% 
+  select(site, region) %>% 
+  group_by(site) %>% 
+  unique() 
+
+regions_2022 <- hobo_bft_2022 %>% 
+  select(location, region) %>% 
+  group_by(region) %>% 
+  unique()
+
+locations_2022 <- hobo_bft_2022 %>% 
+  select(location) %>% 
+  distinct(location)
+  
+
 ```
 
 
@@ -70,6 +315,9 @@ brazil_2022_hobo <- read_csv(here("data", "hobo_2022", "Brazil_combined.csv")) %
 ```{r}
 
 serdp_hobo_site <- read_csv(here("clean_tables", "serdp_hobo_site.csv"))
+
+serdp_locs_swap <- serdp_hobo_site %>% 
+  select(site, site_code)
 
 # %>% 
 #   group_by(site) %>%
@@ -83,6 +331,8 @@ serdp_hobo_location <- read_csv(here("clean_tables", "serdp_hobo_location.csv"))
 
 ```
 
+
+
 ## read in serdp hobo data
 
 ### shade hobo
@@ -93,7 +343,7 @@ raw_shade_hobo <- read.csv(here("data", "serdp", "hobo", "Shade_HOBO_2021_01_28.
 
 shade_hobo <- raw_shade_hobo %>% 
   select(!c(x_1, x, location)) %>% 
-  rename(shade_temperature_c = temperature,
+  rename(serdp_shade_temperature_c = temperature,
          shade_relative_humidity = rh,
          site_code = site,
          #enviro_location = location,
@@ -117,7 +367,7 @@ raw_soil_hobo <- read_csv(here("data", "serdp", "hobo", "Soil_HOBO_2021_01_28.cs
 
 soil_hobo <- raw_soil_hobo %>% 
   select(!c(x1, x, location)) %>% 
-  rename(soil_temperature_c = temperature,
+  rename(serdp_soil_temperature_c = temperature,
          site_code = site) %>% 
   mutate(site_code = str_to_lower(str_replace_all(site_code, "0", "")),
          date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
@@ -136,7 +386,7 @@ raw_sun_hobo <- read_csv(here("data", "serdp", "hobo", "Sun_HOBO_2021_01_28.csv"
 
 sun_hobo <- raw_sun_hobo %>% 
   select(!c(x1, x, location)) %>% 
-  rename(sun_temperature_c = temperature,
+  rename(serdp_sun_temperature_c = temperature,
          site_code = site,
          #enviro_location = location,
          sun_light_lux = light) %>% 
@@ -158,7 +408,7 @@ raw_water_hobo <- read_csv(here("data", "serdp", "hobo", "Water_HOBO_2021_01_28.
 
 water_hobo <- raw_water_hobo %>% 
   select(!c(x1, x, location)) %>% 
-  rename(water_temperature_c = temperature,
+  rename(serdp_water_temperature_c = temperature,
          site_code = site,
          #enviro_location = location,
          water_light_lux = light) %>% 
@@ -176,14 +426,39 @@ gc()
 ## bind hobos 
 ```{r}
 
-all_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_time")) %>% 
+all_serdp_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_time")) %>% 
   left_join(sun_hobo, by = c("site_code", "date_time")) %>% 
   left_join(water_hobo, by = c("site_code", "date_time")) %>% 
   select(!c(time_zone.y, time_zone.x.x, time_zone.y.y)) %>% 
   rename(time_zone = time_zone.x) %>% 
-  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
-         hobo_site_id = as.UUID(""))
+  left_join(serdp_locs_swap, by = c("site_code"))
+
+# %>% 
+#   mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
+#          hobo_site_id = as.UUID(""))
 
 write_csv(all_hobos, here("clean_tables", "hobo.csv"))  
 
 ```
+
+# combine serdp and 2022
+
+## all locations, regions, sites
+```{r}
+
+hobo_location <- locations_2022
+
+hobo_regions <- plyr::rbind.fill(regions_2022, serdp_hobo_region)
+
+hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site)
+
+```
+
+## all hobo data
+```{r}
+
+
+all_hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos)
+
+```
+
