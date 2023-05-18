@@ -49,12 +49,14 @@ water_sn <- sn_2022_hobo %>%
          water_relative_humidity = rh) %>% 
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
 
 full_clean_sn_hobo_2022 <- full_join(sun_sn, water_sn, by = c("site", "date_time")) %>% 
   remove_empty(which = "cols") %>% 
   mutate(region = "california",
-         location = "usa")
+         location = "usa",
+         time_zone = "GMT-0:700")
   
 
 ```
@@ -100,10 +102,11 @@ sun_brazil <- brazil_2022_hobo %>%
          sun_light_lux = intensity_lux,
          sun_dew_point_c = dew_point,
          sun_relative_humidity = rh) %>% 
+    mutate(row = row_number()) %>% 
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux)) %>% 
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy")))) %>% 
-  select(!c(time_zone))
+  select(!c(time_zone, row))
   
 water_brazil <- brazil_2022_hobo %>%
   select(!c(study_area, hobo_name)) %>% 
@@ -113,9 +116,11 @@ water_brazil <- brazil_2022_hobo %>%
          water_light_lux = intensity_lux,
          water_dew_point_c = dew_point,
          water_relative_humidity = rh) %>% 
+  mutate(row = row_number()) %>% 
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
+                                                                  "mdy HMS", "mdy")))) %>% 
+  select(!c(row, time_zone))
 
 full_clean_brazil_hobo_2022 <- full_join(water_brazil, sun_brazil, by = c("site", "date_time")) %>% 
   full_join(soil_brazil, by = c("site", "date_time")) %>% 
@@ -124,7 +129,8 @@ full_clean_brazil_hobo_2022 <- full_join(water_brazil, sun_brazil, by = c("site"
   mutate(location = "brazil",
          region = case_when(site %in% c("BO01", "BO02", "BO03") ~ "boraceia",
                             site %in% c("SV04", "SV05") ~ "santa_virginia"),
-         site = str_to_lower(site))
+         site = str_to_lower(site),
+         time_zone = "GMT-0:200")
   
 
 
@@ -186,7 +192,8 @@ water_penn <- penn_2022_hobo %>%
          water_relative_humidity = rh) %>% 
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
 
 
 full_clean_penn_hobo_2022 <- full_join(water_penn, sun_penn, by = c("site", "date_time")) %>% 
@@ -196,12 +203,13 @@ full_clean_penn_hobo_2022 <- full_join(water_penn, sun_penn, by = c("site", "dat
   mutate(region = "pennsylvania",
          site = case_when(site == "Admin" ~ "admin_pond",
                           site == "Phelps" ~ "phelps_pond",
-                          site == "RV" ~ "rv",
+                          site == "RV" ~ "rv_pond",
                           site == "Tuttle" ~ "tuttle_pond",
-                          site == "TW" ~ "tyron_weber",
+                          site == "TW" ~ "tryon_weber",
                           site == "Wood" ~ "wood_lab_pond",
                           site == "Vorisek" ~ "vorisek_pond"),
-         location = "usa")
+         location = "usa",
+         time_zone = "GMT-04:00")
 
 
 ```
@@ -220,11 +228,12 @@ shade_panama <- panama_2022_hobo %>%
   rename(shade_temperature_c = temperature,
          shade_light_lux = intensity_lux,
          shade_dew_point_c = dew_point,
-         shade_relative_humidity = rh) %>% 
+         shade_relative_humidity = rh) %>%
+  mutate(row = row_number()) %>% 
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux)) %>% 
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))%>% 
-  select(!c(time_zone))
+  select(!c(time_zone, row))
   
 soil_panama <- panama_2022_hobo %>% 
   select(!c(study_area, hobo_name)) %>% 
@@ -262,7 +271,8 @@ water_panama <- panama_2022_hobo %>%
          water_relative_humidity = rh) %>% 
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
-                                                                  "mdy HMS", "mdy"))))
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
 
 full_clean_panama_hobo_2022 <- full_join(water_panama, shade_panama, by = c("site", "date_time")) %>% 
   full_join(soil_panama, by = c("site", "date_time"))  %>% 
@@ -275,7 +285,8 @@ full_clean_panama_hobo_2022 <- full_join(water_panama, shade_panama, by = c("sit
          region = case_when(site == "rio_blanco" ~ "el_cope",
                             site == "rio_tigrero" ~ "el_cope",
                             site == "altos_de_piedra" ~ "santa_fe",
-                            site == "hotel_campestre" ~ "el_valle"))
+                            site == "hotel_campestre" ~ "el_valle"),
+         time_zone = "GMT-0:500")
   
 
 
@@ -304,9 +315,11 @@ sites_2022 <- hobo_bft_2022 %>%
   unique() 
 
 regions_2022 <- hobo_bft_2022 %>% 
-  select(location, region) %>% 
+  select(location, region, time_zone) %>% 
   group_by(region) %>% 
-  unique()
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id)
 
 locations_2022 <- hobo_bft_2022 %>% 
   select(location) %>% 
@@ -445,6 +458,11 @@ all_serdp_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_ti
          serdp_shade_dew_point_c = shade_dew_point_c,
          serdp_water_light_lux = water_light_lux)
 
+# serdp_tz <- all_serdp_hobos %>% 
+#   select(site, time_zone) %>% 
+#   group_by(site) %>% 
+#   unique()
+
 # %>% 
 #   mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
 #          hobo_site_id = as.UUID(""))
@@ -460,24 +478,34 @@ all_serdp_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_ti
 ```{r}
 
 hobo_location <- locations_2022 %>%
-  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()))
+  mutate(hobo_location_id = UUIDgenerate(output = c("uuid"), n = n()))
 
 write_csv(hobo_location, here("clean_tables", "hobo_location.csv"))
 
 
 hobo_regions <- plyr::rbind.fill(regions_2022, serdp_hobo_region) %>% 
   group_by(region)%>%
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id) %>% 
   mutate(hobo_region_id = UUIDgenerate(output = c("uuid")),
-         hobo_location_id = as.UUID(""))
+         hobo_location_id = as.UUID(""),
+         region = str_replace(region, " ", "_"),
+         time_zone = if_else(region == "louisiana", "GMT-06:00", time_zone),
+         time_zone = if_else(region == "tennessee", "GMT-06:00", time_zone),
+         time_zone = if_else(region == "vermont", "GMT-04:00", time_zone),
+         time_zone = if_else(region == "new_mexico", "GMT-06:00", time_zone))
 
 write_csv(hobo_regions, here("clean_tables", "hobo_regions.csv"))
 
 
 hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site) %>% 
   group_by(site) %>% 
-    mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
          hobo_region_id = as.UUID("")) %>% 
-  select(!c(utm_zone, utme, utmn, location))
+  select(!c(utm_zone, utme, utmn, location, temp_id))
 
 write_csv(hobo_sites, here("clean_tables", "hobo_sites.csv"))
 
@@ -488,10 +516,15 @@ write_csv(hobo_sites, here("clean_tables", "hobo_sites.csv"))
 ```{r}
 
 
-all_hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos) %>%
-  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
-         hobo_site_id = as.UUID(""))
+hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos) %>%
+  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n())) %>% 
+  #replace(is.null(.), NA) %>% 
+  #remove_empty(which = "cols") %>% 
+  rename(soil_temperature_c_neg5cm = "soil_temperature_c_-5cm",
+         soil_light_lux_neg5cm = "soil_light_lux_-5cm",
+         soil_temperature_c_neg10cm = "soil_temperature_c_-10cm") %>% 
+  select(!time_zone)
 
-write_csv(all_hobo, here("clean_tables", "hobo.csv"))
+write_csv(hobo, here("clean_tables", "hobo.csv"))
 
 ```

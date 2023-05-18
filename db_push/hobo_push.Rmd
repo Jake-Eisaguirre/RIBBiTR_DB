@@ -13,7 +13,7 @@ if (!require(librarian)){
 }
 
 # librarian downloads, if not already downloaded, and reads in needed packages
-librarian::shelf(tidyverse, DBI, RPostgres, here)
+librarian::shelf(tidyverse, DBI, RPostgres, here, uuid)
 ```
 
 # Clean tables
@@ -76,40 +76,73 @@ dbWriteTable(connection, 'hobo_location', hobo_location, overwrite=T,
                              hobo_location_id = "uuid"))
 
 ## hobo region
-dbWriteTable(connection, 'hobo_region', hobo_region, overwrite=T,
+dbWriteTable(connection, 'hobo_region', hobo_regions, overwrite=T,
              field.types = c(region = "varchar",
+                             time_zone = "varchar",
                              location = "varchar",
                              hobo_region_id = "uuid",
                              hobo_location_id = "uuid"))
 
 ## hobo site
-dbWriteTable(connection, 'hobo_site', hobo_site, overwrite=T,
+dbWriteTable(connection, 'hobo_site', hobo_sites, overwrite=T,
              field.types = c(site_code = "varchar(4)",
-                             region = "varchar(12)",
+                             region = "varchar",
                              site = "varchar",
                              site_comments = "varchar",
-                             location = "varchar(6)",
-                             utm_zone = "int",
-                             utme = "float8",
-                             utmn = "float8",
                              hobo_site_id = "uuid",
                              hobo_region_id = "uuid"))
 
+
+# hobo <- hobo %>% 
+#   mutate(hobo_site_id = as.UUID(hobo_site_id)) %>% 
+#   spec_table()
+
 ## all hobo
-dbWriteTable(connection, 'hobo', hobo, overwrite=T,
-             field.types = c(date_time = "timestamp",
-                             shade_temperature_c = "float8",
-                             shade_relative_humidity = "float8",
-                             shade_dew_point_c = "float8",
-                             site_code = "varchar(4)",
-                             time_zone = "varchar",
-                             soil_temperature_c = "float8",
-                             sun_temperature_c = "float8",
-                             sun_light_lux = "float8",
-                             water_temperature_c = "float8",
-                             water_light_lux = "float8",
-                             hobo_id = "uuid",
-                             hobo_site_id = "uuid"))
+dbWriteTable(connection, 'hobo', hobo, overwrite=T)
+
+             # field.types = c(date_time = "timestamp",
+             #                 serdp_shade_temperature_c = "float8",
+             #                 serdp_shade_relative_humidity = "float8",
+             #                 serdp_shade_dew_point_c = "float8",
+             #                 site_code = "varchar",
+             #                 time_zone = "varchar",
+             #                 serdp_soil_temperature_c = "float8",
+             #                 serdp_sun_temperature_c = "float8",
+             #                 serdp_sun_light_lux = "float8",
+             #                 serdp_water_temperature_c = "float8",
+             #                 serdp_water_light_lux = "float8",
+             #                 hobo_id = "uuid",
+             #                 hobo_site_id = "varchar",
+             #                 site = "varchar",
+             #                 water_temperature_c_5cm = "float8",
+             #                 water_light_lux_5cm = "float8",
+             #                 sun_temperature_c_0cm= "float8",
+             #                 sun_temperature_c_50cm= "float8",
+             #                 sun_relative_humidity_50cm= "float8",
+             #                 sun_dew_point_c_50cm= "float8",
+             #                 sun_light_lux_0cm= "float8",
+             #                 soil_temperature_c_neg5cm= "float8",
+             #                 soil_light_lux_neg5cm= "float8",
+             #                 shade_temperature_c_0cm= "float8",
+             #                 shade_temperature_c_50cm= "float8",
+             #                 shade_light_lux_0cm= "float8",
+             #                 shade_light_lux_50cm= "float8",
+             #                 shade_temperature_c_5cm= "float8",
+             #                 shade_temperature_c_100cm= "float8",
+             #                 shade_relative_humidity_100cm= "float8",
+             #                 shade_dew_point_c_100cm= "float8",
+             #                 shade_light_lux_5cm= "float8",
+             #                 water_temperature_c_20cm= "float8",
+             #                 water_temperature_c_35cm= "float8",
+             #                 sun_temperature_c_25cm= "float8",
+             #                 sun_light_lux_25cm= "float8",
+             #                 soil_temperature_c_neg10cm= "float8",
+             #                 shade_temperature_c_25cm= "float8",
+             #                 shade_relative_humidity_50cm= "float8",
+             #                 shade_dew_point_c_50cm= "float8",
+             #                 shade_light_lux_25cm= "float8",
+             #                 water_light_lux_35cm= "float8"
+             #                 ))
 
 
 ## hobo shade

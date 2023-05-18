@@ -80,13 +80,15 @@ dbExecute(connection,
           references hobo_region (hobo_region_id);")
 
 #hobo
+dbExecute(connection, "alter table hobo add column hobo_site_id UUID;")
+
 dbExecute(connection, "alter table hobo add primary key(hobo_id);")
 
 dbExecute(connection, "update hobo h 
                        set hobo_site_id =
                         	(select hs.hobo_site_id
                         	from hobo_site hs
-                        	where hs.site_code = h.site_code);")
+                        	where hs.site = h.site);")
 
 dbExecute(connection, 
           "alter table hobo 
@@ -98,8 +100,10 @@ dbExecute(connection, "alter table hobo_region drop column location;")
 
 dbExecute(connection, "alter table hobo_site drop column region;")
 
-dbExecute(connection, "alter table hobo_site drop column location;")
+dbExecute(connection, "alter table hobo_site drop column site;")
 
-dbExecute(connection, "alter table hobo drop column site_code;")
+dbExecute(connection, "alter table hobo_site drop column site_code;")
+
+#dbExecute(connection, "alter table hobo drop column site_code;")
 
 ```
