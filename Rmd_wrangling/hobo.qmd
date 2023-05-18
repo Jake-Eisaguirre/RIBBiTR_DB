@@ -20,6 +20,7 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI
 ```
 
 ## 2022 SN Hobo Data
+
 ```{r}
 
 sn_2022_hobo <- read_csv(here("data", "hobo_2022", "SierraNevada_combined.csv")) %>% 
@@ -59,6 +60,7 @@ full_clean_sn_hobo_2022 <- full_join(sun_sn, water_sn, by = c("site", "date_time
 ```
 
 ## 2022 Brazil Hobo Data
+
 ```{r}
 
 brazil_2022_hobo <- read_csv(here("data", "hobo_2022", "Brazil_combined.csv")) %>% 
@@ -121,13 +123,15 @@ full_clean_brazil_hobo_2022 <- full_join(water_brazil, sun_brazil, by = c("site"
   remove_empty(which = "cols") %>% 
   mutate(location = "brazil",
          region = case_when(site %in% c("BO01", "BO02", "BO03") ~ "boraceia",
-                            site %in% c("SV04", "SV05") ~ "santa_virginia"))
+                            site %in% c("SV04", "SV05") ~ "santa_virginia"),
+         site = str_to_lower(site))
   
 
 
 ```
 
 ## 2022 Penn Hobo Data
+
 ```{r}
 
 penn_2022_hobo <- read_csv(here("data", "hobo_2022", "PA_combined.csv")) %>% 
@@ -184,6 +188,7 @@ water_penn <- penn_2022_hobo %>%
   mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
                                                                   "mdy HMS", "mdy"))))
 
+
 full_clean_penn_hobo_2022 <- full_join(water_penn, sun_penn, by = c("site", "date_time")) %>% 
   full_join(soil_penn, by = c("site", "date_time")) %>% 
   full_join(shade_penn, by = c("site", "date_time")) %>% 
@@ -202,6 +207,7 @@ full_clean_penn_hobo_2022 <- full_join(water_penn, sun_penn, by = c("site", "dat
 ```
 
 ## 2022 Panama Hobo
+
 ```{r}
 
 panama_2022_hobo <- read_csv(here("data", "hobo_2022", "Panama_combined.csv")) %>% 
@@ -276,6 +282,7 @@ full_clean_panama_hobo_2022 <- full_join(water_panama, shade_panama, by = c("sit
 ```
 
 ## 2022 HOBO BFT
+
 ```{r}
 
 hobo_bft_2022 <- plyr::rbind.fill(full_clean_brazil_hobo_2022, full_clean_panama_hobo_2022, full_clean_penn_hobo_2022, full_clean_sn_hobo_2022) %>% 
@@ -288,6 +295,7 @@ all_hobo_2022 <- hobo_bft_2022 %>%
 ```
 
 ## 2022 sites, regions, and locations
+
 ```{r}
 
 sites_2022 <- hobo_bft_2022 %>% 
@@ -307,10 +315,10 @@ locations_2022 <- hobo_bft_2022 %>%
 
 ```
 
-
 # SERDP
 
-## SERDP Hobo location, site, and region 
+## SERDP Hobo location, site, and region
+
 ```{r}
 
 serdp_hobo_site <- read_csv(here("clean_tables", "serdp_hobo_site.csv"))
@@ -330,11 +338,10 @@ serdp_hobo_location <- read_csv(here("clean_tables", "serdp_hobo_location.csv"))
 
 ```
 
-
-
 ## read in serdp hobo data
 
 ### shade hobo
+
 ```{r}
 
 raw_shade_hobo <- read.csv(here("data", "serdp", "hobo", "Shade_HOBO_2021_01_28.csv")) %>% 
@@ -359,6 +366,7 @@ gc()
 ```
 
 ### soil hobo
+
 ```{r}
 
 raw_soil_hobo <- read_csv(here("data", "serdp", "hobo", "Soil_HOBO_2021_01_28.csv")) %>% 
@@ -378,6 +386,7 @@ gc()
 ```
 
 ### sun hobo
+
 ```{r}
 
 raw_sun_hobo <- read_csv(here("data", "serdp", "hobo", "Sun_HOBO_2021_01_28.csv")) %>% 
@@ -422,7 +431,8 @@ rm(raw_water_hobo)
 gc()
 ```
 
-## bind hobos 
+## bind hobos
+
 ```{r}
 
 all_serdp_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_time")) %>% 
@@ -446,15 +456,22 @@ all_serdp_hobos <- left_join(shade_hobo, soil_hobo, by = c("site_code", "date_ti
 # combine serdp and 2022
 
 ## all locations, regions, sites
+
 ```{r}
 
 hobo_location <- locations_2022 %>%
   mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()))
 
+write_csv(hobo_location, here("clean_tables", "hobo_location.csv"))
+
+
 hobo_regions <- plyr::rbind.fill(regions_2022, serdp_hobo_region) %>% 
   group_by(region)%>%
   mutate(hobo_region_id = UUIDgenerate(output = c("uuid")),
          hobo_location_id = as.UUID(""))
+
+write_csv(hobo_regions, here("clean_tables", "hobo_regions.csv"))
+
 
 hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site) %>% 
   group_by(site) %>% 
@@ -462,10 +479,12 @@ hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site) %>%
          hobo_region_id = as.UUID("")) %>% 
   select(!c(utm_zone, utme, utmn, location))
 
+write_csv(hobo_sites, here("clean_tables", "hobo_sites.csv"))
 
 ```
 
 ## all hobo data
+
 ```{r}
 
 
@@ -473,5 +492,6 @@ all_hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos) %>%
   mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n()),
          hobo_site_id = as.UUID(""))
 
-```
+write_csv(all_hobo, here("clean_tables", "hobo.csv"))
 
+```
