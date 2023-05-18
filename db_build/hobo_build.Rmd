@@ -100,9 +100,9 @@ dbExecute(connection, "alter table hobo_region drop column location;")
 
 dbExecute(connection, "alter table hobo_site drop column region;")
 
-dbExecute(connection, "alter table hobo_site drop column site;")
+dbExecute(connection, "alter table hobo drop column site;")
 
-dbExecute(connection, "alter table hobo_site drop column site_code;")
+dbExecute(connection, "alter table hobo drop column site_code;")
 
 #dbExecute(connection, "alter table hobo drop column site_code;")
 

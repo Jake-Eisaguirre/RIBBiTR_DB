@@ -523,8 +523,31 @@ hobo <- plyr::rbind.fill(all_hobo_2022, all_serdp_hobos) %>%
   rename(soil_temperature_c_neg5cm = "soil_temperature_c_-5cm",
          soil_light_lux_neg5cm = "soil_light_lux_-5cm",
          soil_temperature_c_neg10cm = "soil_temperature_c_-10cm") %>% 
-  select(!time_zone)
+  select(!c(time_zone)) %>% 
+  select(date_time, sort(names(.))) %>% 
+  mutate(date_time = str_remove(date_time, "\\+00:00")) %>% 
+  relocate(c(serdp_shade_dew_point_c:serdp_water_temperature_c), .after = last_col())
 
 write_csv(hobo, here("clean_tables", "hobo.csv"))
+```
+
+## hobo date_time
+```{r}
+
+# hobo_date_time <- hobo %>% 
+#   select(region, date_time) %>% 
+#   group_by(date_time) %>% 
+#   mutate(temp_id = cur_group_id()) %>% 
+#   filter(duplicated(!temp_id)) %>% 
+#   mutate(hobo_date_time_id = UUIDgenerate(output = c("uuid")),
+#          hobo_region_id = as.UUID(""))
+
+
+```
+
+  
+  
+
+
 
 ```
