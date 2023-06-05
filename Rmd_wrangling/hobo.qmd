@@ -532,6 +532,7 @@ write_csv(hobo, here("clean_tables", "hobo.csv"))
 ```
 
 ## hobo date_time
+
 ```{r}
 
 # hobo_date_time <- hobo %>% 
@@ -545,9 +546,4 @@ write_csv(hobo, here("clean_tables", "hobo.csv"))
 
 ```
 
-  
-  
-
-
-
-```
+\`\`\`
