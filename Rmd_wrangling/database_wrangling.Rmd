@@ -543,9 +543,7 @@ penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
         mucusome_id = if_else(mucusome_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", mucusome_id),
         amp_id_1 = if_else(mucusome_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", amp_id_1),
         #amp_id_1 = if_else(amp_id_1 == "AMPBath00048", "AMPBath00038", amp_id_1),
-        amp_id_1 = if_else(mucusome_id == "MucBath00052", "AMPBath00052", amp_id_1)) %>% 
-  mutate(across(c(bd_swab_tube_id:toe_clip_tube_id), ~ str_replace_all(., " ", "")),
-         across(c(bd_swab_tube_id:toe_clip_tube_id), ~ str_replace_all(., "#", "")))
+        amp_id_1 = if_else(mucusome_id == "MucBath00052", "AMPBath00052", amp_id_1))
 
 ```
 
