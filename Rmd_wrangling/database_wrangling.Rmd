@@ -413,7 +413,13 @@ munged_Amphibian_Captured_Information <-  read_csv(here("data", "penn","munged_A
                        
 munged_Amphibian_Captured_Information_Repeatable <- read_csv(here("data","penn", "munged_Amphibian_Captured_Information_Repeatable.csv"))
 
-munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","munged_Amphibian_Processing_App_Repeatable.csv"))
+# penn_cmr_toe_clip <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>% 
+#   select(fulcrum_id, location, species, capture_date, cmr_id, cmr_id_other) %>% 
+#   unite(cmr_id, c(cmr_id:cmr_id_other), na.rm = T) %>% 
+#   drop_na(location)
+
+munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","munged_Amphibian_Processing_App_Repeatable.csv")) %>% 
+  mutate(amp_id_1 = if_else(fulcrum_id == "15726e63-04ad-46fa-8f93-e7e5c5f3377a", "AMPBath00038", amp_id_1))
 
 munged_VisualEncounter_Survey <- read_csv(here("data", "penn","munged_VisualEncounter_Survey.csv"))
   
@@ -422,6 +428,7 @@ munged_VisualEncounter_Survey_Repeatable <- read_csv(here("data", "penn","munged
 munged_Acoustic_Survey <- read_csv(here("data", "penn","munged_Acoustic_Survey.csv"))
 
 munged_Acoustic_Survey_Repeatable <- read_csv(here("data/penn/munged_Acoustic_Survey_Repeatable.csv"))
+
 
 
 # IDS in the commetns fixes
