@@ -413,13 +413,17 @@ munged_Amphibian_Captured_Information <-  read_csv(here("data", "penn","munged_A
                        
 munged_Amphibian_Captured_Information_Repeatable <- read_csv(here("data","penn", "munged_Amphibian_Captured_Information_Repeatable.csv"))
 
-# penn_cmr_toe_clip <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>% 
-#   select(fulcrum_id, location, species, capture_date, cmr_id, cmr_id_other) %>% 
-#   unite(cmr_id, c(cmr_id:cmr_id_other), na.rm = T) %>% 
-#   drop_na(location)
+penn_cmr_toe_clip <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>%
+  select(fulcrum_id, location, capture_date, cmr_id, cmr_id_other) %>%
+  unite(cmr_id, c(cmr_id:cmr_id_other), na.rm = T) %>%
+  drop_na(location) %>% 
+  select(!location) %>% 
+  rename(capture_mark_recapture = fulcrum_id) %>% 
+  write_csv(here("clean_tables", "penn_cmr.csv"))
 
 munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","munged_Amphibian_Processing_App_Repeatable.csv")) %>% 
-  mutate(amp_id_1 = if_else(fulcrum_id == "15726e63-04ad-46fa-8f93-e7e5c5f3377a", "AMPBath00038", amp_id_1))
+  mutate(amp_id_1 = if_else(fulcrum_id == "15726e63-04ad-46fa-8f93-e7e5c5f3377a", "AMPBath00038", amp_id_1),
+         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1))
 
 munged_VisualEncounter_Survey <- read_csv(here("data", "penn","munged_VisualEncounter_Survey.csv"))
   
@@ -1388,7 +1392,7 @@ join capture_survey cs on s.id = cs.survey_id;
 ```{r}
 
 sn_capture_table <- sn_capture %>% 
-  select(!c(survey_id, id, pit_tag_ref, tag_new)) %>% 
+  select(!c(survey_id, id, tag_new)) %>% 
   mutate(survey_time = "day",
          detection_type = as.character(detection_type),
          detection_type = if_else(detection_type == "cmr", "capture", detection_type),
@@ -1411,7 +1415,8 @@ sn_capture_table <- sn_capture %>%
   rename(bd_swab_id = swab_id,
          capture_utme = utme,
          capture_utmn = utmn,
-         capture_comments = notes_capture)
+         capture_comments = notes_capture,
+         capture_mark_recapture = pit_tag_ref)
 
   
 #write_csv(sn_capture_table, here("clean_tables", "sn_capture_table.csv"))

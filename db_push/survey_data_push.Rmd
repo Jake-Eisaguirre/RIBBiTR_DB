@@ -428,6 +428,9 @@ dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
              field.types = c(bd_swab_id = "varchar",
                              bd_load = "float8"))
 
+# penn cmr
+dbWriteTable(connection, "penn_cmr", penn_cmr, overwrite=T)
+
 
 dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
 
