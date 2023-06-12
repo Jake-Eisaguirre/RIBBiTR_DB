@@ -92,3 +92,70 @@ cmr <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "supp_penn
 
 ```
 
+## DB Connection
+```{r}
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"),
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"),
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to survey_data")
+```
+
+
+## Merge unique visits include site
+### Merge all 2023 visits
+```{r}
+
+comms <- survey_info %>% 
+  select(site, sampling_event_comments, date)
+
+unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, survey_info, survey_ves) %>% 
+  select(date, site) %>% 
+  group_by(date, site) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  left_join(comms, by = c("site", "date")) %>% 
+  select(!temp_id) %>% 
+  rename(visit_comments = sampling_event_comments) %>% 
+  mutate(site = str_to_lower(site),
+         site = str_replace_all(site, "-", "_"),
+         site = str_replace_all(site, " ", "_"))
+
+```
+
+### Pull site f.key
+```{r}
+
+s.fkey_q <- "select site, site_id
+            from site;"
+
+s.key <- dbGetQuery(connection, s.fkey_q)
+
+```
+
+### populate site k.key on visit table - READY
+```{r}
+
+unique_visits_fkey <- unique_visits %>% 
+  inner_join(s.key, by = c("site")) %>% 
+  mutate(visit_id = UUIDgenerate()) %>% 
+  ungroup() %>% 
+  select(!c(site))
+
+
+```
+
+
+
