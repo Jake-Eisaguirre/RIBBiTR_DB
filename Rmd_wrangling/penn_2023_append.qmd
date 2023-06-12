@@ -12,7 +12,7 @@ if (!require(librarian)){
 }
 
 # librarian downloads, if not already downloaded, and reads in needed packages
-librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, stringr, DBI, parsedate, uuid)
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, stringr, DBI, parsedate, uuid, hms)
 ```
 ## Load CSV Exports and Trim Fat
 ```{r}
@@ -25,12 +25,14 @@ survey_info <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
 survey_acoustic <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
                              "2_penn_acousticsurvey", "2_penn_acousticsurvey.csv")) %>% 
   select(!c(2:14)) %>% 
-  clean_names()
+  clean_names() %>% 
+  mutate(detection_type = "aural")
 
 acoustic_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
                              "2_penn_acousticsurvey", "2_penn_acousticsurvey_acoustic_survey.csv")) %>% 
   select(!c(4:11)) %>% 
-  clean_names()
+  clean_names()%>% 
+  mutate(detection_type = "aural")
 
 
 survey_edna <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "3_penn_ednasurvey",
@@ -54,24 +56,28 @@ edna_obs_filt <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
 survey_ves <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
                             "4_penn_visualencountersurvey", "4_penn_visualencountersurvey.csv")) %>% 
   select(!c(2:14)) %>% 
-  clean_names()
+  clean_names()%>% 
+  mutate(detection_type = "visual")
 
 ves_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
                             "4_penn_visualencountersurvey", 
                          "4_penn_visualencountersurvey_visual_encounter_information.csv")) %>% 
   select(!c(4:11)) %>% 
-  clean_names()
+  clean_names()%>% 
+  mutate(detection_type = "visual")
 
 survey_capture <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", 
                                 "5_penn_capturesurvey", "5_penn_capturesurvey.csv")) %>% 
   select(!c(2:14)) %>% 
-  clean_names()
+  clean_names()%>% 
+  mutate(detection_type = "capture")
 
 capture_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", 
                                 "5_penn_capturesurvey", 
                              "5_penn_capturesurvey_captured_amphibian_information.csv")) %>% 
   select(!c(4:12)) %>% 
-  clean_names()
+  clean_names()%>% 
+  mutate(detection_type = "capture")
 
 samp_proces <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
                              "6_penn_sampleprocessing",
@@ -122,7 +128,7 @@ comms <- survey_info %>%
   select(site, sampling_event_comments, date)
 
 unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, survey_info, survey_ves) %>% 
-  select(date, site) %>% 
+  select(date, site, survey_time) %>% 
   group_by(date, site) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
@@ -131,7 +137,8 @@ unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, 
   rename(visit_comments = sampling_event_comments) %>% 
   mutate(site = str_to_lower(site),
          site = str_replace_all(site, "-", "_"),
-         site = str_replace_all(site, " ", "_"))
+         site = str_replace_all(site, " ", "_"),
+         survey_time = str_to_lower(survey_time))
 
 ```
 
@@ -150,12 +157,104 @@ s.key <- dbGetQuery(connection, s.fkey_q)
 
 unique_visits_fkey <- unique_visits %>% 
   inner_join(s.key, by = c("site")) %>% 
-  mutate(visit_id = UUIDgenerate()) %>% 
-  ungroup() %>% 
-  select(!c(site))
+  mutate(visit_id = UUIDgenerate())
 
 
 ```
 
 
+## Survey data include date and survey_time
+### Merge all survey data
+```{r}
+
+mid_surv_cap <- survey_info %>% 
+  select(!c(fulcrum_id, site_other, start_time, end_time, survey_time)) %>% 
+  mutate(detection_type = "capture")
+
+mid_surv_ves <- survey_info %>% 
+  select(!c(fulcrum_id, site_other, start_time, end_time, survey_time)) %>% 
+  mutate(detection_type = "visual")
+
+mid_surv_aural <- survey_info%>% 
+  select(!c(fulcrum_id, site_other, start_time, end_time, survey_time)) %>% 
+  mutate(detection_type = "aural")
+
+surv_info <- plyr::rbind.fill(mid_surv_cap, mid_surv_ves, mid_surv_aural)
+
+
+mid_unique_survey <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_ves) %>% 
+  select(!c(fulcrum_id, observer, observer_other, acoustic_survey_comments)) %>% 
+  left_join(surv_info, by = c("site", "date", "detection_type"))
+
+unique_survey <- mid_unique_survey %>% 
+  group_by(site, date, detection_type) %>% 
+  mutate(start_time = as_hms(mean(start_time)),
+         end_time = as_hms(mean(end_time))) %>% 
+  select(!c(air_temperature_measurement_time,
+            water_temperature_measurement_time, conductivity_us)) %>% 
+  unite(survey_comments, c("survey_comments", "survey_description", "sampling_event_comments"), na.rm = T,
+        sep = ",") %>% 
+  unite(observers, c("observers", "other_observers"), na.rm = T, sep = ",") %>% 
+  rename(wind = wind_conditions,
+         sky = sky_conditions,
+         relative_humidity_percent = humidity,
+         pressure_psi = pressure, # need to confirm units
+         wind_speed_m_s = wind_speed_ms,
+         air_temp_c = air_temperature_c,
+         dissolved_o2_percent = dissolved_oxygen,
+         tds_ppm = total_dissolved_solids, # need to confirm units
+         water_temp_c = water_temperature_c,
+         p_h = ph) %>% 
+  mutate(survey_time = str_to_lower(survey_time),
+         site = str_to_lower(str_replace_all(site, "-", "_")),
+         site = str_replace_all(site, " ", "_"))
+
+
+```
+
+### Pull visit pkey from unique table above
+```{r}
+
+surv_fkey <- unique_visits_fkey %>% 
+  select(date, visit_id, site)
+
+
+```
+
+### Join visit pkey into surv fkey - Not fully unique due to multiple users per survey....
+```{r}
+
+unique_survey_fkey <- unique_survey %>% 
+  left_join(surv_fkey, by = c("date", "site")) %>% 
+  mutate(p_h = if_else(p_h == 0.00, NA, p_h)) %>% 
+  group_by(site, date, detection_type) %>% 
+  mutate(survey_id = UUIDgenerate(output = c("uuid"))) %>% 
+  filter(!duplicated(survey_id))
+
+
+viz <- unique_survey_fkey %>%
+  filter(detection_type == "capture") %>% 
+  group_by(site) %>% 
+  summarise(n = n())
+
+ggplot(data = viz) +
+  geom_col(aes(x=site, y = n)) +
+  ggtitle("Raw Capture Visits")
+
+survey_capture
+
+
+
+```
+
+```{r}
+viz_c <- survey_ves%>%
+  group_by(site) %>% 
+  summarise(n = n())
+
+ggplot(data = viz_c) +
+  geom_col(aes(x=site, y = n)) +
+  ggtitle("Raw VES Visits")
+
+```
 
