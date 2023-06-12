@@ -5,6 +5,7 @@ editor: visual
 ---
 
 ## Load Packages
+
 ```{r}
 if (!require(librarian)){
   install.packages("librarian")
@@ -14,7 +15,9 @@ if (!require(librarian)){
 # librarian downloads, if not already downloaded, and reads in needed packages
 librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, stringr, DBI, parsedate, uuid, hms)
 ```
+
 ## Load CSV Exports and Trim Fat
+
 ```{r}
 
 survey_info <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
@@ -99,6 +102,7 @@ cmr <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "supp_penn
 ```
 
 ## DB Connection
+
 ```{r}
 tryCatch({
     drv <- dbDriver("Postgres")
@@ -119,9 +123,10 @@ tryCatch({
 dbExecute(connection, "set search_path to survey_data")
 ```
 
-
 ## Merge unique visits include site
+
 ### Merge all 2023 visits
+
 ```{r}
 
 comms <- survey_info %>% 
@@ -143,6 +148,7 @@ unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, 
 ```
 
 ### Pull site f.key
+
 ```{r}
 
 s.fkey_q <- "select site, site_id
@@ -153,6 +159,7 @@ s.key <- dbGetQuery(connection, s.fkey_q)
 ```
 
 ### populate site k.key on visit table - READY
+
 ```{r}
 
 unique_visits_fkey <- unique_visits %>% 
@@ -162,9 +169,10 @@ unique_visits_fkey <- unique_visits %>%
 
 ```
 
-
 ## Survey data include date and survey_time
+
 ### Merge all survey data
+
 ```{r}
 
 mid_surv_cap <- survey_info %>% 
@@ -213,6 +221,7 @@ unique_survey <- mid_unique_survey %>%
 ```
 
 ### Pull visit pkey from unique table above
+
 ```{r}
 
 surv_fkey <- unique_visits_fkey %>% 
@@ -222,6 +231,7 @@ surv_fkey <- unique_visits_fkey %>%
 ```
 
 ### Join visit pkey into surv fkey - Not fully unique due to multiple users per survey....
+
 ```{r}
 
 unique_survey_fkey <- unique_survey %>% 
@@ -229,9 +239,14 @@ unique_survey_fkey <- unique_survey %>%
   mutate(p_h = if_else(p_h == 0.00, NA, p_h)) %>% 
   group_by(site, date, detection_type) %>% 
   mutate(survey_id = UUIDgenerate(output = c("uuid"))) %>% 
-  filter(!duplicated(survey_id))
+  filter(!duplicated(survey_id)) %>% 
+  mutate(duration_min = if_else(end_time < start_time,
+                            as_hms(86400) - start_time + end_time,
+                            end_time - start_time),
+         duration_min = duration_min/60)
 
-
+unique_survey_fkey$duration_min <- str_sub(unique_survey_fkey$duration_min, -4) %>% 
+  as.numeric()
 
 ```
 
@@ -243,4 +258,3 @@ mid_cap <- capture_obs %>%
   left_join(samp_proces, by = c("location", "date", "bag_id"))
 
 ```
-
