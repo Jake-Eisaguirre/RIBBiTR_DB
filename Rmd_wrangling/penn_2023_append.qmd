@@ -1,0 +1,94 @@
+---
+title: "penn_2023_append"
+format: html
+editor: visual
+---
+
+## Load Packages
+```{r}
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, stringr, DBI, parsedate, uuid)
+```
+## Load CSV Exports and Trim Fat
+```{r}
+
+survey_info <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                             "1_penn_surveyinformation", "1_penn_surveyinformation.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+survey_acoustic <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                             "2_penn_acousticsurvey", "2_penn_acousticsurvey.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+acoustic_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                             "2_penn_acousticsurvey", "2_penn_acousticsurvey_acoustic_survey.csv")) %>% 
+  select(!c(4:11)) %>% 
+  clean_names()
+
+
+survey_edna <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "3_penn_ednasurvey",
+                             "3_penn_ednasurvey.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+
+edna_obs_col <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "3_penn_ednasurvey",
+                          "3_penn_ednasurvey_edna_collection.csv")) %>% 
+  select(!c(4:11)) %>% 
+  clean_names()
+
+
+edna_obs_filt <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                               "3_penn_ednasurvey",
+                               "3_penn_ednasurvey_edna_collection_edna_filtering.csv")) %>% 
+  select(!c(4:11)) %>% 
+  clean_names()
+
+survey_ves <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                            "4_penn_visualencountersurvey", "4_penn_visualencountersurvey.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+ves_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                            "4_penn_visualencountersurvey", 
+                         "4_penn_visualencountersurvey_visual_encounter_information.csv")) %>% 
+  select(!c(4:11)) %>% 
+  clean_names()
+
+survey_capture <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", 
+                                "5_penn_capturesurvey", "5_penn_capturesurvey.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+capture_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", 
+                                "5_penn_capturesurvey", 
+                             "5_penn_capturesurvey_captured_amphibian_information.csv")) %>% 
+  select(!c(4:12)) %>% 
+  clean_names()
+
+samp_proces <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                             "6_penn_sampleprocessing",
+                             "6_penn_sampleprocessing.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+samp_procces_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+                             "6_penn_sampleprocessing",
+                             "6_penn_sampleprocessing_amphibian_capture_survey_collections.csv"))%>% 
+  select(!c(4:11)) %>% 
+  clean_names()
+
+cmr <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "supp_penn_cmrids",
+                     "supp_penn_cmrids.csv")) %>% 
+  select(!c(2:14)) %>% 
+  clean_names()
+
+```
+
