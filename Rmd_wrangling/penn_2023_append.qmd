@@ -232,29 +232,15 @@ unique_survey_fkey <- unique_survey %>%
   filter(!duplicated(survey_id))
 
 
-viz <- unique_survey_fkey %>%
-  filter(detection_type == "capture") %>% 
-  group_by(site) %>% 
-  summarise(n = n())
-
-ggplot(data = viz) +
-  geom_col(aes(x=site, y = n)) +
-  ggtitle("Raw Capture Visits")
-
-survey_capture
-
-
 
 ```
 
-```{r}
-viz_c <- survey_ves%>%
-  group_by(site) %>% 
-  summarise(n = n())
+## Prep capture table
 
-ggplot(data = viz_c) +
-  geom_col(aes(x=site, y = n)) +
-  ggtitle("Raw VES Visits")
+```{r}
+
+mid_cap <- capture_obs %>% 
+  left_join(samp_proces, by = c("location", "date", "bag_id"))
 
 ```
 
