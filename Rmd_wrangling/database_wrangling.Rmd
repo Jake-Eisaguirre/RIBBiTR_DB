@@ -1066,7 +1066,7 @@ write_csv(survey, here("clean_tables", "survey.csv"))
 ```{r}
 
 penn_ves <- penn1_VES %>% 
-  select(!c(region, location, observer)) %>% 
+  select(!c(region, location)) %>% 
   mutate(duration_min = if_else(end_time < start_time,
                             as_hms(86400) - start_time + end_time,
                             end_time - start_time),
@@ -1198,7 +1198,7 @@ gc()
 ```{r}
 
 penn_aural <- penn1_aural %>% 
-  select(!c(region, observer, location, start_hour, end_hour, start_time, end_time, duration_min)) %>% 
+  select(!c(region, location, start_hour, end_hour, start_time, end_time, duration_min)) %>% 
   mutate(detection_type = "aural",
          species_acoustic = str_replace_all(species_acoustic, " ", "_"),
          site = str_replace_all(site, " ", "_"),
@@ -1331,8 +1331,8 @@ all_newt_ids <- newt %>%
 ```{r}
 
 penn_capture <- penn1_capture %>% 
-  select(!c(region, location, visit_comment, survey_comment, start_time, end_time,
-            observer, duration_min, wind_speed_ms, air_temperature_c, 
+  select(!c(region, location, visit_comment, survey_comment, start_time, end_time, duration_min,
+            wind_speed_ms, air_temperature_c, 
            water_temperature_c, ph, total_dissolved_solids, survey_comments, conductivity_us)) %>% 
   mutate(site = str_replace_all(site, " ", "_"),
          site = str_replace_all(site, "-", "_"),
@@ -1616,7 +1616,7 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          survey_id = as.UUID(""),
          site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
          site = if_else(site == "shelbourne_pond", "shelburne_pond", site)) %>% 
-  select(!c(sex_other, amp_id_3, amp_id_4, antibody_id_3, antibody_id_4))
+  select(!c(sex_other))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   

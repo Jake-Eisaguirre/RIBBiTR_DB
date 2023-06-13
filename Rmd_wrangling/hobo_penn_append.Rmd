@@ -1,0 +1,151 @@
+---
+title: "append_penn_hobo"
+author: "Jake Eisaguirre"
+date: "2023-05-19"
+output: html_document
+---
+
+## Load package
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, DBI, parsedate, stringr, hms,
+                 anytime, uuid)
+```
+
+## Read in raw csv
+```{r}
+raw_penn_hobo <- read_csv(here("data", "hobo_2023", "penn", "PA_combined_Jan-May23.csv")) %>% 
+  clean_names()
+```
+
+## Pivot wide and combine data to match schema
+```{r}
+shade_penn <- raw_penn_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "shade") %>% 
+  select(!location) %>% 
+  rename(shade_temperature_c = temperature,
+         shade_light_lux = intensity_lux,
+         shade_dew_point_c = dew_point,
+         shade_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+  
+soil_penn <- raw_penn_hobo %>% 
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "soil") %>% 
+  select(!location) %>% 
+  mutate(row = row_number()) %>% 
+  rename(soil_temperature_c = temperature,
+         soil_light_lux = intensity_lux,
+         soil_dew_point_c = dew_point,
+         soil_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_relative_humidity, soil_dew_point_c, soil_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone, row))
+  
+sun_penn <- raw_penn_hobo %>% 
+    select(!c(study_area, hobo_name)) %>% 
+  filter(location == "sun") %>% 
+  select(!location) %>% 
+  rename(sun_temperature_c = temperature,
+         sun_light_lux = intensity_lux,
+         sun_dew_point_c = dew_point,
+         sun_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy")))) %>% 
+  select(!c(time_zone))
+  
+water_penn <- raw_penn_hobo %>%
+  select(!c(study_area, hobo_name)) %>% 
+  filter(location == "water") %>% 
+  select(!location) %>% 
+  rename(water_temperature_c = temperature,
+         water_light_lux = intensity_lux,
+         water_dew_point_c = dew_point,
+         water_relative_humidity = rh) %>% 
+  pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux)) %>% 
+  mutate(date_time = format_iso_8601(parse_date_time(date_time, c("mdy H", "mdy HM", 
+                                                                  "mdy HMS", "mdy"))))%>% 
+  select(!c(time_zone))
+hobo_penn_append <- full_join(water_penn, sun_penn, by = c("site", "date_time")) %>% 
+  full_join(soil_penn, by = c("site", "date_time")) %>% 
+  full_join(shade_penn, by = c("site", "date_time")) %>% 
+  remove_empty(which = "cols") %>% 
+  mutate(site = case_when(site == "Admin" ~ "admin_pond",
+                          site == "Phelps" ~ "phelps_pond",
+                          site == "RV" ~ "rv_pond",
+                          site == "Tuttle" ~ "tuttle_pond",
+                          site == "TW" ~ "tryon_weber",
+                          site == "Wood" ~ "wood_lab_pond",
+                          site == "Vorisek" ~ "vorisek_pond"),
+         date_time = str_remove(date_time, "\\+00:00")) %>% 
+  remove_empty(which = "cols") %>%
+  mutate(hobo_id = UUIDgenerate(output = c("uuid"), n = n())) %>% 
+  rename(soil_temperature_c_neg10cm="soil_temperature_c_-10cm",
+         soil_temperature_c_neg5cm="soil_temperature_c_-5cm")
+```
+
+
+## Connect to DB, pull site f.kery, and join to `hobo_penn_append`
+```{r}
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"),
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"),
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+dbExecute(connection, "set search_path to hobo")
+q <- "select s.site, s.hobo_site_id, r.region 
+      from hobo_region r
+      join hobo_site s on r.hobo_region_id = s.hobo_region_id
+      where r.region = 'pennsylvania';"
+site_f.keys <- dbGetQuery(connection, q) %>% 
+  select(!c(region))
+final_penn_hobo_append <- hobo_penn_append %>% 
+  left_join(site_f.keys, by = c("site")) %>% 
+  select(!c(site))
+```
+
+
+## create empty columns in DB which are new to this data set
+```{r}
+q_col <- "SELECT *
+          FROM hobo
+          LIMIT 1;"
+col_names <- dbGetQuery(connection, q_col) %>% 
+  colnames()
+db_cols <- final_penn_hobo_append %>% 
+  colnames() 
+missing_cols <- setdiff(db_cols, col_names) %>% 
+  print() %>% 
+  as.character()
+add_col_q <- paste0("alter table hobo
+                  add ", missing_cols[1]," float8;")
+dbExecute(connection, add_col_q)
+```
+
+
+
+## Append clean data to DB
+```{r}
+dbAppendTable(connection, "hobo", final_penn_hobo_append)
+```
