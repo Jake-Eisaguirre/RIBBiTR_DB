@@ -301,13 +301,14 @@ mid_samp_proc <- samp_proces %>%
   select(!c(fulcrum_id, fulcrum_id.y, fulcrum_record_id, c(norep_bathvolume_50ml_acid_05ml:ul_of_norep_01688mgml),
             c(photo:photo_url), c(amp_ig_ne_injected:amp_ig_comments)))
 
-unique_cap <- mid_cap %>% 
-  left_join(mid_samp_proc, by = c("site" = "location", "date", "bag_id")) %>% 
-  select(!c(survey_time.y, species_capture.y, species_capture_other, life_stage_other, sex_other,
+unique_cap <- mid_samp_proc %>% 
+  left_join(mid_cap, by = c("location"= "site", "date", "bag_id")) %>% 
+  select(!c(survey_time.y, species_capture.y, life_stage_other, sex_other,
             survey_comments)) %>% 
   rename(detection_type = detection_type.x,
          survey_time = survey_time.x,
-         species_capture = species_capture.x) %>% 
+         species_capture = species_capture.x,
+         site = location) %>% 
   unite(processor, c("processor", "processor_other"), na.rm = T, sep = "") %>% 
   mutate(site = str_to_lower(str_replace_all(site, "-", "_")),
          site = str_replace_all(site, " ", "_"),
@@ -343,12 +344,13 @@ unique_cap_fkey <- unique_cap %>%
 ### final capture table
 
 #### empty column search
+
 ## create empty columns in DB which are new to this data set
 
 ```{r}
 
 final_cap <- unique_cap_fkey %>% 
-  select(!c(survey_time, detection_type, site, date)) %>% 
+  select(!c(survey_time, detection_type, site, date, species_capture_other)) %>% 
   rename(microbiome_swab_id = microbiome_id,
          sierra_bd_swab_id = bd_swab_id_sv)
 
@@ -507,3 +509,5 @@ final_cmr <- cmr %>%
 dbAppendTable(connection, "penn_cmr", final_cmr)
 
 ```
+
+
