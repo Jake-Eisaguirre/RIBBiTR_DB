@@ -284,7 +284,7 @@ dbAppendTable(connection, "survey", fin_survey)
 ### merge and clean capture tables
 
 ```{r}
-cap_col <- read_csv(here("clean_tables", "capture.csv"))
+#cap_col <- read_csv(here("clean_tables", "capture.csv"))
 
 
 mid_cap <- survey_info %>% 
@@ -300,6 +300,17 @@ mid_samp_proc <- samp_proces %>%
   left_join(samp_procces_obs, by= c("fulcrum_id" = "fulcrum_parent_id")) %>% 
   select(!c(fulcrum_id, fulcrum_id.y, fulcrum_record_id, c(norep_bathvolume_50ml_acid_05ml:ul_of_norep_01688mgml),
             c(photo:photo_url), c(amp_ig_ne_injected:amp_ig_comments)))
+
+neg_controls <- mid_samp_proc %>% 
+  filter(species_capture == "Negative Control") %>% 
+  select(!c(processor_other, sex_other, survey_comments, life_stage_other)) %>% 
+  select(!c(species_capture_other:body_mass)) %>% 
+  rename(site = location) %>% 
+  mutate(species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")))
+
+mid_samp_proc <- mid_samp_proc %>% 
+  filter(!species_capture == "Negative Control") %>% 
+  select(!species_capture_other)
 
 unique_cap <- mid_samp_proc %>% 
   left_join(mid_cap, by = c("location"= "site", "date", "bag_id")) %>% 
@@ -320,7 +331,10 @@ unique_cap <- mid_samp_proc %>%
          svl_mm = snout_vent_length,
          body_and_bag_mass_g = body_and_bag_mass,
          bag_mass_g = bag_mass,
-         body_mass_g = body_mass) 
+         body_mass_g = body_mass) %>% 
+  mutate(amp_id = if_else(capture_mark_recapture == "cf358e11-d6da-4637-af56-c384d683e6fb", "Pe_AMP00000", amp_id)) %>% 
+  plyr::rbind.fill(neg_controls)
+
 
 
 ```
@@ -350,10 +364,12 @@ unique_cap_fkey <- unique_cap %>%
 ```{r}
 
 final_cap <- unique_cap_fkey %>% 
-  select(!c(survey_time, detection_type, site, date, species_capture_other)) %>% 
+  select(!c(survey_time, detection_type, site, date)) %>% 
   rename(microbiome_swab_id = microbiome_id,
-         sierra_bd_swab_id = bd_swab_id_sv)
-
+         sierra_bd_swab_id = bd_swab_id_sv) %>% 
+  mutate(sex = str_to_lower(sex),
+         capture_type = str_to_lower(capture_type),
+         life_stage = str_to_lower(life_stage))
 
 q_col <- "SELECT *
           FROM capture
@@ -509,5 +525,3 @@ final_cmr <- cmr %>%
 dbAppendTable(connection, "penn_cmr", final_cmr)
 
 ```
-
-
