@@ -207,7 +207,7 @@ surv_info <- plyr::rbind.fill(mid_surv_cap, mid_surv_ves, mid_surv_aural)
 
 mid_unique_survey <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_ves) %>% 
   select(!c(fulcrum_id, observer, observer_other, acoustic_survey_comments)) %>% 
-  left_join(surv_info, by = c("site", "date", "detection_type"))
+  full_join(surv_info, by = c("site", "date", "detection_type"))
 
 unique_survey <- mid_unique_survey %>% 
   group_by(site, date, detection_type) %>% 
@@ -230,7 +230,11 @@ unique_survey <- mid_unique_survey %>%
          p_h = ph) %>% 
   mutate(survey_time = str_to_lower(survey_time),
          site = str_to_lower(str_replace_all(site, "-", "_")),
-         site = str_replace_all(site, " ", "_"))
+         site = str_replace_all(site, " ", "_")) %>% 
+  mutate(temp_id = cur_group_id(),
+         survey_time = if_else(is.na(survey_time), "night", survey_time)) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id)
 
 
 ```
@@ -306,7 +310,9 @@ neg_controls <- mid_samp_proc %>%
   select(!c(processor_other, sex_other, survey_comments, life_stage_other)) %>% 
   select(!c(species_capture_other:body_mass)) %>% 
   rename(site = location) %>% 
-  mutate(species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")))
+  mutate(species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")),
+         survey_time = str_to_lower(survey_time),
+         site = str_to_lower(str_replace_all(site, " ", "_")))
 
 mid_samp_proc <- mid_samp_proc %>% 
   filter(!species_capture == "Negative Control") %>% 
@@ -370,6 +376,7 @@ final_cap <- unique_cap_fkey %>%
   mutate(sex = str_to_lower(sex),
          capture_type = str_to_lower(capture_type),
          life_stage = str_to_lower(life_stage))
+
 
 q_col <- "SELECT *
           FROM capture
