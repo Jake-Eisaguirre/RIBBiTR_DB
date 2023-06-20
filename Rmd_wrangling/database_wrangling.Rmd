@@ -288,7 +288,15 @@ penn_sites <- read_csv(here("data", "penn", "penn_sites.csv")) %>%
   clean_names() %>% 
   select(!c(observer,date)) %>% 
   mutate(region = "pennsylvania",
-         utm_zone = 17)
+         utm_zone = 17,
+         area = "",
+         area = if_else(site == "wood lab pond", "2130", area),
+         area = if_else(site == "phelps pond", "2799", area),
+         area = if_else(site == "rv pond", "1306", area),
+         area = if_else(site == "tuttle pond", "1336", area),
+         area = if_else(site == "admin pond", "43665", area),
+         area = if_else(site == "vorisek pond", "2103", area),
+         area = as.numeric(area))
 ```
 ## pull out brazil sites
 ```{r}
