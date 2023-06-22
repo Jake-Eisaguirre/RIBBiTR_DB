@@ -311,6 +311,7 @@ colnames(brazil_regions) <- c("region", "location")
 
 ```
 
+
 ## combine region tables
 ```{r}
 
@@ -1606,6 +1607,9 @@ sn_capture_table <- sn_capture %>%
 
 ## brazil_legacy capture
 ```{r}
+
+brazil_legacy_cmr <- read_csv(here("data", "brazil_legacy", "cmr.csv"))
+
 brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.csv")) %>% 
   select(!c(17:20)) %>% 
   select(!c(count, family)) %>% 
@@ -1621,7 +1625,8 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
          species_capture = str_replace_all(species_capture, " ", "_"),
          bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NA),
          genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NA),
-         time_of_capture = if_else(time_of_capture == "NA:00", "", time_of_capture))
+         time_of_capture = if_else(time_of_capture == "NA:00", "", time_of_capture)) %>% 
+  left_join(brazil_legacy_cmr, by = c("bd_swab_id" = "swab_id"))
 
 v <- vect(brazil_legacy_capture, c("capture_longitude", "capture_latitude"), crs="+proj=longlat")
 u <- terra::project(v, "+proj=utm +zone=23")

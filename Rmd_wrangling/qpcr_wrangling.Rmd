@@ -128,6 +128,18 @@ l <- panama_qpcr %>%
   filter(duplicated(bd_swab_id))
 ```
 
+# Brazil
+## load legacy brazil qpcr data
+```{r}
+
+brazil_legacy_qpcr <- read_csv(here("data", "brazil_legacy", "bd.csv")) %>% 
+  drop_na() %>% 
+  rename(bd_swab_id = swab_id)
+
+write_csv(brazil_legacy_qpcr, here("clean_tables", "brazil_legacy_bd"))
+
+```
+
 
 # temp qpcr data
 ```{r}

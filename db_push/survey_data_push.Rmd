@@ -435,6 +435,9 @@ dbWriteTable(connection, "penn_cmr", penn_cmr, overwrite=T)
 
 dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
 
+# Brazil legacy bd
+dbWriteTable(connection, "brazil_legacy_bd", brazil_legacy_bd, overwrite=T)
+
 ```
 
 
