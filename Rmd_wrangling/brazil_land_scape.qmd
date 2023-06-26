@@ -65,7 +65,7 @@ land_scape_bd <- raw_land_scape %>%
 
 land_scape_microbiome <- raw_land_scape %>% 
   select(c(sample_id_2:jaccard_microbiome_beta_dispersion)) %>% 
-  rename(microbiome_id = sample_id_2) %>% 
+  rename(microbiome_swab_id = sample_id_2) %>% 
   select(!c(description))
 
 #dbWriteTable(connection, "brazil_landscape_microbiome", land_scape_microbiome, overwrite = T)
@@ -126,10 +126,9 @@ land_scape_site <- land_scape_site %>%
 region_id <- dbGetQuery(connection, "select r.region, r.region_id from region r;")
 
 final_land_scape_site <-land_scape_site %>% 
-  left_join(region_id, by = c("region")) %>% 
-  select(!c(region))
+  left_join(region_id, by = c("region")) 
 
-dbAppendTable(connection, "site", final_land_scape_site)
+#dbAppendTable(connection, "site", final_land_scape_site)
 
 
 ```
@@ -139,13 +138,105 @@ dbAppendTable(connection, "site", final_land_scape_site)
 #### clean visit table
 ```{r}
 
+
 land_scape_visit <- raw_land_scape %>% 
-  select(landscape_id, fragment_id, date) %>% 
-  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T)
+  select(landscape_id, fragment_id, date_portuguese, campanha) %>% 
+  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
+  mutate(date_portuguese = lubridate::parse_date_time(date_portuguese, c("%m/%d/%y")),
+         site = str_to_lower(str_replace_all(site, ". ", "_")),
+         survey_time = "day" ) %>% 
+  rename(date = date_portuguese,
+         campaign = campanha) %>% 
+  group_by(date, survey_time) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id) %>% 
+  drop_na(date) %>% 
+  mutate(visit_id = UUIDgenerate(output = c("uuid")))
+
+```
+#### join site key on visit table
+```{r}
+
+site_key <- final_land_scape_site %>% 
+  select(site, site_id)
+
+final_land_scape_visit <- land_scape_visit %>% 
+  left_join(site_key, by = c("site")) 
+
+#dbAppendTable(connection, "final_land_scape_visit", visit)
+
 
 ```
 
+### Survey Table
+#### clean survey table
+```{r}
 
+land_scape_survey <- raw_land_scape %>% 
+  select(landscape_id, fragment_id, date_portuguese, percent_cob_veg) %>% 
+  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
+  mutate(date_portuguese = lubridate::parse_date_time(date_portuguese, c("%m/%d/%y")),
+         detection_type = "capture",
+         survey_time = "day") %>% 
+  rename(date = date_portuguese,
+         percent_vegetation_cover = percent_cob_veg) %>% 
+  group_by(site, date, detection_type, survey_time) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id)) %>% 
+  mutate(survey_id = UUIDgenerate(output = c("uuid")),
+         site = str_to_lower(str_replace_all(site, ". ", "_"))) %>% 
+  drop_na(date)
+
+```
+
+#### add visit_key to survey table
+```{r}
+visit_key <- final_land_scape_visit %>% 
+  select(site, date, survey_time, visit_id)
+
+final_land_scape_survey <- land_scape_survey %>% 
+  left_join(visit_key, by = c("site", "date", "survey_time")) %>% 
+  ungroup() 
+
+#dbAppendTable(connection, "final_land_scape_survey", survey)
+
+
+```
+
+### Capture table
+#### Clean capture data
+```{r}
+
+land_scape_capture <- raw_land_scape %>% 
+  select(date_portuguese, sp, developmental_mode, sample_id, landscape_id, fragment_id, sex, obs) %>% 
+  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
+  mutate(detection_type = "capture",
+         survey_time = "day",
+         site = str_to_lower(str_replace_all(site, ". ", "_")),
+         date_portuguese = lubridate::parse_date_time(date_portuguese, c("%m/%d/%y")),
+         microbiome_id = sample_id,
+         date_portuguese = if_else(is.na(date_portuguese), as_date("2019-01-14"), date_portuguese)) %>% 
+  rename(date = date_portuguese,
+         bd_swab_id = sample_id,
+         species_capture = sp,
+         capture_comments = obs,
+         life_stage = developmental_mode) %>% 
+  mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
+         species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")))
+
+```
+#### survey fkey for capture table
+```{r}
+surv_fkey <- final_land_scape_survey %>% 
+  select(site, date, detection_type, survey_time, survey_id)
+
+final_land_scape_capture <- land_scape_capture %>% 
+  left_join(surv_fkey, by = c("site", "date", "detection_type", "survey_time"))
+
+
+```
 
 
 ## Select habit density table
@@ -159,10 +250,51 @@ land_scape_habitat <- raw_land_scape %>%
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id)) %>% 
   mutate(site = str_to_lower(site),
-         site = str_replace_all(site, ". ", "_")) %>% 
-  mutate(brazil_landscape_id = UUIDgenerate(output = c("uuid")),
-         brazil_site_landscape_id = as.UUID(""))
+         site = str_replace_all(site, ". ", "_"))
   
+
+```
+
+## Drop columns and Append
+```{r}
+# site
+append_site <- final_land_scape_site %>% 
+  select(!c(region)) 
+
+dbAppendTable(connection, "site", append_site)
+
+# visit
+append_visit <- final_land_scape_visit %>% 
+  ungroup() %>% 
+  select(!c(site)) 
+
+dbAppendTable(connection, "visit", append_visit)
+
+# survey
+append_survey <- final_land_scape_survey %>% 
+  ungroup() %>% 
+  select(!c(survey_time, date, site)) %>% 
+  mutate(percent_vegetation_cover = as.integer(percent_vegetation_cover))
+
+dbAppendTable(connection, "survey", append_survey)  
+
+# capture
+append_capture <- final_land_scape_capture %>% 
+  ungroup() %>% 
+  select(!c(site, date, survey_time, detection_type)) %>% 
+  rename(microbiome_swab_id = microbiome_id)
+
+dbAppendTable(connection, "capture", append_capture)
+
+#bd
+dbWriteTable(connection, "brazil_landscape_bd", land_scape_bd, overwrite = T)
+
+#microbiome
+dbWriteTable(connection, "brazil_landscape_microbiome", land_scape_microbiome, overwrite= T)
+
+#fragment data
+dbWriteTable(connection, "brazil_landscape_habitat", land_scape_habitat, overwrite = T)
+
 
 ```
 
