@@ -1,0 +1,168 @@
+---
+title: "brazil_land_scape"
+format: html
+editor: visual
+---
+
+## Load packages
+```{r}
+#| message: false
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, DBI, parsedate, stringr, hms, uuid, oce)
+
+```
+
+## Connect to Database
+```{r}
+tryCatch({
+    drv <- dbDriver("Postgres")
+    print("Connecting to Database…")
+    connection <- dbConnect(drv,
+                 dbname = Sys.getenv("aws_dbname"),
+                 host = Sys.getenv("aws_host"),
+                 port = Sys.getenv("aws_port"),
+                 user = Sys.getenv("aws_user"),
+                 password = Sys.getenv("aws_password"),
+                 timezone=NULL)
+    print("Database Connected!")
+    },
+    error=function(cond) {
+            print("Unable to connect to Database.")
+    })
+
+dbExecute(connection, "set search_path to survey_data")
+
+```
+
+
+## Load Data
+```{r}
+#| message: false
+
+raw_land_scape <- read_csv(here("data", "new_2023_data", "land_scape", "Landscapes_RoL_Becker.csv")) %>% 
+  clean_names()
+
+```
+
+## Select BD data
+```{r}
+
+land_scape_bd <- raw_land_scape %>% 
+  select(c(plate:bd_pres_ab)) %>% 
+  rename(bd_swab_id = sample_id)
+
+#dbWriteTable(connection, "brazil_landscape_bd", land_scape_bd, overwruite = T)
+
+```
+
+## Select microbiome data
+```{r}
+
+land_scape_microbiome <- raw_land_scape %>% 
+  select(c(sample_id_2:jaccard_microbiome_beta_dispersion)) %>% 
+  rename(microbiome_id = sample_id_2) %>% 
+  select(!c(description))
+
+#dbWriteTable(connection, "brazil_landscape_microbiome", land_scape_microbiome, overwrite = T)
+
+```
+
+
+## Survey Data
+### Site table
+#### clean
+```{r}
+
+land_scape_site <- raw_land_scape %>% 
+  select(landscape_id, fragment_id, latitude, longitude, notes_about_capture_site) %>% 
+  rename(site_comments = notes_about_capture_site) %>% 
+  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
+  group_by(site) %>%
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id)) %>% 
+  mutate(site = str_to_lower(site),
+         site = str_replace_all(site, ". ", "_"),
+         site_id = UUIDgenerate(output = c("uuid")),
+         utm_zone = 23,
+         region = "santa_virginia") %>% 
+  ungroup() %>% 
+  mutate(latitude = as.character(latitude),
+         longitude = as.character(longitude))
+
+land_scape_site$latitude <- gsub("^(.{3})(.*)$",
+                                 "\\1.\\2",
+                                 land_scape_site$latitude)
+
+land_scape_site$longitude <- gsub("^(.{3})(.*)$",
+                                 "\\1.\\2",
+                                 land_scape_site$longitude)
+
+land_scape_site$latitude <- as.numeric(land_scape_site$latitude)
+land_scape_site$longitude <- as.numeric(land_scape_site$longitude)
+
+v <- terra::vect(land_scape_site, c("longitude", "latitude"), crs="+proj=longlat")
+u <- terra::project(v, "+proj=utm +zone=23")
+utm <- terra::crds(u)
+
+i <- which(!is.na(land_scape_site$longitude))
+land_scape_site[i, c("utme", "utmn")] <- utm
+
+land_scape_site <- land_scape_site %>% 
+  select(!c(latitude, longitude))
+
+
+
+```
+
+#### apply region_key
+```{r}
+
+region_id <- dbGetQuery(connection, "select r.region, r.region_id from region r;")
+
+final_land_scape_site <-land_scape_site %>% 
+  left_join(region_id, by = c("region")) %>% 
+  select(!c(region))
+
+dbAppendTable(connection, "site", final_land_scape_site)
+
+
+```
+
+
+### Visit Table
+#### clean visit table
+```{r}
+
+land_scape_visit <- raw_land_scape %>% 
+  select(landscape_id, fragment_id, date) %>% 
+  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T)
+
+```
+
+
+
+
+## Select habit density table
+```{r}
+
+land_scape_habitat <- raw_land_scape %>% 
+  select(landscape_id, fragment_id, c(den_dre:ennd_app)) %>% 
+  unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
+  group_by(site) %>%
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!c(temp_id)) %>% 
+  mutate(site = str_to_lower(site),
+         site = str_replace_all(site, ". ", "_")) %>% 
+  mutate(brazil_landscape_id = UUIDgenerate(output = c("uuid")),
+         brazil_site_landscape_id = as.UUID(""))
+  
+
+```
+
