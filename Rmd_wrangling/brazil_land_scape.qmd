@@ -293,7 +293,7 @@ dbWriteTable(connection, "brazil_landscape_bd", land_scape_bd, overwrite = T)
 dbWriteTable(connection, "brazil_landscape_microbiome", land_scape_microbiome, overwrite= T)
 
 #fragment data
-dbWriteTable(connection, "brazil_landscape_habitat", land_scape_habitat, overwrite = T)
+dbWriteTable(connection, "brazil_landscape_habitat", land_scape_habitat, overwrite = T) 
 
 
 ```
