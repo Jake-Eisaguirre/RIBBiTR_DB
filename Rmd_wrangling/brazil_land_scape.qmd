@@ -154,7 +154,7 @@ land_scape_visit <- raw_land_scape %>%
          survey_time = "day" ) %>% 
   rename(date = date_portuguese,
          campaign = campanha) %>% 
-  group_by(date, survey_time) %>% 
+  group_by(date, survey_time, site) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!temp_id) %>% 
@@ -192,7 +192,7 @@ land_scape_survey <- raw_land_scape %>%
          survey_time = "day") %>% 
   rename(date = date_portuguese,
          percent_vegetation_cover = percent_cob_veg) %>% 
-  group_by(site, date, detection_type, survey_time) %>% 
+  group_by(site, date) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id)) %>% 
