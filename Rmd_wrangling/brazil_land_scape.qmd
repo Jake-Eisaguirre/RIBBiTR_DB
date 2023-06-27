@@ -5,6 +5,7 @@ editor: visual
 ---
 
 ## Load packages
+
 ```{r}
 #| message: false
 if (!require(librarian)){
@@ -18,6 +19,7 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, DBI, parsedate,
 ```
 
 ## Connect to Database
+
 ```{r}
 tryCatch({
     drv <- dbDriver("Postgres")
@@ -39,8 +41,8 @@ dbExecute(connection, "set search_path to survey_data")
 
 ```
 
-
 ## Load Data
+
 ```{r}
 #| message: false
 
@@ -50,6 +52,7 @@ raw_land_scape <- read_csv(here("data", "new_2023_data", "land_scape", "Landscap
 ```
 
 ## Select BD data
+
 ```{r}
 
 land_scape_bd <- raw_land_scape %>% 
@@ -61,6 +64,7 @@ land_scape_bd <- raw_land_scape %>%
 ```
 
 ## Select microbiome data
+
 ```{r}
 
 land_scape_microbiome <- raw_land_scape %>% 
@@ -72,10 +76,12 @@ land_scape_microbiome <- raw_land_scape %>%
 
 ```
 
-
 ## Survey Data
+
 ### Site table
+
 #### clean
+
 ```{r}
 
 land_scape_site <- raw_land_scape %>% 
@@ -121,6 +127,7 @@ land_scape_site <- land_scape_site %>%
 ```
 
 #### apply region_key
+
 ```{r}
 
 region_id <- dbGetQuery(connection, "select r.region, r.region_id from region r;")
@@ -133,11 +140,11 @@ final_land_scape_site <-land_scape_site %>%
 
 ```
 
-
 ### Visit Table
-#### clean visit table
-```{r}
 
+#### clean visit table
+
+```{r}
 
 land_scape_visit <- raw_land_scape %>% 
   select(landscape_id, fragment_id, date_portuguese, campanha) %>% 
@@ -155,7 +162,9 @@ land_scape_visit <- raw_land_scape %>%
   mutate(visit_id = UUIDgenerate(output = c("uuid")))
 
 ```
+
 #### join site key on visit table
+
 ```{r}
 
 site_key <- final_land_scape_site %>% 
@@ -170,7 +179,9 @@ final_land_scape_visit <- land_scape_visit %>%
 ```
 
 ### Survey Table
+
 #### clean survey table
+
 ```{r}
 
 land_scape_survey <- raw_land_scape %>% 
@@ -192,6 +203,7 @@ land_scape_survey <- raw_land_scape %>%
 ```
 
 #### add visit_key to survey table
+
 ```{r}
 visit_key <- final_land_scape_visit %>% 
   select(site, date, survey_time, visit_id)
@@ -206,7 +218,9 @@ final_land_scape_survey <- land_scape_survey %>%
 ```
 
 ### Capture table
+
 #### Clean capture data
+
 ```{r}
 
 land_scape_capture <- raw_land_scape %>% 
@@ -227,7 +241,9 @@ land_scape_capture <- raw_land_scape %>%
          species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")))
 
 ```
+
 #### survey fkey for capture table
+
 ```{r}
 surv_fkey <- final_land_scape_survey %>% 
   select(site, date, detection_type, survey_time, survey_id)
@@ -238,8 +254,8 @@ final_land_scape_capture <- land_scape_capture %>%
 
 ```
 
-
 ## Select habit density table
+
 ```{r}
 
 land_scape_habitat <- raw_land_scape %>% 
@@ -256,6 +272,7 @@ land_scape_habitat <- raw_land_scape %>%
 ```
 
 ## Drop columns and Append
+
 ```{r}
 # site
 append_site <- final_land_scape_site %>% 
@@ -297,4 +314,3 @@ dbWriteTable(connection, "brazil_landscape_habitat", land_scape_habitat, overwri
 
 
 ```
-
