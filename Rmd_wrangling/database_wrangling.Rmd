@@ -596,7 +596,7 @@ munged_Amphibian_Captured_Information <-  read_csv(here("data", "penn","munged_A
 munged_Amphibian_Captured_Information_Repeatable <- read_csv(here("data","penn", "munged_Amphibian_Captured_Information_Repeatable.csv"))
 
 penn_cmr_toe_clip <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>%
-  select(fulcrum_id, location, capture_date, cmr_id, cmr_id_other) %>%
+  select(fulcrum_id, location, cmr_id, cmr_id_other) %>%
   unite(cmr_id, c(cmr_id:cmr_id_other), na.rm = T) %>%
   drop_na(location) %>% 
   select(!location) %>% 

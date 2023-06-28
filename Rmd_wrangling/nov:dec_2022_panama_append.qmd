@@ -97,17 +97,17 @@ full_cap_data <- left_join(raw_site_visit, raw_survey, by = c("fulcrum_id" = "fu
          region = str_to_lower(str_replace_all(region, " ", "_")))
 
 raw_cap_tert_data <- full_cap_data %>% 
-    select(date, region, site, transect, notes_site, start_date, surveytime, observers, numobs,
+    select(fulcrum_id,date, region, site, transect, notes_site, start_date, surveytime, observers, numobs,
          starttime, end_date, endtime, surlength_time_minutes, c(varm_transect_meters:notes_survey), detection_type) %>% 
   mutate(detection_type = "capture")
 
 raw_visual_tert_data <- full_visual_data %>% 
-  select(date, region, site, transect, notes_site, start_date, surveytime, observers, numobs,
+  select(fulcrum_id,date, region, site, transect, notes_site, start_date, surveytime, observers, numobs,
          starttime, end_date, endtime, surlength_time_minutes, c(varm_transect_meters:notes_survey), detection_type) %>% 
   mutate(detection_type = "visual")
 
 raw_aural_tert_data <- full_aural_data %>% 
-  select(date, region, site, transect, notes_site, start_date, surveytime, observers, numobs,
+  select(fulcrum_id, date, region, site, transect, notes_site, start_date, surveytime, observers, numobs,
          starttime, end_date, endtime, surlength_time_minutes, c(varm_transect_meters:notes_survey), detection_type) %>% 
   mutate(detection_type = "aural")
 
@@ -199,14 +199,18 @@ survey_table <- raw_tert_data %>%
 ## Pull out Capture Table
 ```{r}
 
+d_st_det <- raw_tert_data %>% 
+  select(fulcrum_id, site, date, surveytime, detection_type) %>% 
+  filter(detection_type == "capture")
+
 names(raw_cap) <- gsub(pattern = "capt_", replacement = "1_", x=names(raw_cap))
 names(raw_cap) <- gsub(pattern = "cap_", replacement = "2_", x=names(raw_cap))
 
 pull_apart_table <- raw_cap %>% 
-  select(fulcrum_id, c("1_species":"2_buccal_swab"))
+  select(fulcrum_id, c("1_species":"2_buccal_swab"), fulcrum_parent_id)
 
 cap_1 <- pull_apart_table %>% 
-  select(c(fulcrum_id:pit_tag_id_number_if_it_was_placed), detection_type) %>% 
+  select(c(fulcrum_id:pit_tag_id_number_if_it_was_placed), detection_type, fulcrum_parent_id) %>% 
   unite(species_capture, c("1_species", "1_species_other"), na.rm = T) %>%
   mutate(species_capture = if_else(species_capture == "", NA, species_capture)) %>% 
   drop_na(species_capture)
@@ -215,14 +219,73 @@ names(cap_1) <- gsub(pattern = "1_", replacement = "", x=names(cap_1))
 
 
 cap_2 <- pull_apart_table %>% 
-  select(fulcrum_id, c(detection_type:"2_buccal_swab")) %>% 
+  select(fulcrum_id, c(detection_type:"2_buccal_swab"), fulcrum_parent_id) %>% 
   unite(species_capture, c("2_species", "2_species_other"), na.rm = T) %>% 
   mutate(species_capture = if_else(species_capture == "", NA, species_capture)) %>% 
   drop_na(species_capture)
 
 names(cap_2) <- gsub(pattern = "2_", replacement = "", x=names(cap_2))
 
-capture_table <- plyr::rbind.fill(cap_1, cap_2)
+mid_capture_table <- plyr::rbind.fill(cap_1, cap_2) %>% 
+  mutate(detection_type = "capture")
+
+add_unique <- d_st_det %>% 
+  group_by(fulcrum_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id) %>% 
+  left_join(mid_capture_table, by = c("fulcrum_id" = "fulcrum_parent_id", "detection_type" = "detection_type"))
+
+unique_capture_table <- add_unique %>% 
+  rename(capture_mark_recapture = fulcrum_id.y,
+         time_of_capture = time,
+         capture_trx_loc = transectm_m,
+         microhabitat_type = microhab,
+         body_temp_c = bodytemp_c,
+         susbtrate_temp_c = substemp_c,
+         body_mass_g = frogmass_g,
+         bag_mass_g = mass_bag_g,
+         body_and_bag_mass_g = frogbag_mass_g,
+         life_stage = lifestage,
+         cmr_id = pit_tag_id_number_if_it_was_placed,
+         microhab_moredetail = microhab_other,
+         capture_comments = notes_captureutm_offtransect,
+         capture_animal_state = dead) %>% 
+  ungroup() %>% 
+  unite(capture_comments, c("capture_comments", "notesutm_offtransect"), na.rm = T, sep = ", ") %>% 
+  select(!c(norephinephrine_units_to_inject_for_amps, norephinephrine_ml_to_inject_for_amps, fulcrum_id)) %>% 
+  mutate(species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")))
+
+panama_cmr <- unique_capture_table %>% 
+  select(capture_mark_recapture, cmr_id) %>% 
+  drop_na(cmr_id)
+
+
+s.key <- survey_table %>% 
+  select(date, site, detection_type, survey_time, survey_id)
+  
+capture_table <- unique_capture_table %>% 
+  select(!c(cmr_id, pit_tag)) %>% 
+  mutate(bd_swab = if_else(bd_swab == 1, swab_id, NA),
+         mucosome_water = if_else(mucosome_water == 1, swab_id, NA),
+         amps = if_else(amps == 1, swab_id, NA),
+         ampshcl = if_else(ampshcl == 1, swab_id, NA),
+         bacteria_swab = if_else(bacteria_swab == 1, swab_id, NA),
+         glycerol_swab = if_else(glycerol_swab == 1, swab_id, NA),
+         buccal_swab = if_else(buccal_swab == 1, swab_id, NA)) %>% 
+  select(!c(swab_id)) %>% 
+  rename(bd_swab_id = bd_swab,
+         mucosome_id = mucosome_water,
+         amp_id = amps,
+         microbiome_swab_id = bacteria_swab,
+         antibody_id = ampshcl,
+         bacterial_swab_id = glycerol_swab,
+         genetic_id = buccal_swab,
+         survey_time = surveytime) %>% 
+  left_join(s.key, by = c("date", "site", "detection_type", "survey_time")) %>% 
+  select(!c(date, site, survey_time, detection_type)) %>% 
+  mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()))
+  
 
 
 ```
