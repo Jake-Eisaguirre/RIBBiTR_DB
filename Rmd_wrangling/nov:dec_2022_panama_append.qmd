@@ -111,7 +111,8 @@ raw_aural_tert_data <- full_aural_data %>%
          starttime, end_date, endtime, surlength_time_minutes, c(varm_transect_meters:notes_survey), detection_type) %>% 
   mutate(detection_type = "aural")
 
-raw_tert_data <- plyr::rbind.fill(raw_cap_tert_data, raw_visual_tert_data, raw_aural_tert_data)
+raw_tert_data <- plyr::rbind.fill(raw_cap_tert_data, raw_visual_tert_data, raw_aural_tert_data) %>% 
+  mutate(surveytime = if_else(surveytime == "day,night", "day", surveytime))
 
 ```
 
@@ -191,7 +192,8 @@ survey_table <- raw_tert_data %>%
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id)) %>% 
   left_join(visit_key, by = c("site", "date", "survey_time")) %>% 
-  mutate(survey_id = UUIDgenerate(output = c("uuid")))
+  mutate(survey_id = UUIDgenerate(output = c("uuid"))) %>% 
+  ungroup() 
 
 
 ```
@@ -242,7 +244,7 @@ unique_capture_table <- add_unique %>%
          capture_trx_loc = transectm_m,
          microhabitat_type = microhab,
          body_temp_c = bodytemp_c,
-         susbtrate_temp_c = substemp_c,
+         substrate_temp_c = substemp_c,
          body_mass_g = frogmass_g,
          bag_mass_g = mass_bag_g,
          body_and_bag_mass_g = frogbag_mass_g,
@@ -322,7 +324,10 @@ ves_table <- add_unique_v %>%
   mutate(visual_animal_state = if_else(visual_animal_state == "no", "alive", "dead")) %>% 
   left_join(s.key, by = c("site", "date", "survey_time", "detection_type")) %>% 
   mutate(ves_id = UUIDgenerate(output = c("uuid"), n = n())) %>% 
-  select(!c(date, detection_type, site, survey_time))
+  select(!c(date, detection_type, site, survey_time)) %>% 
+  mutate(count = if_else(count == "Approximately 50", "50", count),
+         count = if_else(count == "Approximately 200", "200", count),
+         count = as.numeric(count))
   
 
 
@@ -358,6 +363,36 @@ aural_table <- add_unique_a %>%
   mutate(aural_id = UUIDgenerate(output = c("uuid"), n = n())) %>% 
   select(!c(date, detection_type, site, survey_time))
   
+
+```
+
+## Append Tables
+```{r}
+
+append_visit <- visit_table %>% 
+  ungroup() %>% 
+  select(!c(site))
+
+dbAppendTable(connection, "visit", append_visit)
+
+
+append_survey <- survey_table %>% 
+  ungroup() %>% 
+  select(!c(date, site, survey_time))
+
+dbAppendTable(connection, "survey", append_survey)
+
+
+dbAppendTable(connection, "cmr", panama_cmr)
+
+dbAppendTable(connection, "capture", capture_table)
+
+dbAppendTable(connection, "ves", ves_table)
+
+
+
+
+dbAppendTable(connection, "aural", aural_table)
 
 ```
 
