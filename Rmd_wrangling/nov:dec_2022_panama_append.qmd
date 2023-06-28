@@ -284,9 +284,80 @@ capture_table <- unique_capture_table %>%
          survey_time = surveytime) %>% 
   left_join(s.key, by = c("date", "site", "detection_type", "survey_time")) %>% 
   select(!c(date, site, survey_time, detection_type)) %>% 
-  mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()))
+  mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
+         capture_animal_state = if_else(capture_animal_state == 1, "dead", "alive"))
   
 
+
+```
+
+## Pull out Visual
+```{r}
+d_st_det_v <- raw_tert_data %>% 
+  select(fulcrum_id, site, date, surveytime, detection_type) %>% 
+  filter(detection_type == "visual")
+
+add_unique_v <- raw_visual %>% 
+  left_join(d_st_det_v, by = c("fulcrum_parent_id" = "fulcrum_id", "detection_type" = "detection_type")) %>% 
+  group_by(fulcrum_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id) %>% 
+  ungroup() %>% 
+  select(c(detection_type:surveytime), c(vis_species:vis_dead))
+
+names(add_unique_v) <- gsub(pattern = "vis_", replacement = "", x=names(add_unique_v))
+
+ves_table <- add_unique_v %>% 
+  select(!c(species_other, time, bodytemp_c, substemp_c)) %>% 
+  mutate(site = str_to_lower(str_replace_all(site, " ", "_")),
+         species = str_to_lower(str_replace_all(species, " ", "_"))) %>% 
+  rename(species_ves = species,
+         detection_location = transectm_m,
+         ves_comments = notesutm_offtransect,
+         count = quantity, 
+         life_stage = lifestage,
+         visual_animal_state = dead,
+         survey_time = surveytime) %>% 
+  mutate(visual_animal_state = if_else(visual_animal_state == "no", "alive", "dead")) %>% 
+  left_join(s.key, by = c("site", "date", "survey_time", "detection_type")) %>% 
+  mutate(ves_id = UUIDgenerate(output = c("uuid"), n = n())) %>% 
+  select(!c(date, detection_type, site, survey_time))
+  
+
+
+
+
+```
+
+## Pull out Aural
+```{r}
+d_st_det_a <- raw_tert_data %>% 
+  select(fulcrum_id, site, date, surveytime, detection_type) %>% 
+  filter(detection_type == "aural")
+
+add_unique_a <- raw_aural %>% 
+  left_join(d_st_det_a, by = c("fulcrum_parent_id" = "fulcrum_id", "detection_type" = "detection_type")) %>% 
+  group_by(fulcrum_id) %>% 
+  mutate(temp_id = cur_group_id()) %>% 
+  filter(!duplicated(temp_id)) %>% 
+  select(!temp_id) %>% 
+  ungroup() %>% 
+  select(c(detection_type:surveytime), c(call_species:call_microhab))
+
+names(add_unique_a) <- gsub(pattern = "call_", replacement = "", x=names(add_unique_a))
+
+aural_table <- add_unique_a %>% 
+  select(!c(species_other, time)) %>% 
+  rename(survey_time = surveytime,
+         species_aural = species,
+         detection_location = transectm_m,
+         aural_comments = notesutm_offtransect,
+         count = quantity) %>% 
+  left_join(s.key, by = c("site", "date", "survey_time", "detection_type")) %>% 
+  mutate(aural_id = UUIDgenerate(output = c("uuid"), n = n())) %>% 
+  select(!c(date, detection_type, site, survey_time))
+  
 
 ```
 
