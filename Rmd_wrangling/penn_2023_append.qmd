@@ -529,6 +529,6 @@ final_cmr <- cmr %>%
   rename(capture_mark_recapture = fulcrum_id,
          cmr_id = cmr)
 
-dbAppendTable(connection, "penn_cmr", final_cmr)
+dbAppendTable(connection, "cmr", final_cmr)
 
 ```

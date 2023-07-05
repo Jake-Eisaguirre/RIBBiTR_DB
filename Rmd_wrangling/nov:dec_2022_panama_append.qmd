@@ -16,6 +16,7 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, DBI, parsedate,
 ```
 
 ## DB Connection
+
 ```{r}
 tryCatch({
     drv <- dbDriver("Postgres")
@@ -36,8 +37,8 @@ tryCatch({
 dbExecute(connection, "set search_path to survey_data")
 ```
 
-
 ## Load all CSV file
+
 ```{r}
 #| message: false
 
@@ -68,7 +69,9 @@ raw_site_visit <- read_csv(here("data", "panama_legacy", "second_half_2022", "pa
 ```
 
 ## Combine All
-### Combine 
+
+### Combine
+
 ```{r}
 
 full_visual_data <- left_join(raw_site_visit, raw_survey, by = c("fulcrum_id" = "fulcrum_parent_id")) %>% 
@@ -117,6 +120,7 @@ raw_tert_data <- plyr::rbind.fill(raw_cap_tert_data, raw_visual_tert_data, raw_a
 ```
 
 ### Pull out Site Table
+
 ```{r}
 
 cur_site_list <- dbGetQuery(connection, "select s.site from site s;")
@@ -141,8 +145,8 @@ dbAppendTable(connection, "site", site_table)
 
 ```
 
-
 ### Pull out Visit Table
+
 ```{r}
 
 site_key <- dbGetQuery(connection, "select s.site, s.site_id from site s;")
@@ -161,6 +165,7 @@ visit_table <- raw_tert_data %>%
 ```
 
 ### Pull out Survey Table
+
 ```{r}
 
 visit_key <- visit_table %>% 
@@ -199,6 +204,7 @@ survey_table <- raw_tert_data %>%
 ```
 
 ## Pull out Capture Table
+
 ```{r}
 
 d_st_det <- raw_tert_data %>% 
@@ -294,6 +300,7 @@ capture_table <- unique_capture_table %>%
 ```
 
 ## Pull out Visual
+
 ```{r}
 d_st_det_v <- raw_tert_data %>% 
   select(fulcrum_id, site, date, surveytime, detection_type) %>% 
@@ -336,6 +343,7 @@ ves_table <- add_unique_v %>%
 ```
 
 ## Pull out Aural
+
 ```{r}
 d_st_det_a <- raw_tert_data %>% 
   select(fulcrum_id, site, date, surveytime, detection_type) %>% 
@@ -367,6 +375,7 @@ aural_table <- add_unique_a %>%
 ```
 
 ## Append Tables
+
 ```{r}
 
 append_visit <- visit_table %>% 
@@ -395,4 +404,3 @@ dbAppendTable(connection, "ves", ves_table)
 dbAppendTable(connection, "aural", aural_table)
 
 ```
-
