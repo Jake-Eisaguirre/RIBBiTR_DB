@@ -151,7 +151,7 @@ land_scape_visit <- raw_land_scape %>%
   unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
   mutate(date_portuguese = lubridate::parse_date_time(date_portuguese, c("%m/%d/%y")),
          site = str_to_lower(str_replace_all(site, ". ", "_")),
-         survey_time = "day" ) %>% 
+         survey_time = "night" ) %>% 
   rename(date = date_portuguese,
          campaign = campanha) %>% 
   group_by(date, survey_time, site) %>% 
@@ -189,7 +189,7 @@ land_scape_survey <- raw_land_scape %>%
   unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
   mutate(date_portuguese = lubridate::parse_date_time(date_portuguese, c("%m/%d/%y")),
          detection_type = "capture",
-         survey_time = "day") %>% 
+         survey_time = "night") %>% 
   rename(date = date_portuguese,
          percent_vegetation_cover = percent_cob_veg) %>% 
   group_by(site, date) %>% 
@@ -227,7 +227,7 @@ land_scape_capture <- raw_land_scape %>%
   select(date_portuguese, sp, developmental_mode, sample_id, landscape_id, fragment_id, sex, obs) %>% 
   unite(site, c("landscape_id", "fragment_id"), sep = "_", na.rm = T) %>% 
   mutate(detection_type = "capture",
-         survey_time = "day",
+         survey_time = "night",
          site = str_to_lower(str_replace_all(site, ". ", "_")),
          date_portuguese = lubridate::parse_date_time(date_portuguese, c("%m/%d/%y")),
          microbiome_id = sample_id,
@@ -238,7 +238,8 @@ land_scape_capture <- raw_land_scape %>%
          capture_comments = obs,
          life_stage = developmental_mode) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
-         species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")))
+         species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")),
+         life_stage = if_else(life_stage == "AL", "aquatic_larvae", "terrestrial_development"))
 
 ```
 
