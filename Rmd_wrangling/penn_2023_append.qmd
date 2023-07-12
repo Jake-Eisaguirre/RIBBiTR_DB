@@ -19,6 +19,7 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, stringr, DBI, p
 ## Load CSV Exports and Trim Fat
 
 ```{r}
+#| message: false
 
 survey_info <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
                              "1_penn_surveyinformation", "1_penn_surveyinformation.csv")) %>% 
@@ -338,7 +339,8 @@ unique_cap <- mid_samp_proc %>%
          body_and_bag_mass_g = body_and_bag_mass,
          bag_mass_g = bag_mass,
          body_mass_g = body_mass) %>% 
-  mutate(amp_id = if_else(capture_mark_recapture == "cf358e11-d6da-4637-af56-c384d683e6fb", "Pe_AMP00000", amp_id)) %>% 
+  ungroup() %>% 
+  mutate(amp_id = if_else(capture_mark_recapture %in% ("cf358e11-d6da-4637-af56-c384d683e6fb"), "Pe_AMP00000", amp_id)) %>% 
   plyr::rbind.fill(neg_controls)
 
 
