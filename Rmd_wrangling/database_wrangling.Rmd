@@ -898,6 +898,8 @@ serdp_visit_table <- read_csv(here("data", "serdp", "serdp_visit_table.csv")) %>
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id))
 
+
+
 ```
 
 ## read panama data and pull out unique visits
@@ -1172,7 +1174,8 @@ serdp_survey_table <- read_csv(here("data", "serdp", "serdp_survey_table.csv")) 
          wind_speed_m_s = wind_speed_mpers,
          observer = investigator_i_ds)%>% 
   group_by(site, date, survey_time, detection_type) %>% 
-  mutate(temp_id = cur_group_id()) %>% 
+  mutate(temp_id = cur_group_id(),
+         date = as_date(date)) %>% 
   filter(!duplicated(temp_id)) %>% 
   select(!c(temp_id))
 
@@ -1180,6 +1183,7 @@ serdp_survey_table$duration_minutes <- str_sub(serdp_survey_table$duration_minut
   as.numeric()
 
 write_csv(serdp_survey_table, here("clean_tables", "serdp_survey.csv"))
+
 ```
 
 ## sn survey table
@@ -1701,7 +1705,6 @@ serdp_capture <- left_join(serdp_capture, Ids_to_back_log, by = c("bd_swab_id"="
   unite(microbiome_swab_id, c("microbiome_swab_id.x", "microbiome_swab_id.y"), na.rm = T) %>% 
   unite(mucosome_id, c("mucosome_id.x", "mucosome_id.y"), na.rm = T)
 
-
 ```
 
 ## panama capture table
@@ -1785,6 +1788,10 @@ write_csv(panama_capture, here("data", "panama_legacy", "clean_tables", "clean_p
 ## bind all capture tables
 ```{r}
 
+a <- capture %>% 
+  filter(str_detect(site_code, "pa"))
+
+
 capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_capture,
                             sn_capture_table) %>% 
   mutate(capture_comments = str_replace_all(capture_comments, "[[:punct:]]", ""),
@@ -1792,6 +1799,10 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          site = str_replace_all(site, " ", "_"),
          microhabitat_notes = str_replace_all(microhabitat_notes, "[[:punct:]]", ""),
          site = if_else(site == "wood_lab", "wood_lab_pond", site),
+         site = if_else(site == "rv", "rv_pond", site),
+         site = if_else(site == "tuttle", "tuttle_pond", site),
+         site = if_else(site == "phelps", "phelps_pond", site),
+         site = if_else(site == "newt_(mike_vorisek's)", "vorisek_pond", site),
          detection_type = "capture") %>% 
   #mutate_all(na_if, "") %>% 
   #relocate(c(bd_swab_id:e_dna), .after = tad_stage) %>% 
