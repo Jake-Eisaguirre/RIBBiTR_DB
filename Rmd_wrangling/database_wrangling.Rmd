@@ -1788,10 +1788,6 @@ write_csv(panama_capture, here("data", "panama_legacy", "clean_tables", "clean_p
 ## bind all capture tables
 ```{r}
 
-a <- capture %>% 
-  filter(str_detect(site_code, "pa"))
-
-
 capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_capture,
                             sn_capture_table) %>% 
   mutate(capture_comments = str_replace_all(capture_comments, "[[:punct:]]", ""),
