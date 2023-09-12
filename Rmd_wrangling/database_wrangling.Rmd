@@ -119,8 +119,6 @@ panama_raw <- read_csv(here("data", "panama_legacy", "panama_data.csv")) %>%
          survey_time = if_else(sort_id == "175", "night", survey_time),
          survey_time = if_else(sort_id == "176", "night", survey_time))
 
-
-
 # regions
 panama_regions <- panama_raw %>% 
   mutate(region = str_to_lower(region),
@@ -705,6 +703,8 @@ penn1_capture <- penn1_capture %>%
 june_july_missing_data <- read_csv(here("data", "penn", "2022_missing_data", "clean_missing_june_july_data.csv")) %>% 
   mutate(detection_type = "capture") %>% 
   rename(body_temp_c = body_temperature)
+
+
 
 penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
   mutate(amp_id_1 = if_else(bd_swab_tube_id == "2022-05-18-admin-raca4", "2022-05-18-admin-raca4", amp_id_1), #manual data fixes
@@ -1516,6 +1516,9 @@ all_newt_ids <- newt %>%
 ## penn1 capture
 ```{r}
 
+id_joins <- read_csv(here("data", "id_joins.csv")) %>% 
+  mutate(microbiome_swab_id = bd_swab_id)
+
 penn_capture <- penn1_capture %>% 
   select(!c(region, location, visit_comment, survey_comment, start_time, end_time, duration_min,
             wind_speed_ms, air_temperature_c, 
@@ -1553,7 +1556,10 @@ penn_capture <- penn1_capture %>%
          antibody_id = antibody_id_1,
          mucosome_id = mucusome_id) %>% 
   unite(life_stage, c(life_stage, life_stage_other), sep = ",", na.rm = T) %>% 
-  mutate(date = format_iso_8601(date))
+  mutate(date = format_iso_8601(date)) %>% 
+  left_join(id_joins, by = c("microbiome_swab_id")) %>% 
+  unite(bd_swab_id, c("bd_swab_id.x", "bd_swab_id.y"), na.rm = T) %>% 
+  mutate(bd_swab_id = if_else(bd_swab_id == "", NA, bd_swab_id))
   
 
 #rm(penn1_capture, penn1_VES, penn1_aural)

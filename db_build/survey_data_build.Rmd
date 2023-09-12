@@ -165,7 +165,7 @@ dbExecute(connection, "alter table serdp_newt_microbiome_mucosome_antifungal
 dbExecute(connection, "alter table serdp_amp add primary key(amp_id);")
 
 #serdp_bd
-dbExecute(connection, "alter table serdp_bd add primary key(bd_swab_id);")
+#dbExecute(connection, "alter table serdp_bd add primary key(bd_swab_id);")
 
 #temp_panama_bd
 dbExecute(connection, "alter table panama_bd_temp add primary key(bd_swab_id);")
