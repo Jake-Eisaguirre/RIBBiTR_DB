@@ -14,7 +14,7 @@ if (!require(librarian)){
 
 # librarian downloads, if not already downloaded, and reads in needed packages
 librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
-                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
+                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid, stringi)
 ```
 
 # create location table (panama, brazil, usa)
@@ -603,7 +603,15 @@ penn_cmr <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>%
 
 munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","munged_Amphibian_Processing_App_Repeatable.csv")) %>% 
   mutate(amp_id_1 = if_else(fulcrum_id == "15726e63-04ad-46fa-8f93-e7e5c5f3377a", "AMPBath00038", amp_id_1),
-         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1))
+         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1)) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_replace_all(., " ", "-"))) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_to_lower(.))) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_replace_all(., "#", ""))) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"),
+                .fn = ~stri_replace_last_fixed(., "-", "")))
 
 munged_VisualEncounter_Survey <- read_csv(here("data", "penn","munged_VisualEncounter_Survey.csv"))
   
@@ -632,7 +640,6 @@ cap_comments <- munged_Amphibian_Processing_App_Repeatable %>%
 munged_Amphibian_Processing_App_Repeatable <- munged_Amphibian_Processing_App_Repeatable %>% 
   slice_tail(n = -21) %>% 
   rbind(cap_comments)
-
 
 ```
 
