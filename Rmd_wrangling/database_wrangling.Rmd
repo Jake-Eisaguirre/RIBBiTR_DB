@@ -603,15 +603,7 @@ penn_cmr <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>%
 
 munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","munged_Amphibian_Processing_App_Repeatable.csv")) %>% 
   mutate(amp_id_1 = if_else(fulcrum_id == "15726e63-04ad-46fa-8f93-e7e5c5f3377a", "AMPBath00038", amp_id_1),
-         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1)) %>% 
-  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
-                .fn = ~str_replace_all(., " ", "-"))) %>% 
-  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
-                .fn = ~str_to_lower(.))) %>% 
-  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
-                .fn = ~str_replace_all(., "#", ""))) %>% 
-  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"),
-                .fn = ~stri_replace_last_fixed(., "-", "")))
+         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1)) 
 
 munged_VisualEncounter_Survey <- read_csv(here("data", "penn","munged_VisualEncounter_Survey.csv"))
   
@@ -698,7 +690,15 @@ penn1_capture <- right_join(right_join(munged_Amphibian_Captured_Information,
                             as_hms(86400) - start_time + end_time,
                             end_time - start_time),
          duration_min = duration_min/60) %>%
-  relocate(duration_min, .after = end_time) 
+  relocate(duration_min, .after = end_time) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_replace_all(., " ", "-"))) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_to_lower(.))) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_replace_all(., "#", ""))) %>% 
+  mutate(across(.cols = c("bd_swab_tube_id":"toe_clip_tube_id"), 
+                .fn = ~str_remove(., "-(?=\\d+$)")))
 
 penn1_capture$duration_min <- str_sub(penn1_capture$duration_min, -4) %>% 
   as.numeric()
@@ -743,7 +743,7 @@ penn1_capture <- plyr::rbind.fill(penn1_capture, june_july_missing_data) %>%
         mucusome_id = if_else(mucusome_id == "2022-08-15-admin-rapi3", "2022-05-19-admin-rapi3", mucusome_id),
         amp_id_1 = if_else(mucusome_id == "2022-05-19-admin-rapi3", "2022-05-19-admin-rapi3", amp_id_1),
         #amp_id_1 = if_else(amp_id_1 == "AMPBath00048", "AMPBath00038", amp_id_1),
-        amp_id_1 = if_else(mucusome_id == "MucBath00052", "AMPBath00052", amp_id_1))
+        amp_id_1 = if_else(mucusome_id == "MucBath00052", "AMPBath00052", amp_id_1)) 
 
 ```
 
@@ -1526,6 +1526,12 @@ all_newt_ids <- newt %>%
 id_joins <- read_csv(here("data", "id_joins.csv")) %>% 
   mutate(microbiome_swab_id = bd_swab_id)
 
+add_id <- read_csv(here("data", "add_ids.csv")) %>% 
+  mutate(microbiome_swab_id = bd_swab_id)
+
+another_add_ids <- read_csv(here("data", "another_add_ids.csv")) %>% 
+  mutate(microbiome_swab_id = bd_swab_id)
+
 penn_capture <- penn1_capture %>% 
   select(!c(region, location, visit_comment, survey_comment, start_time, end_time, duration_min,
             wind_speed_ms, air_temperature_c, 
@@ -1566,7 +1572,15 @@ penn_capture <- penn1_capture %>%
   mutate(date = format_iso_8601(date)) %>% 
   left_join(id_joins, by = c("microbiome_swab_id")) %>% 
   unite(bd_swab_id, c("bd_swab_id.x", "bd_swab_id.y"), na.rm = T) %>% 
-  mutate(bd_swab_id = if_else(bd_swab_id == "", NA, bd_swab_id))
+  mutate(bd_swab_id = if_else(bd_swab_id == "", NA, bd_swab_id))%>% 
+  mutate(across(c("bd_swab_id":"microbiome_swab_id"), ~str_to_lower(.))) %>% 
+  left_join(add_id, by = c("microbiome_swab_id")) %>% 
+  unite(bd_swab_id, c("bd_swab_id.x", "bd_swab_id.y"), na.rm = T) %>% 
+  mutate(bd_swab_id = if_else(bd_swab_id == "", NA, bd_swab_id)) %>% 
+  left_join(another_add_ids, by = c("microbiome_swab_id")) %>% 
+  unite(bd_swab_id, c("bd_swab_id.x", "bd_swab_id.y"), na.rm = T) %>% 
+  mutate(bd_swab_id = if_else(bd_swab_id == "", NA, bd_swab_id),
+         bd_swab_id = if_else(bd_swab_id == "2022-05-11-admin-toad-sp.19", "2022-05-11-admin-toad19", bd_swab_id))
   
 
 #rm(penn1_capture, penn1_VES, penn1_aural)
