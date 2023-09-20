@@ -1532,6 +1532,9 @@ add_id <- read_csv(here("data", "add_ids.csv")) %>%
 another_add_ids <- read_csv(here("data", "another_add_ids.csv")) %>% 
   mutate(microbiome_swab_id = bd_swab_id)
 
+last_add_ids <- read_csv(here("data", "last_id_joins.csv")) %>% 
+  mutate(microbiome_swab_id = bd_swab_id)
+
 penn_capture <- penn1_capture %>% 
   select(!c(region, location, visit_comment, survey_comment, start_time, end_time, duration_min,
             wind_speed_ms, air_temperature_c, 
@@ -1580,7 +1583,9 @@ penn_capture <- penn1_capture %>%
   left_join(another_add_ids, by = c("microbiome_swab_id")) %>% 
   unite(bd_swab_id, c("bd_swab_id.x", "bd_swab_id.y"), na.rm = T) %>% 
   mutate(bd_swab_id = if_else(bd_swab_id == "", NA, bd_swab_id),
-         bd_swab_id = if_else(bd_swab_id == "2022-05-11-admin-toad-sp.19", "2022-05-11-admin-toad19", bd_swab_id))
+         bd_swab_id = if_else(bd_swab_id == "2022-05-11-admin-toad-sp.19", "2022-05-11-admin-toad19", bd_swab_id)) %>% 
+  left_join(last_add_ids, by = c("microbiome_swab_id")) %>% 
+  unite(bd_swab_id, c("bd_swab_id.x", "bd_swab_id.y"), na.rm = T)
   
 
 #rm(penn1_capture, penn1_VES, penn1_aural)
