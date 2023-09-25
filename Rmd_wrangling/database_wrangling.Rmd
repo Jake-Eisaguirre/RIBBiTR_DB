@@ -624,7 +624,8 @@ munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","mung
          dry_swab_tube_id = if_else(fulcrum_id == "6fd443ea-0d23-4d81-a2de-414ce7c17eff", "2022-05-19-admin-raca10", dry_swab_tube_id),
          dry_swab_tube_id = if_else(fulcrum_id == "98f3703e-2c80-4c0f-b3c2-1c0e4d65ee02", "2022-05-19-admin-raca14", dry_swab_tube_id),
          dry_swab_tube_id = if_else(fulcrum_id == "83d87a97-eba4-4e0d-a4cb-0d18f3fecac7", "2022-05-19-admin-raca7", dry_swab_tube_id),
-         dry_swab_tube_id = if_else(fulcrum_id == "82fb4c13-21d5-4b66-b824-c6b5bdf258bc", "2022-05-18-admin-rapi16", dry_swab_tube_id)) 
+         dry_swab_tube_id = if_else(fulcrum_id == "82fb4c13-21d5-4b66-b824-c6b5bdf258bc", "2022-05-18-admin-rapi16", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "db8b8aac-05f5-405b-8171-1084f997bdd5", "2022-05-19-admin-rapi27", dry_swab_tube_id)) 
 
 munged_VisualEncounter_Survey <- read_csv(here("data", "penn","munged_VisualEncounter_Survey.csv"))
   
