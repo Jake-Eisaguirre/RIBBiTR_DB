@@ -603,7 +603,28 @@ penn_cmr <- read_csv(here("data", "penn", "ple_cmr_data.csv")) %>%
 
 munged_Amphibian_Processing_App_Repeatable <- read_csv(here("data", "penn","munged_Amphibian_Processing_App_Repeatable.csv")) %>% 
   mutate(amp_id_1 = if_else(fulcrum_id == "15726e63-04ad-46fa-8f93-e7e5c5f3377a", "AMPBath00038", amp_id_1),
-         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1)) 
+         amp_id_1 = if_else(fulcrum_id == "afbf5cdd-17ab-42da-9103-17028256a44d", "AMPBath00048", amp_id_1),
+         dry_swab_tube_id = if_else(fulcrum_id == "087726c9-f2d8-4391-9119-a922f1b24ddd", "DrySwab00001", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "4ba2da71-6478-4526-bb08-9f4cf4f0f022", "DrySwab00002", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "6f5e0675-4581-48fb-8b9b-8b7d812fd0a0", "DrySwab00003", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "c2553549-3664-46cb-ad4e-e6fe79a1bc7e", "DrySwab00004", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "a82804b5-8f3d-4536-96e5-21e6f974bc6d", "DrySwab00005", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "57b66f62-c70c-42fc-b3ad-0bd521d76968", "DrySwab00006", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "85c6c2bf-dd15-4b51-b7ec-40fd8049ffb8", "DrySwab00007", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "e4a556b8-67a8-4d79-9a22-759859003a80", "DrySwab00008", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "f882d3d3-0ee5-4b26-8e68-e7d64edde49f", "DrySwab00009", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "e0d07d40-09c0-4067-a9b1-e711fc9e7210", "DrySwab00010", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "423368b2-4d49-471b-af4a-86da696ef52d", "DrySwab00011", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "758f7186-3cf9-4af5-8902-56204cb9c9db", "DrySwab00095", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "82355539-8d16-4c35-941c-e55a192135b1", "2022-05-18 admin Buam #24", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "ae4896a5-f395-4168-8dfe-2d5e4c54d33d", "2022-05-19-admin-raca23", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "0de07350-1ce4-41f9-ae8d-08710ed451b0", "2022-05-11-admin-raca13", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "2b83d388-4dad-4298-9e53-d196955666a2", "2022-05-11-admin-pscr4", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "1d10a605-0ddd-4498-96b5-0cf1b3ce675c", "2022-05-19-admin-raca13", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "6fd443ea-0d23-4d81-a2de-414ce7c17eff", "2022-05-19-admin-raca10", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "98f3703e-2c80-4c0f-b3c2-1c0e4d65ee02", "2022-05-19-admin-raca14", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "83d87a97-eba4-4e0d-a4cb-0d18f3fecac7", "2022-05-19-admin-raca7", dry_swab_tube_id),
+         dry_swab_tube_id = if_else(fulcrum_id == "82fb4c13-21d5-4b66-b824-c6b5bdf258bc", "2022-05-18-admin-rapi16", dry_swab_tube_id)) 
 
 munged_VisualEncounter_Survey <- read_csv(here("data", "penn","munged_VisualEncounter_Survey.csv"))
   
