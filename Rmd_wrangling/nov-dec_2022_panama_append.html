@@ -461,8 +461,8 @@ add_unique_v &lt;- raw_visual %&gt;%
 <pre><code>## Warning in left_join(., d_st_det_v, by = c(fulcrum_parent_id = &quot;fulcrum_id&quot;, : Detected an unexpected many-to-many relationship between `x` and `y`.
 ## ℹ Row 1 of `x` matches multiple rows in `y`.
 ## ℹ Row 4 of `y` matches multiple rows in `x`.
-## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this
-##   warning.</code></pre>
+## ℹ If a many-to-many relationship is expected, set `relationship =
+##   &quot;many-to-many&quot;` to silence this warning.</code></pre>
 <pre class="r"><code>names(add_unique_v) &lt;- gsub(pattern = &quot;vis_&quot;, replacement = &quot;&quot;, x=names(add_unique_v))
 
 ves_table &lt;- add_unique_v %&gt;% 
@@ -501,8 +501,8 @@ add_unique_a &lt;- raw_aural %&gt;%
 <pre><code>## Warning in left_join(., d_st_det_a, by = c(fulcrum_parent_id = &quot;fulcrum_id&quot;, : Detected an unexpected many-to-many relationship between `x` and `y`.
 ## ℹ Row 1 of `x` matches multiple rows in `y`.
 ## ℹ Row 3 of `y` matches multiple rows in `x`.
-## ℹ If a many-to-many relationship is expected, set `relationship = &quot;many-to-many&quot;` to silence this
-##   warning.</code></pre>
+## ℹ If a many-to-many relationship is expected, set `relationship =
+##   &quot;many-to-many&quot;` to silence this warning.</code></pre>
 <pre class="r"><code>names(add_unique_a) &lt;- gsub(pattern = &quot;call_&quot;, replacement = &quot;&quot;, x=names(add_unique_a))
 
 aural_table &lt;- add_unique_a %&gt;% 

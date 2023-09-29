@@ -1863,7 +1863,19 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          survey_id = as.UUID(""),
          site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
          site = if_else(site == "shelbourne_pond", "shelburne_pond", site)) %>% 
-  select(!c(sex_other))
+  select(!c(sex_other)) %>% 
+  mutate(amp_id = if_else(bd_swab_id == "dryswab00095", "ampbath00052", amp_id),
+         amp_id = if_else(bd_swab_id == "2022-05-18-admin-rapi16", "2022-05-18-admin-rapi16", amp_id),
+         amp_id = if_else(bd_swab_id == "bdswab00089", "ampbath00028", amp_id),
+         bd_swab_id = if_else(bd_swab_id == "bdswab000067", "bdswab00067", bd_swab_id),
+         amp_id = if_else(bd_swab_id == "bdswab00067", "ampbath00016", amp_id),
+         amp_id_2 = if_else(bd_swab_id == "bdswab00067", "ampbath00017", amp_id_2),
+         bd_swab_id = if_else(bd_swab_id == "bdswab000068", "bdswab00068", bd_swab_id),
+         amp_id = if_else(bd_swab_id == "bdswab00068", "ampbath00018", amp_id),
+         amp_id_2 = if_else(bd_swab_id == "bdswab00068", "ampbath00019", amp_id_2),
+         bd_swab_id = if_else(bd_swab_id == "bdswab000069", "bdswab00069", bd_swab_id),
+         amp_id = if_else(bd_swab_id == "bdswab00069", "ampbath00020", amp_id),
+         amp_id_2 = if_else(bd_swab_id == "bdswab00069", "ampbath00021", amp_id_2))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
