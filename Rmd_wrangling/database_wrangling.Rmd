@@ -1875,7 +1875,19 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          amp_id_2 = if_else(bd_swab_id == "bdswab00068", "ampbath00019", amp_id_2),
          bd_swab_id = if_else(bd_swab_id == "bdswab000069", "bdswab00069", bd_swab_id),
          amp_id = if_else(bd_swab_id == "bdswab00069", "ampbath00020", amp_id),
-         amp_id_2 = if_else(bd_swab_id == "bdswab00069", "ampbath00021", amp_id_2))
+         amp_id_2 = if_else(bd_swab_id == "bdswab00069", "ampbath00021", amp_id_2)) %>% 
+  filter(!species_capture %in% c("control", "controle", "negative_control")) %>% 
+  mutate(species_capture = if_else(species_capture == "boana_bandeirante", "boana_bandeirantes", species_capture),
+         species_capture = if_else(species_capture == "desmognathus_Ochrophaeum", "desmognathus_ochrophaeus", species_capture),
+         species_capture = if_else(species_capture == "esparadana_prosoblepon", "espadarana_prosoblepon", species_capture),
+         species_capture = if_else(species_capture == "eurycea_bislineata", "eurycea_bislaneata", species_capture),
+         species_capture = if_else(species_capture == "ischnocnema_henselli", "ischnocnema_henselii", species_capture),
+         species_capture = if_else(species_capture == "plethodon_glutinosus", "plethodon_glutinosis", species_capture),
+         species_capture = if_else(species_capture == "unknown", "unknown_species", species_capture),
+         species_capture = if_else(species_capture == "?", "unknown_species", species_capture),
+         species_capture = if_else(species_capture == "lithobates_pipiens", "rana_pipiens", species_capture),
+         species_capture = if_else(species_capture == "lithobates_clamitans", "rana_clamitans", species_capture),
+         species_capture = if_else(species_capture == "lithobates_catesbeianus", "rana_catesbeiana", species_capture))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   

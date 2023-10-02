@@ -1,7 +1,7 @@
 ---
 title: "Nov/Dec_2022_Panama_Append"
 format: html
-editor: visual
+editor: source
 ---
 
 ```{r}
