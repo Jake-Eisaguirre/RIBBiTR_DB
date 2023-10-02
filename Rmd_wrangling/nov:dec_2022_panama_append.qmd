@@ -293,7 +293,8 @@ capture_table <- unique_capture_table %>%
   left_join(s.key, by = c("date", "site", "detection_type", "survey_time")) %>% 
   select(!c(date, site, survey_time, detection_type)) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
-         capture_animal_state = if_else(capture_animal_state == 1, "dead", "alive"))
+         capture_animal_state = if_else(capture_animal_state == 1, "dead", "alive"),
+         species_capture = if_else(species_capture == "esparadana_prosoblepon", "espadarana_prosoblepon", species_capture))
   
 
 

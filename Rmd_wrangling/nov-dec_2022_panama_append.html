@@ -442,7 +442,8 @@ capture_table &lt;- unique_capture_table %&gt;%
   left_join(s.key, by = c(&quot;date&quot;, &quot;site&quot;, &quot;detection_type&quot;, &quot;survey_time&quot;)) %&gt;% 
   select(!c(date, site, survey_time, detection_type)) %&gt;% 
   mutate(capture_id = UUIDgenerate(output = c(&quot;uuid&quot;), n = n()),
-         capture_animal_state = if_else(capture_animal_state == 1, &quot;dead&quot;, &quot;alive&quot;))</code></pre>
+         capture_animal_state = if_else(capture_animal_state == 1, &quot;dead&quot;, &quot;alive&quot;),
+         species_capture = if_else(species_capture == &quot;esparadana_prosoblepon&quot;, &quot;espadarana_prosoblepon&quot;, species_capture))</code></pre>
 </div>
 <div id="pull-out-visual" class="section level2">
 <h2>Pull out Visual</h2>

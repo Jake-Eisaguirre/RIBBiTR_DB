@@ -1,7 +1,7 @@
 ---
 title: "brazil_land_scape"
 format: html
-editor: visual
+editor: source
 ---
 
 ## Load packages
@@ -239,7 +239,8 @@ land_scape_capture <- raw_land_scape %>%
          life_stage = developmental_mode) %>% 
   mutate(capture_id = UUIDgenerate(output = c("uuid"), n = n()),
          species_capture = str_to_lower(str_replace_all(species_capture, " ", "_")),
-         life_stage = if_else(life_stage == "AL", "aquatic_larvae", "terrestrial_development"))
+         life_stage = if_else(life_stage == "AL", "aquatic_larvae", "terrestrial_development"),
+         species_capture = if_else(species_capture == "ischnocnema_henselli", "ischnocnema_henselii", species_capture))
 
 ```
 

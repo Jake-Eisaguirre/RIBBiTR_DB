@@ -1887,7 +1887,8 @@ capture <- plyr::rbind.fill(panama_capture, brazil_capture, penn_capture, serdp_
          species_capture = if_else(species_capture == "?", "unknown_species", species_capture),
          species_capture = if_else(species_capture == "lithobates_pipiens", "rana_pipiens", species_capture),
          species_capture = if_else(species_capture == "lithobates_clamitans", "rana_clamitans", species_capture),
-         species_capture = if_else(species_capture == "lithobates_catesbeianus", "rana_catesbeiana", species_capture))
+         species_capture = if_else(species_capture == "lithobates_catesbeianus", "rana_catesbeiana", species_capture),
+         species_capture = if_else(is.na(species_capture), "unknown_species", species_capture))
 
 write_csv(capture, here("clean_tables", "capture.csv"))
   
