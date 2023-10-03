@@ -285,24 +285,24 @@ dbWriteTable(connection, 'capture', capture, overwrite=T,
                              survey_id = "uuid"))
 
 # panama 2019 bd data
-dbWriteTable(connection, 'panama_2019_bd', pan_2019_bd, overwrite=T,
-             field.types = c(well = "int",
-                             well_position = "varchar",
-                             bd_swab_id = "varchar",
-                             bd_ct_mean = "float8",
-                             bd_quantity_mean = "float8",
-                             bd_pos_neg = "varchar",
-                             ipc = "varchar",
-                             extraction_plate = "varchar",
-                             extraction_tech = "varchar",
-                             q_pcr_tech = "varchar",
-                             extraction_lab = "varchar",
-                             q_pcr_plate = "varchar",
-                             q_pcr_lab = "varchar",
-                             ext_pos_quality = "varchar",
-                             ext_neg_quality = "varchar",
-                             sample_type = "varchar",
-                             rerun = "boolean"))
+# dbWriteTable(connection, 'panama_2019_bd', pan_2019_bd, overwrite=T,
+#              field.types = c(well = "int",
+#                              well_position = "varchar",
+#                              bd_swab_id = "varchar",
+#                              bd_ct_mean = "float8",
+#                              bd_quantity_mean = "float8",
+#                              bd_pos_neg = "varchar",
+#                              ipc = "varchar",
+#                              extraction_plate = "varchar",
+#                              extraction_tech = "varchar",
+#                              q_pcr_tech = "varchar",
+#                              extraction_lab = "varchar",
+#                              q_pcr_plate = "varchar",
+#                              q_pcr_lab = "varchar",
+#                              ext_pos_quality = "varchar",
+#                              ext_neg_quality = "varchar",
+#                              sample_type = "varchar",
+#                              rerun = "boolean"))
 
 # serdp bd genomic data
 dbWriteTable(connection, 'serdp_bd_genomic', serdp_bd_genom, overwrite=T,
@@ -402,32 +402,32 @@ dbWriteTable(connection, 'serdp_amp', serdp_amp, overwrite=T,
                              degreedays = "int"))
 
 # serdp bd_load
-dbWriteTable(connection, 'serdp_bd', serdp_bd, overwrite=T,
-             field.types = c(bd_swab_id = "varchar",
-                             qpcr_date = "date",
-                             qpcr_neg_cont = "varchar",
-                             sample_quality = "varchar",
-                             sample_ipc = "varchar",
-                             sample_rerun = "varchar",
-                             sample_bd = "varchar",
-                             sample_bd_ct = "float8",
-                             sample_bd_qty = "float8",
-                             bd_load = "float8",
-                             notes = "varchar"))
+# dbWriteTable(connection, 'serdp_bd', serdp_bd, overwrite=T,
+#              field.types = c(bd_swab_id = "varchar",
+#                              qpcr_date = "date",
+#                              qpcr_neg_cont = "varchar",
+#                              sample_quality = "varchar",
+#                              sample_ipc = "varchar",
+#                              sample_rerun = "varchar",
+#                              sample_bd = "varchar",
+#                              sample_bd_ct = "float8",
+#                              sample_bd_qty = "float8",
+#                              bd_load = "float8",
+#                              notes = "varchar"))
 
 # sierra bd_load
-dbWriteTable(connection, 'sierra_nevada_bd', sierra_nevada_bd, overwrite=T,
-             field.types = c(bd_swab_id = "varchar",
-                             replicate = "int",
-                             start_quant = "float8",
-                             std_type = "varchar",
-                             dilution = "int",
-                             bd_load = "float8"))
+# dbWriteTable(connection, 'sierra_nevada_bd', sierra_nevada_bd, overwrite=T,
+#              field.types = c(bd_swab_id = "varchar",
+#                              replicate = "int",
+#                              start_quant = "float8",
+#                              std_type = "varchar",
+#                              dilution = "int",
+#                              bd_load = "float8"))
 
 #panama temp bd_load
-dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
-             field.types = c(bd_swab_id = "varchar",
-                             bd_load = "float8"))
+# dbWriteTable(connection, 'panama_bd_temp', panama_bd_temp, overwrite=T,
+#              field.types = c(bd_swab_id = "varchar",
+#                              bd_load = "float8"))
 
 # penn cmr
 dbWriteTable(connection, "cmr", penn_cmr, overwrite=T)
@@ -436,7 +436,7 @@ dbWriteTable(connection, "cmr", penn_cmr, overwrite=T)
 dbWriteTable(connection, "temp_shiny_bd", temp_shiny_bd)
 
 # Brazil legacy bd
-dbWriteTable(connection, "brazil_legacy_bd", brazil_legacy_bd, overwrite=T)
+#dbWriteTable(connection, "brazil_legacy_bd", brazil_legacy_bd, overwrite=T)
 
 ```
 
