@@ -306,7 +306,7 @@ append_capture <- final_land_scape_capture %>%
 dbAppendTable(connection, "capture", append_capture)
 
 #bd
-dbWriteTable(connection, "brazil_landscape_bd", land_scape_bd, overwrite = T)
+#dbWriteTable(connection, "brazil_landscape_bd", land_scape_bd, overwrite = T)
 
 #microbiome
 dbWriteTable(connection, "brazil_landscape_microbiome", land_scape_microbiome, overwrite= T)
