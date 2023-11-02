@@ -21,81 +21,81 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, stringr, DBI, p
 ```{r}
 #| message: false
 
-survey_info <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+survey_info <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                              "1_penn_surveyinformation", "1_penn_surveyinformation.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names()
 
-survey_acoustic <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+survey_acoustic <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                              "2_penn_acousticsurvey", "2_penn_acousticsurvey.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names() %>% 
   mutate(detection_type = "aural")
 
-acoustic_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+acoustic_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                              "2_penn_acousticsurvey", "2_penn_acousticsurvey_acoustic_survey.csv")) %>% 
   select(!c(4:11)) %>% 
   clean_names()%>% 
   mutate(detection_type = "aural")
 
 
-survey_edna <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "3_penn_ednasurvey",
+survey_edna <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season", "3_penn_ednasurvey",
                              "3_penn_ednasurvey.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names()
 
 
-edna_obs_col <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "3_penn_ednasurvey",
+edna_obs_col <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season", "3_penn_ednasurvey",
                           "3_penn_ednasurvey_edna_collection.csv")) %>% 
   select(!c(4:11)) %>% 
   clean_names()
 
 
-edna_obs_filt <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+edna_obs_filt <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                                "3_penn_ednasurvey",
                                "3_penn_ednasurvey_edna_collection_edna_filtering.csv")) %>% 
   select(!c(4:11)) %>% 
   clean_names()
 
-survey_ves <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+survey_ves <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                             "4_penn_visualencountersurvey", "4_penn_visualencountersurvey.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names()%>% 
   mutate(detection_type = "visual")
 
-ves_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+ves_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                             "4_penn_visualencountersurvey", 
                          "4_penn_visualencountersurvey_visual_encounter_information.csv")) %>% 
   select(!c(4:11)) %>% 
   clean_names()%>% 
   mutate(detection_type = "visual")
 
-survey_capture <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", 
+survey_capture <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season", 
                                 "5_penn_capturesurvey", "5_penn_capturesurvey.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names()%>% 
   mutate(detection_type = "capture")
 
-capture_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", 
+capture_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season", 
                                 "5_penn_capturesurvey", 
                              "5_penn_capturesurvey_captured_amphibian_information.csv")) %>% 
   select(!c(4:12)) %>% 
   clean_names()%>% 
   mutate(detection_type = "capture")
 
-samp_proces <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+samp_proces <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                              "6_penn_sampleprocessing",
                              "6_penn_sampleprocessing.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names()
 
-samp_procces_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23",
+samp_procces_obs <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season",
                              "6_penn_sampleprocessing",
                              "6_penn_sampleprocessing_amphibian_capture_survey_collections.csv"))%>% 
   select(!c(4:11)) %>% 
   clean_names()
 
-cmr <- read_csv(here("data", "new_2023_data", "penn", "exp_06_12_23", "supp_penn_cmrids",
+cmr <- read_csv(here("data", "new_2023_data", "penn", "exp_full_season", "supp_penn_cmrids",
                      "supp_penn_cmrids.csv")) %>% 
   select(!c(2:14)) %>% 
   clean_names()
@@ -135,7 +135,7 @@ comms <- survey_info %>%
 
 unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, survey_info, survey_ves) %>% 
   select(date, site, survey_time) %>% 
-  group_by(date, site) %>% 
+  group_by(date, site, survey_time) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   left_join(comms, by = c("site", "date")) %>% 
@@ -165,7 +165,8 @@ s.key <- dbGetQuery(connection, s.fkey_q)
 
 unique_visits_fkey <- unique_visits %>% 
   inner_join(s.key, by = c("site")) %>% 
-  mutate(visit_id = UUIDgenerate())
+  mutate(visit_id = UUIDgenerate()) %>% 
+  ungroup()
 
 
 ```
@@ -208,7 +209,8 @@ surv_info <- plyr::rbind.fill(mid_surv_cap, mid_surv_ves, mid_surv_aural)
 
 mid_unique_survey <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_ves) %>% 
   select(!c(fulcrum_id, observer, observer_other, acoustic_survey_comments)) %>% 
-  full_join(surv_info, by = c("site", "date", "detection_type"))
+  full_join(surv_info, by = c("site", "date", "detection_type")) %>% 
+  select(!c(site_other))
 
 unique_survey <- mid_unique_survey %>% 
   group_by(site, date, detection_type) %>% 

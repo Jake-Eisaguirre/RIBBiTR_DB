@@ -556,7 +556,8 @@ sites <- plyr::rbind.fill(final_brazil_sites, penn_sites, serdp_sites, panama_si
          utme = if_else(site == "silenciosa", 0545146, utme),
          utmn = if_else(site == "silenciosa", 0958387, utmn),
          site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
-         site = if_else(site == "shelbourne_pond", "shelburne_pond", site))
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site),
+         site = if_else(site == "extra_trilha_olho_dagua_land", "extra_trilha_olhodagua_land", site))
 
 # brazil_locs <- read_csv(here("data", "brazil", "site_locs.csv")) %>% 
 #   rename(latitude = lat,
@@ -1398,7 +1399,12 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table, brazil_ves) %>%
   mutate(ves_id = UUIDgenerate(output = "uuid", n = n()),
          survey_id = as.UUID(""),
          site = if_else(site == "shelbourne_bay", "shelburne_bay", site),
-         site = if_else(site == "shelbourne_pond", "shelburne_pond", site))
+         site = if_else(site == "shelbourne_pond", "shelburne_pond", site),
+         species_ves = if_else(species_ves %in% c("desmog_spp", "desmog_spp.", "desmongnathus_sp"), "desmognathus_spp", species_ves),
+         species_ves = if_else(species_ves == "esparadana_prosoblepon", "espadarana_prosoblepon", species_ves),
+         species_ves = if_else(species_ves == "rana_catesbiana", "rana_catesbeiana", species_ves),
+         species_ves = if_else(is.na(species_ves), "unknown_species", species_ves),
+         species_ves = if_else(species_ves == "unknown", "unknown_species", species_ves))
 
 write_csv(ves, here("clean_tables", "ves.csv"))
 
@@ -1666,10 +1672,12 @@ sn_capture_table <- sn_capture %>%
 ## brazil_legacy capture
 ```{r}
 
-brazil_legacy_cmr <- read_csv(here("data", "brazil_legacy", "cmr.csv"))
+brazil_legacy_cmr <- read_csv(here("data", "brazil_legacy", "cmr.csv")) %>% 
+  mutate(swab_id = if_else(swab_id == ".", NA, swab_id)) %>% 
+  drop_na()
 
 brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.csv")) %>% 
-  select(!c(17:20)) %>% 
+  select(!c(19:22)) %>% 
   select(!c(count, family)) %>% 
   rename(species_capture = scientific_name,
          capture_comments = comments,
@@ -1683,8 +1691,8 @@ brazil_legacy_capture <- read_csv(here("data", "brazil_legacy", "brazil_capture.
          species_capture = str_replace_all(species_capture, " ", "_"),
          bacterial_swab_id = if_else(bacterial_swab_id == "TRUE", bd_swab_id, NA),
          genetic_id = if_else(genetic_id == "TRUE", bd_swab_id, NA),
-         time_of_capture = if_else(time_of_capture == "NA:00", "", time_of_capture)) %>% 
-  left_join(brazil_legacy_cmr, by = c("bd_swab_id" = "swab_id"))
+         bd_swab_id = if_else(bd_swab_id == ".", NA, bd_swab_id)) %>% 
+  drop_na(bd_swab_id) 
 
 v <- vect(brazil_legacy_capture, c("capture_longitude", "capture_latitude"), crs="+proj=longlat")
 u <- terra::project(v, "+proj=utm +zone=23")
