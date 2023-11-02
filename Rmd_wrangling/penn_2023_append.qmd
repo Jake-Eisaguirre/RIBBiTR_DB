@@ -135,7 +135,7 @@ comms <- survey_info %>%
 
 unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, survey_info, survey_ves) %>% 
   select(date, site, survey_time) %>% 
-  group_by(date, site, survey_time) %>% 
+  group_by(date, site) %>% 
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   left_join(comms, by = c("site", "date")) %>% 
@@ -144,7 +144,11 @@ unique_visits <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_edna, 
   mutate(site = str_to_lower(site),
          site = str_replace_all(site, "-", "_"),
          site = str_replace_all(site, " ", "_"),
-         survey_time = str_to_lower(survey_time))
+         survey_time = str_to_lower(survey_time),
+         date = as.character(date)) %>% 
+  ungroup() %>% 
+  add_row(date = "2023-06-23", site = "tuttle_pond", survey_time = "night") %>% 
+  mutate(date = as_date(date))
 
 ```
 
@@ -165,6 +169,7 @@ s.key <- dbGetQuery(connection, s.fkey_q)
 
 unique_visits_fkey <- unique_visits %>% 
   inner_join(s.key, by = c("site")) %>% 
+  group_by(date, site) %>% 
   mutate(visit_id = UUIDgenerate()) %>% 
   ungroup()
 
@@ -257,7 +262,7 @@ surv_fkey <- unique_visits_fkey %>%
 ```{r}
 
 unique_survey_fkey <- unique_survey %>% 
-  left_join(surv_fkey, by = c("date", "site")) %>% 
+  full_join(surv_fkey, by = c("date", "site")) %>% 
   mutate(p_h = if_else(p_h == 0.00, NA, p_h)) %>% 
   group_by(site, date, detection_type) %>% 
   mutate(survey_id = UUIDgenerate(output = c("uuid"))) %>% 
@@ -267,7 +272,12 @@ unique_survey_fkey <- unique_survey %>%
                             end_time - start_time),
          duration_min = duration_min/60,
          duration_min = str_remove(duration_min, " secs"),
-         duration_min  = round(as.numeric(duration_min), 2))
+         duration_min  = round(as.numeric(duration_min), 2)) %>% 
+  group_by(date, site) %>% 
+  mutate(t = cur_group_id()) %>% 
+  filter(!duplicated(t)) %>% 
+  select(!c(t)) %>% 
+  mutate(survey_time = if_else(is.na(survey_time), "night", survey_time))
 
 ```
 
