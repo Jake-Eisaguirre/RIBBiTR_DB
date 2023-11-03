@@ -240,9 +240,16 @@ unique_survey <- mid_unique_survey %>%
          site = str_to_lower(str_replace_all(site, "-", "_")),
          site = str_replace_all(site, " ", "_")) %>% 
   mutate(temp_id = cur_group_id(),
-         survey_time = if_else(is.na(survey_time), "night", survey_time)) %>% 
+         survey_time = if_else(is.na(survey_time), "night", survey_time),
+         date = as.character(date)) %>% 
   filter(!duplicated(temp_id)) %>% 
-  select(!temp_id)
+  select(!temp_id) %>% 
+  ungroup() %>% 
+  add_row(date = "2023-06-23", site = "tuttle_pond", survey_time = "night", detection_type = "capture") %>% 
+  add_row(date = "2023-06-23", site = "tuttle_pond", survey_time = "night", detection_type = "visual") %>% 
+  add_row(date = "2023-06-23", site = "tuttle_pond", survey_time = "night", detection_type = "aural") %>% 
+  mutate(date = as_date(date))
+
 
 
 ```
@@ -274,9 +281,6 @@ unique_survey_fkey <- unique_survey %>%
          duration_min = str_remove(duration_min, " secs"),
          duration_min  = round(as.numeric(duration_min), 2)) %>% 
   group_by(date, site) %>% 
-  mutate(t = cur_group_id()) %>% 
-  filter(!duplicated(t)) %>% 
-  select(!c(t)) %>% 
   mutate(survey_time = if_else(is.na(survey_time), "night", survey_time))
 
 ```
@@ -352,8 +356,7 @@ unique_cap <- mid_samp_proc %>%
          bag_mass_g = bag_mass,
          body_mass_g = body_mass) %>% 
   ungroup() %>% 
-  mutate(amp_id = if_else(capture_mark_recapture %in% ("cf358e11-d6da-4637-af56-c384d683e6fb"), "Pe_AMP00000", amp_id)) %>% 
-  plyr::rbind.fill(neg_controls)
+  mutate(amp_id = if_else(capture_mark_recapture %in% ("cf358e11-d6da-4637-af56-c384d683e6fb"), "Pe_AMP00000", amp_id))
 
 
 
@@ -389,7 +392,9 @@ final_cap <- unique_cap_fkey %>%
          sierra_bd_swab_id = bd_swab_id_sv) %>% 
   mutate(sex = str_to_lower(sex),
          capture_type = str_to_lower(capture_type),
-         life_stage = str_to_lower(life_stage))
+         life_stage = str_to_lower(life_stage)) %>% 
+  mutate(across(c(bd_swab_id:genetic_id), ~ifelse(str_detect(., "00000"), NA, .))) %>% 
+  select(!c(sierra_bd_swab_id, bacterial_swab_id_foundations, location_other))
 
 
 q_col <- "SELECT *
@@ -460,7 +465,9 @@ ves_fkey <- unique_survey_fkey %>%
 
 unique_ves_fkey <- unique_ves %>% 
   left_join(ves_fkey, by = c("site", "date", "detection_type", "survey_time")) %>% 
-  mutate(ves_id = UUIDgenerate(n = n()))
+  mutate(ves_id = UUIDgenerate(n = n()),
+         species_ves = if_else(species_ves == "", NA, species_ves)) %>% 
+  drop_na(species_ves)
 
 
 
