@@ -294,7 +294,25 @@ panama_raw <- panama_raw %>%
          notes_amphib1 = if_else(swab_id == "160125_05", "Caught after survey", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "160723_a06", "Caught after survey", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "150724_05", "Caught after survey and off trx", notes_amphib1),
-         notes_amphib1 = if_else(swab_id == "150724_06", "Caught after survey and off trx", notes_amphib1))
+         notes_amphib1 = if_else(swab_id == "150724_06", "Caught after survey and off trx", notes_amphib1),
+         species = if_else(swab_id == "130617_B02", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "130617_B04", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "130617_B05", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "130617_B06", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "130617_B07", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "160602_A01", "pristimantis spp", species),
+         species = if_else(swab_id == "160610_A04", "pristimantis ridens", species),
+         species = if_else(swab_id == "160610_A07", "pristimantis cruentus", species),
+         species = if_else(swab_id == "160610_A09", "pristimantis cruentus", species),
+         species = if_else(swab_id == "160610_A10", "unknown species", species),
+         species = if_else(swab_id == "160611_A15", "cochranella euknemos", species),
+         species = if_else(swab_id == "160611_A16", "cochranella euknemos", species),
+         species = if_else(swab_id == "160709_G01", "pristimantis cerasinus", species),
+         species = if_else(swab_id == "160714_A06", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "171213_02", "sachatamia albomaculata", species),
+         species = if_else(swab_id == "160727_A24", "craugastor fitzingeri", species),
+         species = if_else(swab_id == "190807_01", "rhaebo haematiticus", species),
+         life_stage = if_else(swab_id == "160718_A03", "juvenile", life_stage))
 
 
 

@@ -198,12 +198,26 @@ dbAppendTable(connection, "visit", fin_visit)
 ```{r}
 
 mid_surv_cap <- survey_info %>% 
-  select(!c(fulcrum_id, site_other, start_time, end_time, survey_time)) %>% 
-  mutate(detection_type = "capture")
+  left_join(survey_capture, by = c("site", "date")) %>%
+  select(!c(fulcrum_id.x, fulcrum_id.y, observer, observer_other, site_other.x, site_other.y,
+            start_time.x, end_time.x, survey_time.y, air_temperature_measurement_time,
+            water_temperature_measurement_time)) %>% 
+  mutate(detection_type = "capture") %>% 
+  unite(observer, c("observers", "other_observers"), sep=",", na.rm = T) %>% 
+  rename(start_time = start_time.y,
+         end_time = end_time.y,
+         survey_time = survey_time.x)
 
 mid_surv_ves <- survey_info %>% 
-  select(!c(fulcrum_id, site_other, start_time, end_time, survey_time)) %>% 
-  mutate(detection_type = "visual")
+  left_join(survey_ves, by = c("site", "date")) %>% 
+  select(!c(fulcrum_id.x, fulcrum_id.y, observer, observer_other, site_other,
+            start_time.x, end_time.x, survey_time.y, air_temperature_measurement_time,
+            water_temperature_measurement_time)) %>% 
+  mutate(detection_type = "visual") %>% 
+  unite(observer, c("observers", "other_observers"), sep=",", na.rm = T) %>% 
+  rename(start_time = start_time.y,
+         end_time = end_time.y,
+         survey_time = survey_time.x)
 
 mid_surv_aural <- survey_info%>% 
   select(!c(fulcrum_id, site_other, start_time, end_time, survey_time)) %>% 
@@ -215,17 +229,20 @@ surv_info <- plyr::rbind.fill(mid_surv_cap, mid_surv_ves, mid_surv_aural)
 mid_unique_survey <- plyr::rbind.fill(survey_acoustic, survey_capture, survey_ves) %>% 
   select(!c(fulcrum_id, observer, observer_other, acoustic_survey_comments)) %>% 
   full_join(surv_info, by = c("site", "date", "detection_type")) %>% 
-  select(!c(site_other))
+  select(!c(site_other, air_temperature_measurement_time, water_temperature_measurement_time, end_time.y,
+            start_time.y, observers, other_observers, survey_time.x, survey_time.y)) %>% 
+  rename(start_time = start_time.x,
+         end_time = end_time.x) %>% 
+  mutate(survey_time = "Night") %>% 
+  unite(survey_comments, c("survey_comments.x", "survey_description.x", "survey_comments.y", "survey_description.y"),
+        sep = ",", na.rm=T)
 
-unique_survey <- mid_unique_survey %>% 
+unique_survey <- surv_info %>% 
   group_by(site, date, detection_type) %>% 
   mutate(start_time = as_hms(mean(start_time)),
          end_time = as_hms(mean(end_time))) %>% 
-  select(!c(air_temperature_measurement_time,
-            water_temperature_measurement_time, conductivity_us)) %>% 
-  unite(survey_comments, c("survey_comments", "survey_description", "sampling_event_comments"), na.rm = T,
-        sep = ",") %>% 
-  unite(observers, c("observers", "other_observers"), na.rm = T, sep = ",") %>% 
+  select(!c("water_temperature_measurement_time", "air_temperature_measurement_time", "other_observers", "observers")) %>% 
+  unite(survey_comments, c("survey_comments", "sampling_event_comments", "survey_description"), na.rm = T, sep = ",") %>% 
   rename(wind = wind_conditions,
          sky = sky_conditions,
          relative_humidity_percent = humidity,
@@ -292,7 +309,7 @@ unique_survey_fkey <- unique_survey %>%
 fin_survey <- unique_survey_fkey %>% 
   ungroup() %>% 
   select(!c(date, survey_time, site)) %>% 
-  rename(observer = observers,
+  rename(
          duration_minutes = duration_min) %>% 
   mutate(duration_minutes = as.integer(duration_minutes))
 
