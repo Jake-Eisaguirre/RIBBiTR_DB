@@ -298,7 +298,8 @@ unique_survey_fkey <- unique_survey %>%
          duration_min = str_remove(duration_min, " secs"),
          duration_min  = round(as.numeric(duration_min), 2)) %>% 
   group_by(date, site) %>% 
-  mutate(survey_time = if_else(is.na(survey_time), "night", survey_time))
+  mutate(survey_time = if_else(is.na(survey_time), "night", survey_time)) %>% 
+  select(!c(conductivity_us))
 
 ```
 
