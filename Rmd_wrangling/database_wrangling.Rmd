@@ -200,6 +200,7 @@ panama_raw <- panama_raw %>%
 
 # above capture time fix
 panama_raw <- panama_raw %>% 
+  ungroup() %>% 
   mutate(end_time = if_else(swab_id %in% c("121112_01", "121112_02", "121112_03", "121112_04", "121112_05", "121112_06",
                                             "121112_07", "121112_08", "121112_09"), "22:15:00", end_time),
          notes_amphib1 = if_else(swab_id == "181215_j04", "Caught after survey", notes_amphib1),
@@ -295,23 +296,23 @@ panama_raw <- panama_raw %>%
          notes_amphib1 = if_else(swab_id == "160723_a06", "Caught after survey", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "150724_05", "Caught after survey and off trx", notes_amphib1),
          notes_amphib1 = if_else(swab_id == "150724_06", "Caught after survey and off trx", notes_amphib1),
-         species = if_else(swab_id == "130617_B02", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "130617_B04", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "130617_B05", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "130617_B06", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "130617_B07", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "160602_A01", "pristimantis spp", species),
-         species = if_else(swab_id == "160610_A04", "pristimantis ridens", species),
-         species = if_else(swab_id == "160610_A07", "pristimantis cruentus", species),
-         species = if_else(swab_id == "160610_A09", "pristimantis cruentus", species),
-         species = if_else(swab_id == "160610_A10", "unknown species", species),
-         species = if_else(swab_id == "160611_A15", "cochranella euknemos", species),
-         species = if_else(swab_id == "160611_A16", "cochranella euknemos", species),
-         species = if_else(swab_id == "160709_G01", "pristimantis cerasinus", species),
-         species = if_else(swab_id == "160714_A06", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "171213_02", "sachatamia albomaculata", species),
-         species = if_else(swab_id == "160727_A24", "craugastor fitzingeri", species),
-         species = if_else(swab_id == "190807_01", "rhaebo haematiticus", species),
+         # species = if_else(swab_id == "130617_b02", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "130617_b04", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "130617_b05", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "130617_b06", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "130617_b07", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "160602_a01", "pristimantis spp", species),
+         # species = if_else(swab_id == "160610_a04", "pristimantis ridens", species),
+         # species = if_else(swab_id == "160610_a07", "pristimantis cruentus", species),
+         # species = if_else(swab_id == "160610_a09", "pristimantis cruentus", species),
+         # species = if_else(swab_id == "160610_a10", "unknown species", species),
+         # species = if_else(swab_id == "160611_a15", "cochranella euknemos", species),
+         # species = if_else(swab_id == "160611_a16", "cochranella euknemos", species),
+         # species = if_else(swab_id == "160709_g01", "pristimantis cerasinus", species),
+         # species = if_else(swab_id == "160714_a06", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "171213_02", "sachatamia albomaculata", species),
+         # species = if_else(swab_id == "160727_a24", "craugastor fitzingeri", species),
+         # species = if_else(swab_id == "190807_01", "rhaebo haematiticus", species),
          life_stage = if_else(swab_id == "160718_A03", "juvenile", life_stage))
 
 
@@ -1410,7 +1411,7 @@ ves <- plyr::rbind.fill(panama_ves, penn_ves, sn_ves_table, brazil_ves) %>%
          sex = if_else(sex == "unkonwn", "unknown", sex),
          species_ves = str_replace_all(species_ves, " ", "_")) %>% 
   rename(ves_comments = ves_notes) %>% 
-  filter(!species_ves == "control") %>% 
+  #filter(!species_ves == "control") %>% 
   select(!c(start_time, end_time, duration_minutes)) %>% 
   mutate(count = if_else(count == "many", "100", count)) %>% # need to find better fix to "many"
   #group_by() %>% 
