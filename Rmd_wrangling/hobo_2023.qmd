@@ -72,7 +72,7 @@ clean_panama <- raw_comb_panama %>%
 ```{r}
 
 raw_penn <- `PA_combined_May23–Jun23` %>% 
-  clean_names()
+  clean_names() 
 
 ```
 
