@@ -33,3 +33,74 @@ for(i in filenames){
   assign(i, read_csv(here("data", "hobo_2023", "all", paste(i, ".csv", sep=""))))
 }
 ```
+
+## Panama
+
+### Combine both Panama files raw
+```{r}
+
+raw_comb_panama <- rbind(`Panama_combined_Aug23-Dec23`, `Panama_combined_Nov22-Aug23`) %>% 
+  clean_names()
+
+```
+
+### Clean and Pivot
+```{r}
+
+clean_panama <- raw_comb_panama %>% 
+  select(!c(time_zone, study_area)) %>% 
+  rename(temperature_c = temperature,
+         light_lux = intensity_lux,
+         relative_humidity = rh) %>% 
+  mutate(height = str_replace(height, "-", "neg"))
+
+```
+
+
+## Penn
+
+### Raw penn
+```{r}
+
+raw_penn <- `PA_combined_May23–Jun23` %>% 
+  clean_names()
+
+```
+
+### Clean and Pivot
+```{r}
+
+clean_penn <- raw_penn %>% 
+  select(!c(time_zone, study_area)) %>% 
+  rename(temperature_c = temperature,
+         light_lux = intensity_lux,
+         relative_humidity = rh,
+         dew_point_c = dew_point) %>% 
+  mutate(height = str_replace(height, "-", "neg"))
+
+```
+
+
+## SN
+
+### Raw SN 
+```{r}
+
+raw_sn <- `SierraNevada_combined_Jul23-Oct23` %>% 
+  clean_names()
+
+```
+
+### Clean and Pivot
+```{r}
+
+clean_sn <- raw_sn %>% 
+  select(!c(time_zone, study_area)) %>% 
+  rename(temperature_c = temperature,
+         light_lux = intensity_lux,
+         relative_humidity = rh,
+         dew_point_c = dew_point) %>% 
+  mutate(height = str_replace(height, "-", "neg"))
+
+```
+
