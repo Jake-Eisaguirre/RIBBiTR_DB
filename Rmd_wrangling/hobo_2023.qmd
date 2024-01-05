@@ -1,0 +1,20 @@
+---
+title: "hobo_2023"
+format: html
+editor: source
+---
+
+## Load Packages
+
+```{r}
+
+if (!require(librarian)){
+  install.packages("librarian")
+  library(librarian)
+}
+
+# librarian downloads, if not already downloaded, and reads in needed packages
+librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI, parsedate, stringr, hms,
+                 anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
+
+```
