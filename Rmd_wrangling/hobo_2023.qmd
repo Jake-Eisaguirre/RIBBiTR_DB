@@ -18,3 +18,18 @@ librarian::shelf(tidyverse, here, janitor, lubridate, RPostgres, rstudioapi, DBI
                  anytime, terra, sp, rgdal, RWmisc, proj4, uuid)
 
 ```
+
+## read in all .csv files
+```{r}
+
+# clear environment
+rm(list=ls())
+
+# slow method for reading csv files
+
+filenames <- gsub("\\.csv$","", list.files(here("data", "hobo_2023", "all")))
+
+for(i in filenames){
+  assign(i, read_csv(here("data", "hobo_2023", "all", paste(i, ".csv", sep=""))))
+}
+```
