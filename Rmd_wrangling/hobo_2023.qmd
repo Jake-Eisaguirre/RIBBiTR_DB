@@ -51,7 +51,7 @@ clean_panama <- raw_comb_panama %>%
   select(!c(time_zone, study_area, hobo_name)) %>% 
   rename(temperature_c = temperature,
          light_lux = intensity_lux,
-         relative_humidity = rh) %>% 
+         relative_humidity = rh) %>%
   mutate(height = str_replace(height, "-", "neg"),
          dew_point_c = NA,
          site = if_else(site == "AltosdePiedra", "altos_de_piedra", site),
@@ -59,9 +59,65 @@ clean_panama <- raw_comb_panama %>%
          site = if_else(site == "CerroNegro", "cerro_negro", site), # new
          site = if_else(site == "Rabbit", "rabbit_stream", site), # new
          site = if_else(site == "RioBlanco", "rio_blanco", site),
-         site = if_else(site == "Tigrero", "rio_tigrero", site)) %>% 
-  unite(height, c(location, height), sep = "_") %>% 
-  pivot_wider(names_from = height, values_from = c(temperature_c, relative_humidity, dew_point_c, light_lux))
+         site = if_else(site == "Tigrero", "rio_tigrero", site)) 
+
+
+pan_soil <- clean_panama %>% 
+  filter(location == "soil") %>%
+  rename(soil_temperature_c = temperature_c,
+         soil_light_lux = light_lux,
+         soil_relative_humidity = relative_humidity,
+         soil_dew_point_c = dew_point_c) %>% 
+  mutate(row = row_number()) %>%
+  pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_light_lux, soil_relative_humidity, soil_dew_point_c)) %>% 
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
+
+
+pan_shade <- clean_panama %>% 
+  filter(location == "shade") %>% 
+  rename(shade_temperature_c = temperature_c,
+         shade_light_lux = light_lux,
+         shade_relative_humidity = relative_humidity,
+         shade_dew_point_c = dew_point_c) %>% 
+  mutate(row = row_number()) %>% 
+  pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
+
+pan_water <- clean_panama %>% 
+  filter(location=="water") %>%
+  rename(water_temperature_c = temperature_c,
+         water_light_lux = light_lux,
+         water_relative_humidity = relative_humidity,
+         water_dew_point_c = dew_point_c) %>% 
+  mutate(row = row_number()) %>%
+  pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
+
+pan_sun <- clean_panama %>% 
+  filter(location == "sun") %>%
+  rename(sun_temperature_c = temperature_c,
+         sun_light_lux = light_lux,
+         sun_relative_humidity = relative_humidity,
+         sun_dew_point_c = dew_point_c) %>% 
+  mutate(row = row_number()) %>%
+  pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
+
+pan_rg <- clean_panama %>% 
+  filter(location == "raingauge") %>%
+  rename(sun_temperature_c = temperature_c,
+         sun_light_lux = light_lux,
+         sun_relative_humidity = relative_humidity,
+         sun_dew_point_c = dew_point_c) %>% 
+  mutate(row = row_number()) %>%
+  pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
+
 
 ```
 
@@ -102,7 +158,8 @@ penn_soil <- clean_penn %>%
          soil_dew_point_c = dew_point_c) %>% 
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_light_lux, soil_relative_humidity, soil_dew_point_c)) %>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 penn_shade <- clean_penn %>% 
   filter(location == "shade") %>% 
@@ -112,7 +169,8 @@ penn_shade <- clean_penn %>%
          shade_dew_point_c = dew_point_c) %>% 
   mutate(row = row_number()) %>% 
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 penn_water <- clean_penn %>% 
   filter(location=="water") %>%
@@ -122,7 +180,8 @@ penn_water <- clean_penn %>%
          water_dew_point_c = dew_point_c) %>% 
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 penn_sun <- clean_penn %>% 
   filter(location == "sun") %>%
@@ -132,7 +191,8 @@ penn_sun <- clean_penn %>%
          sun_dew_point_c = dew_point_c) %>% 
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 ```
 
