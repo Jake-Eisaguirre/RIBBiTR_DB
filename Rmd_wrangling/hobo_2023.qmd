@@ -114,6 +114,8 @@ hobo_site <- data.frame(site = c("cerro_negro", "rabbit_stream", "SouthForkEastR
 
 dbAppendTable(connection, "hobo_site", hobo_site)
 
+site_ids <- dbGetQuery(connection, "select site, hobo_site_id from hobo_site")
+
 ```
 
 
@@ -167,7 +169,8 @@ pan_shade <- clean_panama %>%
   mutate(row = row_number()) %>% 
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 pan_water <- clean_panama %>% 
   filter(location=="water") %>%
@@ -178,7 +181,8 @@ pan_water <- clean_panama %>%
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 pan_sun <- clean_panama %>% 
   filter(location == "sun") %>%
@@ -189,7 +193,8 @@ pan_sun <- clean_panama %>%
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 pan_rg <- clean_panama %>% 
   filter(location == "raingauge") %>%
@@ -200,7 +205,8 @@ pan_rg <- clean_panama %>%
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(rg_temperature_c, rg_relative_humidity, rg_dew_point_c, rg_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 
 ```
@@ -255,7 +261,8 @@ penn_shade <- clean_penn %>%
   mutate(row = row_number()) %>% 
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 penn_water <- clean_penn %>% 
   filter(location=="water") %>%
@@ -266,7 +273,8 @@ penn_water <- clean_penn %>%
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 penn_sun <- clean_penn %>% 
   filter(location == "sun") %>%
@@ -277,7 +285,8 @@ penn_sun <- clean_penn %>%
   mutate(row = row_number()) %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
   select(!c(row, location)) %>% 
-  remove_empty(which = "cols")
+  remove_empty(which = "cols") %>% 
+  left_join(site_ids, by = c("site"))
 
 ```
 
