@@ -198,5 +198,7 @@ sn_sun <- clean_sn %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
   select(!c(row, location))
 
+sn_clean <- full_join(sn_sun, sn_water, by = c("site", "date_time"))
+
 ```
 

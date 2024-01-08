@@ -1,7 +1,7 @@
 ---
 title: "hobo"
 format: html
-editor: visual
+editor: source
 ---
 
 ## Load Packages
@@ -546,4 +546,3 @@ write_csv(hobo, here("clean_tables", "hobo.csv"))
 
 ```
 
-\`\`\`
