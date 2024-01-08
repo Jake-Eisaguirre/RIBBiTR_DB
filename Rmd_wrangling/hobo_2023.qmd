@@ -166,7 +166,8 @@ sn_soil <- clean_sn %>%
          soil_relative_humidity = relative_humidity,
          soil_dew_point_c = dew_point_c) %>% 
   pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_light_lux, soil_relative_humidity, soil_dew_point_c)) %>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 sn_shade <- clean_sn %>% 
   filter(location == "shade") %>%
@@ -176,7 +177,8 @@ sn_shade <- clean_sn %>%
          shade_relative_humidity = relative_humidity,
          shade_dew_point_c = dew_point_c) %>% 
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 sn_water <- clean_sn %>% 
   filter(location=="water") %>% 
@@ -186,7 +188,8 @@ sn_water <- clean_sn %>%
          water_relative_humidity = relative_humidity,
          water_dew_point_c = dew_point_c) %>% 
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
-  select(!c(row, location))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 sn_sun <- clean_sn %>% 
   filter(location == "sun") %>% 
@@ -196,9 +199,8 @@ sn_sun <- clean_sn %>%
          sun_relative_humidity = relative_humidity,
          sun_dew_point_c = dew_point_c) %>% 
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
-  select(!c(row, location))
-
-sn_clean <- full_join(sn_sun, sn_water, by = c("site", "date_time"))
+  select(!c(row, location)) %>% 
+  remove_empty(which = "cols")
 
 ```
 

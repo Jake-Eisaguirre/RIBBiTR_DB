@@ -504,7 +504,8 @@ hobo_sites <- plyr::rbind.fill(sites_2022, serdp_hobo_site) %>%
   mutate(temp_id = cur_group_id()) %>% 
   filter(!duplicated(temp_id)) %>% 
   mutate(hobo_site_id = UUIDgenerate(output = c("uuid")),
-         hobo_region_id = as.UUID("")) %>% 
+         hobo_region_id = as.UUID(""),
+         region = str_replace(region, " ", "_")) %>% 
   select(!c(utm_zone, utme, utmn, location, temp_id))
 
 write_csv(hobo_sites, here("clean_tables", "hobo_sites.csv"))
