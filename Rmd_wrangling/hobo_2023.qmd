@@ -109,12 +109,12 @@ pan_sun <- clean_panama %>%
 
 pan_rg <- clean_panama %>% 
   filter(location == "raingauge") %>%
-  rename(sun_temperature_c = temperature_c,
-         sun_light_lux = light_lux,
-         sun_relative_humidity = relative_humidity,
-         sun_dew_point_c = dew_point_c) %>% 
+  rename(rg_temperature_c = temperature_c,
+         rg_light_lux = light_lux,
+         rg_relative_humidity = relative_humidity,
+         rg_dew_point_c = dew_point_c) %>% 
   mutate(row = row_number()) %>%
-  pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
+  pivot_wider(names_from = height, values_from = c(rg_temperature_c, rg_relative_humidity, rg_dew_point_c, rg_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols")
 
