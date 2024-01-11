@@ -1,0 +1,48 @@
+---
+title: "panama_2022_qPCR"
+format: html
+editor: visual
+---
+
+## Load Packages
+
+```{r}
+
+if(!require(librarian)){
+  install.packages(librarian)
+  library(librarian)
+}
+
+shelf(tidyverse, here, DBI, RPostgres, janitor, readxl, parsedate, stringr)
+
+```
+
+## Read in Data
+```{r}
+
+raw_qpcr <- read_csv(here("data", "panama", "qpcr", "panama_2022_bdswab.csv")) %>% 
+  clean_names()
+
+```
+
+## Trim Fat
+```{r}
+
+skinny_qpcr <- raw_qpcr %>% 
+  select(sample_name, bd_ct_mean, bd_quantity_mean, extraction_lab, q_pcr_lab, notes) %>% 
+  rename(bd_swab_id = sample_name,
+         average_ct = bd_ct_mean,
+         averate_target_quant = bd_quantity_mean,
+         qpcr_lab = q_pcr_lab,
+         extract_lab = extraction_lab,
+         comments = notes)
+
+```
+
+## Clean Table
+```{r}
+
+clean_qpcr <- skinny_qpcr %>% 
+
+```
+
