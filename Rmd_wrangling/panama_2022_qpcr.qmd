@@ -29,10 +29,11 @@ raw_qpcr <- read_csv(here("data", "panama", "qpcr", "panama_2022_bdswab.csv")) %
 ```{r}
 
 skinny_qpcr <- raw_qpcr %>% 
-  select(sample_name, bd_ct_mean, bd_quantity_mean, extraction_lab, q_pcr_lab, notes) %>% 
+  select(sample_name, bd_ct_mean, bd_quantity_mean, ipc, extraction_lab, q_pcr_lab, notes) %>% 
   rename(bd_swab_id = sample_name,
          average_ct = bd_ct_mean,
-         averate_target_quant = bd_quantity_mean,
+         average_target_quant = bd_quantity_mean,
+         result = ipc,
          qpcr_lab = q_pcr_lab,
          extract_lab = extraction_lab,
          comments = notes)
@@ -42,7 +43,44 @@ skinny_qpcr <- raw_qpcr %>%
 ## Clean Table
 ```{r}
 
-clean_qpcr <- skinny_qpcr %>% 
+qpcr_bd_results <- skinny_qpcr %>% 
+  mutate(bd_swab_id = str_to_lower(bd_swab_id),
+         total_qpcr_volume_uL = 200,
+         qpcr_dilution_factor = 1,
+         volume_template_dna_uL = 5,
+         extract_volume_uL = 200,
+         standard_target_type = "ITS1",
+         standard = "plasmid-pisces",
+         master_mix = "bioline",
+         replicate = "triplicate",
+         qpcr_machine = "quantstudio_3",
+         extraction_kit = "qiagen_dneasy",
+         swab_type = "mw113",
+         extract_lab = "rz_lab",
+         qpcr_lab = "rz_lab",
+         result = if_else(result == "PASS", "p", "n"),
+         average_target_quant = if_else(is.na(average_target_quant), 0, average_target_quant),
+         detected = if_else(average_target_quant == 0, 0, 1),
+         target_quant_per_swab = (average_target_quant * extract_volume_uL) / (volume_template_dna_uL * qpcr_dilution_factor),
+         extraction_date = NA,
+         qpcr_date = NA)
+
+```
+
+## Append to table
+```{r}
+
+connection <- dbConnect(drv = dbDriver("Postgres"),
+                        dbname = Sys.getenv("aws_dbname"),
+                        host = Sys.getenv("aws_host"),
+                        port = Sys.getenv("aws_port"),
+                        user = Sys.getenv("aws_user"),
+                        password = Sys.getenv("aws_password"))
+#search path
+dbExecute(connection, "set search_path to survey_data")
+
+dbAppendTable(connection, 'qpcr_bd_results', qpcr_bd_results)
+
 
 ```
 
