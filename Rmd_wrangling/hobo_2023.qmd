@@ -76,7 +76,7 @@ hobo_region <- mid_hobo_region %>%
          hobo_location_id = if_else(region == "altos_de_campana", pan_location_id, hobo_location_id)) %>% 
   filter(region == "altos_de_campana")
 
-dbAppendTable(connection, "hobo_region", hobo_region)
+#dbAppendTable(connection, "hobo_region", hobo_region)
 
 
 
@@ -109,10 +109,12 @@ hobo_site <- data.frame(site = c("cerro_negro", "rabbit_stream", "SouthForkEastR
   mutate(hobo_region_id = if_else(site == "cerro_negro", cn_regid, hobo_region_id),
          hobo_region_id = if_else(site == "rabbit_stream", rs_regid, hobo_region_id),
          hobo_region_id = if_else(site %in% c("SouthForkEastRockCk", "WestForkEastRockCk", "10109", "10055"), 
-                                  ca_regid, hobo_region_id),
-         hobo_site_id = UUIDgenerate(n=nrow(hobo_site)))
+                                  ca_regid, hobo_region_id))
 
-dbAppendTable(connection, "hobo_site", hobo_site)
+hobo_site <- hobo_site %>% 
+  mutate(hobo_site_id = UUIDgenerate(n=nrow(hobo_site)))
+
+#dbAppendTable(connection, "hobo_site", hobo_site)
 
 site_ids <- dbGetQuery(connection, "select site, hobo_site_id from hobo_site")
 
@@ -157,7 +159,9 @@ pan_soil <- clean_panama %>%
   pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_light_lux, soil_relative_humidity, soil_dew_point_c)) %>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 
 pan_shade <- clean_panama %>% 
@@ -170,7 +174,9 @@ pan_shade <- clean_panama %>%
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 pan_water <- clean_panama %>% 
   filter(location=="water") %>%
@@ -182,7 +188,9 @@ pan_water <- clean_panama %>%
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 pan_sun <- clean_panama %>% 
   filter(location == "sun") %>%
@@ -194,7 +202,9 @@ pan_sun <- clean_panama %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 pan_rg <- clean_panama %>% 
   filter(location == "raingauge") %>%
@@ -206,7 +216,59 @@ pan_rg <- clean_panama %>%
   pivot_wider(names_from = height, values_from = c(rg_temperature_c, rg_relative_humidity, rg_dew_point_c, rg_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
+
+dbExecute(connection, 
+          "alter table hobo
+          add sun_temperature_c_100cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add sun_temperature_c_5cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add sun_relative_humidity_100cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add sun_light_lux_5cm varchar;")
+
+dbAppendTable(connection, 'hobo', pan_sun)
+
+dbExecute(connection, 
+          "alter table hobo
+          add water_temperature_c_10cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add water_temperature_c_neg10cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add water_light_lux_10cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add water_light_lux_neg10cm varchar;")
+
+dbAppendTable(connection, 'hobo', pan_water)
+
+dbAppendTable(connection, 'hobo', pan_shade)
+
+dbAppendTable(connection, 'hobo', pan_soil)
+
+dbExecute(connection, 
+          "alter table hobo
+          add rg_temperature_c_100cm varchar;")
+
+dbExecute(connection, 
+          "alter table hobo
+          add rg_relative_humidity_100cm varchar;")
+
+dbAppendTable(connection, 'hobo', pan_rg)
 
 
 ```
@@ -250,7 +312,9 @@ penn_soil <- clean_penn %>%
   pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_light_lux, soil_relative_humidity, soil_dew_point_c)) %>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols")%>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 penn_shade <- clean_penn %>% 
   filter(location == "shade") %>% 
@@ -262,7 +326,9 @@ penn_shade <- clean_penn %>%
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 penn_water <- clean_penn %>% 
   filter(location=="water") %>%
@@ -274,7 +340,9 @@ penn_water <- clean_penn %>%
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 penn_sun <- clean_penn %>% 
   filter(location == "sun") %>%
@@ -286,7 +354,17 @@ penn_sun <- clean_penn %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols") %>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
+
+dbAppendTable(connection, 'hobo', penn_sun)
+
+dbAppendTable(connection, 'hobo', penn_water)
+
+dbAppendTable(connection, 'hobo', penn_shade)
+
+dbAppendTable(connection, 'hobo', penn_soil)
 
 ```
 
@@ -322,7 +400,9 @@ sn_soil <- clean_sn %>%
   pivot_wider(names_from = height, values_from = c(soil_temperature_c, soil_light_lux, soil_relative_humidity, soil_dew_point_c)) %>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols")%>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 sn_shade <- clean_sn %>% 
   filter(location == "shade") %>%
@@ -334,7 +414,9 @@ sn_shade <- clean_sn %>%
   pivot_wider(names_from = height, values_from = c(shade_temperature_c, shade_relative_humidity, shade_dew_point_c, shade_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols")%>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 sn_water <- clean_sn %>% 
   filter(location=="water") %>% 
@@ -346,7 +428,9 @@ sn_water <- clean_sn %>%
   pivot_wider(names_from = height, values_from = c(water_temperature_c, water_relative_humidity, water_dew_point_c, water_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols")%>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site"))%>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
 
 sn_sun <- clean_sn %>% 
   filter(location == "sun") %>% 
@@ -358,7 +442,18 @@ sn_sun <- clean_sn %>%
   pivot_wider(names_from = height, values_from = c(sun_temperature_c, sun_relative_humidity, sun_dew_point_c, sun_light_lux))%>% 
   select(!c(row, location)) %>% 
   remove_empty(which = "cols")%>% 
-  left_join(site_ids, by = c("site"))
+  left_join(site_ids, by = c("site")) %>% 
+  select(!c(site)) %>% 
+  mutate(hobo_id = UUIDgenerate(n=n()))
+
+dbAppendTable(connection, 'hobo', sn_sun)
+
+dbAppendTable(connection, 'hobo', sn_water)
+
+dbAppendTable(connection, 'hobo', sn_shade)
+
+dbAppendTable(connection, 'hobo', sn_soil)
+
 
 ```
 
